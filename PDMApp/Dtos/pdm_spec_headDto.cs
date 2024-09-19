@@ -25,7 +25,6 @@ namespace PDMApp.Dtos
         public string? Product_m_id { get; set; }
         public string? Heelheight { get; set; }
         public string? Product_d_id { get; set; }
-        public string out_mold_no { get; set; }
-        //
+        public string? out_mold_no { get; set; }
     }
 }

@@ -57,13 +57,44 @@ namespace PDMApp.Controllers
             if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
             {
                 result = result.Where(ph => ph.Spec_m_id.Contains(value.Spec_m_id));
-
             }
-
-            if (!string.IsNullOrWhiteSpace(value.Factory)){
+            if (!string.IsNullOrWhiteSpace(value.Factory))
+            {
                 result = result.Where(ph => ph.Factory == value.Factory);
             }
-            return result;
+            if (!string.IsNullOrWhiteSpace(value.EntryMode))
+            {
+                result = result.Where(ph => ph.Entrymode == value.EntryMode);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Season))
+            {
+                result = result.Where(ph => ph.Season == value.Season);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Year))
+            {
+                result = result.Where(ph => ph.Year == value.Year);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Item_No))
+            {
+                result = result.Where(ph => ph.Item_no == value.Item_No);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Color_No))
+            {
+                result = result.Where(ph => ph.Color_no == value.Color_No);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Dev_No))
+            {
+                result = result.Where(ph => ph.Dev_no == value.Dev_No);
+            }
+            if (!string.IsNullOrWhiteSpace(value.Devcolorno))
+            {
+                result = result.Where(ph => ph.Dev_color_disp_name.Contains(value.Devcolorno));
+            }
+            if (!string.IsNullOrWhiteSpace(value.Stage))
+            {
+                result = result.Where(ph => ph.Stage.Contains(value.Stage));
+            }
+            return result.ToList();
         }
 
             // GET api/<SPECHeadController>/5
