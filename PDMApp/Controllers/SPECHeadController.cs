@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
 using PDMApp.Parameters;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace PDMApp.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/SPEC/[controller]")]
     [ApiController]
     public class SPECHeadController : ControllerBase
     {
@@ -50,7 +51,34 @@ namespace PDMApp.Controllers
             if (!string.IsNullOrWhiteSpace(value.Stage))
                 result = result.Where(ph => ph.Stage.Contains(value.Stage));
 
-            return result.ToList();
+            //return result.ToList();
+            // 先將資料庫查詢結果加載到記憶體中，再進行投影
+            var finalResult = result.ToList();
+
+            // 在記憶體中處理每個 pdm_spec_headDto 並加載對應的 Spec_ItemDtos
+            foreach (var item in finalResult)
+            {
+                item.pdm_Spec_ItemDtos = _pcms_Pdm_TestContext.pdm_spec_item
+                    .Where(si => si.spec_m_id == item.Spec_m_id)
+                    .Select(si => new pdm_spec_itemDto
+                    {
+                        Act_no = si.act_no,
+                        Parts = si.parts,
+                        Moldno = si.material,
+                        Materialno = si.materialno,
+                        Material = si.material,
+                        Submaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Colors = si.colors,
+                        Memo = si.memo,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Width = si.width
+                    }).ToList();
+            }
+
+            return finalResult;
         }
 
         // GET api/<SPECHeadController>/5
@@ -62,9 +90,61 @@ namespace PDMApp.Controllers
 
         // POST api/<SPECHeadController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public IEnumerable<pdm_spec_headDto> Post([FromBody] SpecSearchParameter value)
         {
+            var result = QuerySpecHead().Distinct();
+
+            if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
+                result = result.Where(ph => ph.Spec_m_id.Contains(value.Spec_m_id));
+            if (!string.IsNullOrWhiteSpace(value.Factory))
+                result = result.Where(ph => ph.Factory == value.Factory);
+            if (!string.IsNullOrWhiteSpace(value.EntryMode))
+                result = result.Where(ph => ph.Entrymode == value.EntryMode);
+            if (!string.IsNullOrWhiteSpace(value.Season))
+                result = result.Where(ph => ph.Season == value.Season);
+            if (!string.IsNullOrWhiteSpace(value.Year))
+                result = result.Where(ph => ph.Year == value.Year);
+            if (!string.IsNullOrWhiteSpace(value.Item_No))
+                result = result.Where(ph => ph.Item_no == value.Item_No);
+            if (!string.IsNullOrWhiteSpace(value.Color_No))
+                result = result.Where(ph => ph.Color_no == value.Color_No);
+            if (!string.IsNullOrWhiteSpace(value.Dev_No))
+                result = result.Where(ph => ph.Dev_no == value.Dev_No);
+            if (!string.IsNullOrWhiteSpace(value.Devcolorno))
+                result = result.Where(ph => ph.Dev_color_disp_name.Contains(value.Devcolorno));
+            if (!string.IsNullOrWhiteSpace(value.Stage))
+                result = result.Where(ph => ph.Stage.Contains(value.Stage));
+
+            //return result.ToList();
+            // 先將資料庫查詢結果加載到記憶體中，再進行投影
+            var finalResult = result.ToList();
+
+            // 在記憶體中處理每個 pdm_spec_headDto 並加載對應的 Spec_ItemDtos
+            foreach (var item in finalResult)
+            {
+                item.pdm_Spec_ItemDtos = _pcms_Pdm_TestContext.pdm_spec_item
+                    .Where(si => si.spec_m_id == item.Spec_m_id)
+                    .Select(si => new pdm_spec_itemDto
+                    {
+                        Act_no = si.act_no,
+                        Parts = si.parts,
+                        Moldno = si.material,
+                        Materialno = si.materialno,
+                        Material = si.material,
+                        Submaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Colors = si.colors,
+                        Memo = si.memo,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Width = si.width
+                    }).ToList();
+            }
+
+            return finalResult;
         }
+    
 
         // PUT api/<SPECHeadController>/5
         [HttpPut("{id}")]
