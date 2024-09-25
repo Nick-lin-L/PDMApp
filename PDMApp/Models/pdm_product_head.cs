@@ -109,5 +109,8 @@ namespace PDMApp.Models
         public string betsubai_flg { get; set; }
         public DateTime? entry_drop_date { get; set; }
         public string karyu_kbn_name { get; set; }
+ 
+        //public ICollection<pdm_product_item> ProductItems { get; set; } // 一個 Product 可能有多個 ProductItem
+
     }
 }
