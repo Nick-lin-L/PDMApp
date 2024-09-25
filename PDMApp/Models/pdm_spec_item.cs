@@ -37,5 +37,8 @@ namespace PDMApp.Models
         public string act_no { get; set; }
         public string factory_mold_no { get; set; }
         public string group_mk { get; set; }
+
+        // 外鍵與導航屬性
+        //public pdm_spec_head SpecHead { get; set; }
     }
 }

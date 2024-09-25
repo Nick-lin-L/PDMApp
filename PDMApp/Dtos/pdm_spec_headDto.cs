@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PDMApp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,5 +27,6 @@ namespace PDMApp.Dtos
         public string? Heelheight { get; set; }
         public string? Product_d_id { get; set; }
         public string? out_mold_no { get; set; }
+        public ICollection<pdm_spec_itemDto> pdm_Spec_ItemDtos { get; set; }
     }
 }
