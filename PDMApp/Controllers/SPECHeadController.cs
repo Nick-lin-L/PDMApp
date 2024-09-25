@@ -41,7 +41,7 @@ namespace PDMApp.Controllers
             if (!string.IsNullOrWhiteSpace(value.Year))
                 result = result.Where(ph => ph.Year == value.Year);
             if (!string.IsNullOrWhiteSpace(value.Item_No))
-                result = result.Where(ph => ph.Item_no == value.Item_No);
+                result = result.Where(ph => ph.Item_no.Contains(value.Item_No));
             if (!string.IsNullOrWhiteSpace(value.Color_No))
                 result = result.Where(ph => ph.Color_no == value.Color_No);
             if (!string.IsNullOrWhiteSpace(value.Dev_No))
@@ -63,7 +63,11 @@ namespace PDMApp.Controllers
                     .Select(si => new pdm_spec_itemDto
                     {
                         Act_no = si.act_no,
-                        Parts = si.parts,
+                        //Parts = si.parts,
+                        Parts = si.parts ?? _pcms_Pdm_TestContext.pdm_spec_item
+                        .Where(x => x.spec_m_id == si.spec_m_id && x.act_no == si.act_no && x.parts != null)
+                        .Select(x => x.parts)
+                        .FirstOrDefault(),
                         Moldno = si.material,
                         Materialno = si.materialno,
                         Material = si.material,
@@ -75,7 +79,8 @@ namespace PDMApp.Controllers
                         Hcha = si.hcha,
                         Sec = si.sec,
                         Width = si.width
-                    }).ToList();
+                    }).OrderBy(si => Convert.ToInt32(si.Act_no))
+                    .ToList();
             }
 
             return finalResult;
@@ -105,7 +110,7 @@ namespace PDMApp.Controllers
             if (!string.IsNullOrWhiteSpace(value.Year))
                 result = result.Where(ph => ph.Year == value.Year);
             if (!string.IsNullOrWhiteSpace(value.Item_No))
-                result = result.Where(ph => ph.Item_no == value.Item_No);
+                result = result.Where(ph => ph.Item_no.Contains(value.Item_No));
             if (!string.IsNullOrWhiteSpace(value.Color_No))
                 result = result.Where(ph => ph.Color_no == value.Color_No);
             if (!string.IsNullOrWhiteSpace(value.Dev_No))
@@ -127,7 +132,11 @@ namespace PDMApp.Controllers
                     .Select(si => new pdm_spec_itemDto
                     {
                         Act_no = si.act_no,
-                        Parts = si.parts,
+                        //Parts = si.parts,
+                        Parts = si.parts ?? _pcms_Pdm_TestContext.pdm_spec_item
+                        .Where(x => x.spec_m_id == si.spec_m_id && x.act_no == si.act_no && x.parts != null)
+                        .Select(x => x.parts)
+                        .FirstOrDefault(),
                         Moldno = si.material,
                         Materialno = si.materialno,
                         Material = si.material,
@@ -139,7 +148,8 @@ namespace PDMApp.Controllers
                         Hcha = si.hcha,
                         Sec = si.sec,
                         Width = si.width
-                    }).ToList();
+                    }).OrderBy(si => Convert.ToInt32(si.Act_no))
+                    .ToList();
             }
 
             return finalResult;
@@ -184,7 +194,9 @@ namespace PDMApp.Controllers
                         Cbdlockmk = sh.cbdlockmk,
                         Product_m_id = ph.product_m_id,
                         Product_d_id = pi.product_d_id
-                    });
+                    }).OrderBy(ph => ph.Dev_no)
+                    .ThenBy(pi => pi.Dev_color_disp_name)
+                    ;
         }
 
     }
