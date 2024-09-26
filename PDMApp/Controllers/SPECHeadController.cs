@@ -24,7 +24,7 @@ namespace PDMApp.Controllers
         }
 
 
-        // GET: api/<SPECHeadController>
+        // GET: api/SPEC/<SPECHeadController>
         [HttpGet]
         public IEnumerable<pdm_spec_headDto> Get([FromQuery] SpecSearchParameter value)
         {
@@ -86,14 +86,14 @@ namespace PDMApp.Controllers
             return finalResult;
         }
 
-        // GET api/<SPECHeadController>/5
+        // GET api/SPEC/<SPECHeadController>/5
         [HttpGet("{id}")]
         public pdm_spec_headDto Get(string id)
         {
             return QuerySpecHead().FirstOrDefault(sh => sh.Spec_m_id == id);
         }
 
-        // POST api/<SPECHeadController>
+        // POST api/SPEC/<SPECHeadController>
         [HttpPost]
         public IEnumerable<pdm_spec_headDto> Post([FromBody] SpecSearchParameter value)
         {
@@ -154,15 +154,15 @@ namespace PDMApp.Controllers
 
             return finalResult;
         }
-    
 
-        // PUT api/<SPECHeadController>/5
+
+        // PUT api/SPEC/<SPECHeadController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<SPECHeadController>/5
+        // DELETE api/SPEC/<SPECHeadController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
