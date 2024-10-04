@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace PDMApp.Controllers.SPEC
+namespace PDMApp.Controllers
 {
     [Route("api/SPECv1/[controller]")]
     [ApiController]
@@ -175,8 +175,6 @@ namespace PDMApp.Controllers.SPEC
         }
 
 
-
-
         // PUT api/SPECv1/<SPECHeadController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
@@ -190,7 +188,7 @@ namespace PDMApp.Controllers.SPEC
         }
 
 
-        public IQueryable<pdm_spec_headDto> QuerySpecHead()
+        private IQueryable<pdm_spec_headDto> QuerySpecHead()
         {
             // 使用多表 Join 查詢來組合所需欄位
             return (from ph in _pcms_Pdm_TestContext.pdm_product_head
@@ -220,6 +218,5 @@ namespace PDMApp.Controllers.SPEC
                         pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>() // 初始化空的 Spec_ItemDtos 列表
                     });
         }
-
     }
 }
