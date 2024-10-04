@@ -29,7 +29,7 @@ namespace PDMApp.Controllers.SPEC
         [HttpGet]
         public IEnumerable<pdm_spec_headDto> Get([FromQuery] SpecSearchParameter value)
         {
-            var result = QuerySpecHead();
+            var result = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
 
             if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
                 result = result.Where(ph => ph.Spec_m_id.Contains(value.Spec_m_id));
@@ -91,7 +91,7 @@ namespace PDMApp.Controllers.SPEC
         [HttpGet("{id}")]
         public pdm_spec_headDto Get(string id)
         {
-            return QuerySpecHead().FirstOrDefault(sh => sh.Spec_m_id == id);
+            return QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext).FirstOrDefault(sh => sh.Spec_m_id == id);
         }
 
         // POST api/SPECv1/<SPECHeadController>
@@ -99,8 +99,8 @@ namespace PDMApp.Controllers.SPEC
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
-            var query = QuerySpecHead();
-            //var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
+            //var query = QuerySpecHead();
+            var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
 
             // 動態篩選條件
             if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
@@ -187,7 +187,7 @@ namespace PDMApp.Controllers.SPEC
         {
         }
 
-
+        /*
         private IQueryable<pdm_spec_headDto> QuerySpecHead()
         {
             // 使用多表 Join 查詢來組合所需欄位
@@ -218,5 +218,6 @@ namespace PDMApp.Controllers.SPEC
                         pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>() // 初始化空的 Spec_ItemDtos 列表
                     });
         }
+        */
     }
 }
