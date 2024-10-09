@@ -154,7 +154,7 @@ namespace PDMApp.Controllers.SPEC
             }
 
             // 處理返回結果為空的情況
-            if (result == null || result.Count == 0)
+            if (result == null || result.Count <= 0)
             {
                 // 返回帶有錯誤代碼和訊息的 API 狀態回應
                 return Ok(new APIStatusResponse<IEnumerable<pdm_spec_headDto>>
