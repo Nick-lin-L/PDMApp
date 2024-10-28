@@ -7,6 +7,7 @@ using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -52,32 +53,29 @@ namespace PDMApp.Controllers.SPEC
             // 創建 MultiPageResultDTO 來存放結果
             var resultData = new MultiPageResultDTO();
 
-            // Basic
-            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext);
-            if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
-                basic_query = basic_query.Where(ph => ph.Spec_m_id.Contains(value.Spec_m_id));
-            var resultBasic = await basic_query.Distinct().ToListAsync();
-            resultData.BasicData = resultBasic;  // 將結果賦值給 MultiPageResultDTO 的 BasicData 屬性
+            // Basic 查詢
+            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.Spec_m_id.Contains(value.Spec_m_id));
+            var resultBasic = await basic_query.Distinct().ToListAsync();  // 等待查詢完成
+            resultData.BasicData = resultBasic;
 
-            // Upper,Sole,Other
-            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext);
-            if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
-                upper_query = upper_query.Where(si => si.Spec_m_id.Contains(value.Spec_m_id));
-            var allUpperData = await upper_query.ToListAsync();
+            // Upper,Sole,Other 查詢
+            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext).Where(si => string.IsNullOrWhiteSpace(value.Spec_m_id) || si.Spec_m_id.Contains(value.Spec_m_id));
+            var allUpperData = await upper_query.ToListAsync();  // 等待查詢完成
 
             // 賦予不同頁面資料
             resultData.UpperData = allUpperData.Where(si => si.PartClass == "A").ToList();
             resultData.SoleData = allUpperData.Where(si => si.PartClass == "B").ToList();
             resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
-            
-            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext);
-            if (!string.IsNullOrWhiteSpace(value.Spec_m_id))
-                standard_query = standard_query.Where(st => st.Spec_m_id.Contains(value.Spec_m_id));
-            var resultStandard = await standard_query.Distinct().ToListAsync();
+
+            // Standard 查詢
+            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext).Where(st => string.IsNullOrWhiteSpace(value.Spec_m_id) || st.Spec_m_id.Contains(value.Spec_m_id));
+            var resultStandard = await standard_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.StandardData = resultStandard;
-            
+
             return APIResponseHelper.HandleMultiPageResponse(resultData);
         }
+
+
 
         // PUT api/<GetSpec5SheetRequestController>/5
         [HttpPut("{id}")]
