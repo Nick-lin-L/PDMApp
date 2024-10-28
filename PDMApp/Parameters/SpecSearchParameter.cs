@@ -20,6 +20,7 @@ namespace PDMApp.Parameters
         public string? Stage { get; set; }
         public string? Customer_kbn { get; set; }
         public string? Mode_name { get; set; }
+        public string? Out_mold_no { get; set; }
         public string? Last_No1 { get; set; }
         public string? Last_No2 { get; set; }
         public string? Last_No3 { get; set; }
