@@ -35,6 +35,15 @@ namespace PDMApp
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" });
             });
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyHeader()
+                           .AllowAnyMethod();
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +59,8 @@ namespace PDMApp
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors("AllowAllOrigins"); // 啟用允許所有來源的政策
 
             app.UseAuthorization();
 

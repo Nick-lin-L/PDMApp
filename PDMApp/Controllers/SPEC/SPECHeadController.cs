@@ -130,50 +130,34 @@ namespace PDMApp.Controllers.SPEC
             // 處理每個 pdm_spec_headDto 的 pdm_Spec_ItemDtos
             foreach (var item in result)
             {
-                item.pdm_Spec_ItemDtos = await _pcms_Pdm_TestContext.pdm_spec_item
-                    .Where(si => si.spec_m_id == item.Spec_m_id)
-                    .Select(si => new pdm_spec_itemDto
-                    {
-                        Act_no = si.act_no,
-                        Seqno = si.seqno,
-                        Parts = si.parts,
-                        Moldno = si.material,
-                        Materialno = si.materialno,
-                        Material = si.material,
-                        Submaterial = si.submaterial,
-                        Standard = si.standard,
-                        Supplier = si.supplier,
-                        Colors = si.colors,
-                        Memo = si.memo,
-                        Hcha = si.hcha,
-                        Sec = si.sec,
-                        Width = si.width
-                    }).OrderBy(si => Convert.ToInt32(si.Act_no))
-                    .ThenBy(si => si.Seqno)
-                    .ToListAsync();
-            }
-
-            // 處理返回結果為空的情況
-            if (result == null || result.Count <= 0)
-            {
-                // 返回帶有錯誤代碼和訊息的 API 狀態回應
-                return Ok(new APIStatusResponse<IEnumerable<pdm_spec_headDto>>
+                item.pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>
                 {
-                    Data = Enumerable.Empty<pdm_spec_headDto>(), // 空集合，表示沒有資料
-                    ErrorCode = "10000",
-                    Message = "查無資料"
-                });
+                    await _pcms_Pdm_TestContext.pdm_spec_item
+                        .Where(si => si.spec_m_id == item.Spec_m_id)
+                        .OrderBy(si => Convert.ToInt32(si.act_no))
+                        .ThenBy(si => si.seqno)
+                        .Select(si => new pdm_spec_itemDto
+                        {
+                            Act_no = si.act_no,
+                            Seqno = si.seqno,
+                            Parts = si.parts,
+                            Moldno = si.material,
+                            Materialno = si.materialno,
+                            Material = si.material,
+                            Submaterial = si.submaterial,
+                            Standard = si.standard,
+                            Supplier = si.supplier,
+                            Colors = si.colors,
+                            Memo = si.memo,
+                            Hcha = si.hcha,
+                            Sec = si.sec,
+                            Width = si.width
+                        })
+                        .FirstOrDefaultAsync()
+                };
             }
-
-            // 正常返回資料的情況
-            return Ok(new APIStatusResponse<IEnumerable<pdm_spec_headDto>>
-            {
-                Data = result,
-                ErrorCode = "10001",
-                Message = "成功取得資料"
-            });
+            return APIResponseHelper.HandleApiResponse(result);// 使用共用的 APIResponseHelper 來處理結果
         }
-
 
         // PUT api/SPECv1/<SPECHeadController>/5
         [HttpPut("{id}")]
