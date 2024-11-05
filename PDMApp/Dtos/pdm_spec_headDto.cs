@@ -12,21 +12,21 @@ namespace PDMApp.Dtos
         public string? Year { get; set; }
         public string? Season { get; set; }
         public string? Stage { get; set; }
-        public string? Mold_no { get; set; }
+        public string? MoldNo { get; set; }
         public string? Factory { get; set; }
         public string? Shfactory { get; set; }
-        public string? Item_name_eng { get; set; }
-        public string? Item_name_jpn { get; set; }
-        public string? Item_no { get; set; }
-        public string? Dev_no { get; set; }
-        public string? Dev_color_disp_name { get; set; }
-        public string? Color_no { get; set; }
+        public string? ItemNameEng { get; set; }
+        public string? ItemNameJpn { get; set; }
+        public string? ItemNo { get; set; }
+        public string? DevNo { get; set; }
+        public string? DevColorDispName { get; set; }
+        public string? ColorNo { get; set; }
         public string? Entrymode { get; set; }
         public string? Cbdlockmk { get; set; }
-        public string? Product_m_id { get; set; }
+        public string? ProductMId { get; set; }
         public string? Heelheight { get; set; }
-        public string? Product_d_id { get; set; }
-        public string? out_mold_no { get; set; }
+        public string? ProductDId { get; set; }
+        public string? OutMoldNo { get; set; }
         public ICollection<pdm_spec_itemDto> pdm_Spec_ItemDtos { get; set; }
     }
 }
