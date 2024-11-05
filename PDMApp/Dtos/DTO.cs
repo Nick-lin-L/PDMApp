@@ -7,43 +7,43 @@ namespace PDMApp.Dtos
 {
     public class SpecBasicDTO
     {
-        public string? Dev_no { get; set; }
-        public string? Dev_Color_no { get; set; }
+        public string? DevNo { get; set; }
+        public string? DevColorNo { get; set; }
         public string? Stage { get; set; }
         public decimal? Ver { get; set; }
         public string? Entrymode { get; set; }
-        public string? Sample_Size { get; set; }
+        public string? SampleSize { get; set; }
         public string? Year { get; set; }
         public string? Season { get; set; }
-        public string? Category_Kbn { get; set; }
-        public string? Mold_no { get; set; }
-        public string? Item_no { get; set; }
-        public string? Item_name_eng { get; set; }
-        public string? Item_name_jpn { get; set; }
-        public string? Color_Name_Eng { get; set; }
-        public string? Color_Name_Jpn { get; set; }
-        public string? Size_Run { get; set; }
+        public string? CategoryKbn { get; set; }
+        public string? MoldNo { get; set; }
+        public string? ItemNo { get; set; }
+        public string? ItemNameEng { get; set; }
+        public string? ItemNameJpn { get; set; }
+        public string? ColorNameEng { get; set; }
+        public string? ColorNameJpn { get; set; }
+        public string? SizeRun { get; set; }
         public string? Factory { get; set; }
-        public string? Factory_Upper { get; set; }
+        public string? FactoryUpper { get; set; }
         public decimal? HeelHeight { get; set; }
         public string? Lasting { get; set; }
-        public decimal? Requst_weight { get; set; }
+        public decimal? RequstWeight { get; set; }
         public string? LastNo1 { get; set; }
         public string? LastNo2 { get; set; }
         public string? LastNo3 { get; set; }
-        public string? Upper_Sozai_Code { get; set; }
-        public string? Sole_Sozai_Code { get; set; }
-        public string? Color_no { get; set; }
-        public string? Size_Conversion_Type { get; set; }
-        public string? Special_Conversion { get; set; }
+        public string? UpperSozaiCode { get; set; }
+        public string? SoleSozaiCode { get; set; }
+        public string? ColorNo { get; set; }
+        public string? SizeConversionType { get; set; }
+        public string? SpecialConversion { get; set; }
         public string? Remarks { get; set; }
-        public string? out_mold_no { get; set; }
+        public string? OutMoldNo { get; set; }
         public string? Shfactory { get; set; }
-        public string? Dev_color_disp_name { get; set; }
-        public string? Spec_m_id { get; set; }
+        public string? DevColorDispName { get; set; }
+        public string? SpecMId { get; set; }
         public string? Cbdlockmk { get; set; }
-        public string? Product_m_id { get; set; }
-        public string? Product_d_id { get; set; }
+        public string? ProductMId { get; set; }
+        public string? ProductDId { get; set; }
         public string? pdm_Spec_ItemDtos { get; set; }
     }
 

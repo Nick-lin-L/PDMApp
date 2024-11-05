@@ -7,7 +7,7 @@ namespace PDMApp.Dtos
 {
     public class pdm_spec_itemDto
     {
-        public string? Act_no { get; set; }
+        public string? ActNo { get; set; }
         public int? Seqno { get; set; }
         public string? Parts { get; set; }
         public string? Moldno { get; set; }

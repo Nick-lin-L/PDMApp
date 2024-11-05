@@ -42,13 +42,13 @@ namespace PDMApp.Controllers.SPEC
             if (!string.IsNullOrWhiteSpace(value.Year))
                 result = result.Where(ph => ph.Year == value.Year);
             if (!string.IsNullOrWhiteSpace(value.Item_No))
-                result = result.Where(ph => ph.Item_no.Contains(value.Item_No));
+                result = result.Where(ph => ph.ItemNo.Contains(value.Item_No));
             if (!string.IsNullOrWhiteSpace(value.Color_No))
-                result = result.Where(ph => ph.Color_no == value.Color_No);
+                result = result.Where(ph => ph.ColorNo == value.Color_No);
             if (!string.IsNullOrWhiteSpace(value.Dev_No))
-                result = result.Where(ph => ph.Dev_no == value.Dev_No);
+                result = result.Where(ph => ph.DevNo == value.Dev_No);
             if (!string.IsNullOrWhiteSpace(value.Devcolorno))
-                result = result.Where(ph => ph.Dev_color_disp_name.Contains(value.Devcolorno));
+                result = result.Where(ph => ph.DevColorDispName.Contains(value.Devcolorno));
             if (!string.IsNullOrWhiteSpace(value.Stage))
                 result = result.Where(ph => ph.Stage.Contains(value.Stage));
 
@@ -63,7 +63,7 @@ namespace PDMApp.Controllers.SPEC
                     .Where(si => si.spec_m_id == item.Spec_m_id)
                     .Select(si => new pdm_spec_itemDto
                     {
-                        Act_no = si.act_no,
+                        ActNo = si.act_no,
                         //Parts = si.parts,
                         Parts = si.parts ?? _pcms_Pdm_TestContext.pdm_spec_item
                         .Where(x => x.spec_m_id == si.spec_m_id && x.act_no == si.act_no && x.parts != null)
@@ -80,7 +80,7 @@ namespace PDMApp.Controllers.SPEC
                         Hcha = si.hcha,
                         Sec = si.sec,
                         Width = si.width
-                    }).OrderBy(si => Convert.ToInt32(si.Act_no))
+                    }).OrderBy(si => Convert.ToInt32(si.ActNo))
                     .ToList();
             }
 
@@ -114,15 +114,21 @@ namespace PDMApp.Controllers.SPEC
             if (!string.IsNullOrWhiteSpace(value.Year))
                 query = query.Where(ph => ph.Year == value.Year);
             if (!string.IsNullOrWhiteSpace(value.Item_No))
-                query = query.Where(ph => ph.Item_no.Contains(value.Item_No));
+                query = query.Where(ph => ph.ItemNo.Contains(value.Item_No));
             if (!string.IsNullOrWhiteSpace(value.Color_No))
-                query = query.Where(ph => ph.Color_no == value.Color_No);
+                query = query.Where(ph => ph.ColorNo == value.Color_No);
             if (!string.IsNullOrWhiteSpace(value.Dev_No))
-                query = query.Where(ph => ph.Dev_no == value.Dev_No);
+                query = query.Where(ph => ph.DevNo == value.Dev_No);
             if (!string.IsNullOrWhiteSpace(value.Devcolorno))
-                query = query.Where(ph => ph.Dev_color_disp_name.Contains(value.Devcolorno));
+                query = query.Where(ph => ph.DevColorDispName.Contains(value.Devcolorno));
             if (!string.IsNullOrWhiteSpace(value.Stage))
                 query = query.Where(ph => ph.Stage.Contains(value.Stage));
+            if (!string.IsNullOrWhiteSpace(value.Customer_kbn))
+                query = query.Where(ph => ph.Stage.Contains(value.Customer_kbn));
+            if (!string.IsNullOrWhiteSpace(value.Out_mold_no))
+                query = query.Where(ph => ph.Stage.Contains(value.Out_mold_no));
+
+
 
             // 透過 LINQ 選擇結果
             var result = await query.Distinct().ToListAsync();
@@ -138,7 +144,7 @@ namespace PDMApp.Controllers.SPEC
                         .ThenBy(si => si.seqno)
                         .Select(si => new pdm_spec_itemDto
                         {
-                            Act_no = si.act_no,
+                            ActNo = si.act_no,
                             Seqno = si.seqno,
                             Parts = si.parts,
                             Moldno = si.material,
@@ -170,38 +176,5 @@ namespace PDMApp.Controllers.SPEC
         public void Delete(int id)
         {
         }
-
-        /*
-        private IQueryable<pdm_spec_headDto> QuerySpecHead()
-        {
-            // 使用多表 Join 查詢來組合所需欄位
-            return (from ph in _pcms_Pdm_TestContext.pdm_product_head
-                    join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
-                    join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
-                    join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
-                    select new pdm_spec_headDto
-                    {
-                        Year = ph.year,
-                        Season = ph.season,
-                        Entrymode = sh.entrymode,
-                        Stage = sh.stage,
-                        out_mold_no = ph.out_mold_no,
-                        Mold_no = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
-                        Shfactory = sh.factory,
-                        Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
-                        Item_name_eng = ph.item_name_eng,
-                        Item_name_jpn = ph.item_name_jpn,
-                        Item_no = ph.item_no,
-                        Dev_no = ph.dev_no,
-                        Dev_color_disp_name = pi.dev_color_disp_name,
-                        Color_no = pi.color_no,
-                        Spec_m_id = sh.spec_m_id,
-                        Cbdlockmk = sh.cbdlockmk,
-                        Product_m_id = ph.product_m_id,
-                        Product_d_id = pi.product_d_id,
-                        pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>() // 初始化空的 Spec_ItemDtos 列表
-                    });
-        }
-        */
     }
 }

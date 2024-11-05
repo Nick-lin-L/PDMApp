@@ -54,7 +54,7 @@ namespace PDMApp.Controllers.SPEC
             var resultData = new MultiPageResultDTO();
 
             // Basic 查詢
-            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.Spec_m_id.Contains(value.Spec_m_id));
+            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.SpecMId.Contains(value.Spec_m_id));
             var resultBasic = await basic_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.BasicData = resultBasic;
 
