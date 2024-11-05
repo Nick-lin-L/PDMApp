@@ -55,7 +55,7 @@ namespace PDMApp.Dtos
         public IEnumerable<SpecUpperDTO> OtherData { get; set; }
         public IEnumerable<SpecStandardDTO> StandardData { get; set; }
     }
-    
+     
     public class SpecUpperDTO
     {
         public string Spec_d_id { get; set; }
