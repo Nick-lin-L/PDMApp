@@ -12,8 +12,6 @@ namespace PDMApp.Dtos
         public string? Year { get; set; }
         public string? Season { get; set; }
         public string? Stage { get; set; }
-        //public string? Text { get; set; }
-        //public string? GroupKey { get; set; }
         public string? MoldNo { get; set; }
         public string? Factory { get; set; }
         public string? Shfactory { get; set; }
