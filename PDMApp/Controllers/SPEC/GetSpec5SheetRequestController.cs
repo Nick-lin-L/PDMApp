@@ -54,12 +54,12 @@ namespace PDMApp.Controllers.SPEC
             var resultData = new MultiPageResultDTO();
 
             // Basic 查詢
-            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.SpecMId.Contains(value.Spec_m_id));
+            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.SpecMId.Equals(value.Spec_m_id));
             var resultBasic = await basic_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.BasicData = resultBasic;
 
             // Upper,Sole,Other 查詢
-            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext).Where(si => string.IsNullOrWhiteSpace(value.Spec_m_id) || si.Spec_m_id.Contains(value.Spec_m_id));
+            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext).Where(si => string.IsNullOrWhiteSpace(value.Spec_m_id) || si.Spec_m_id.Equals(value.Spec_m_id));
             var allUpperData = await upper_query.ToListAsync();  // 等待查詢完成
 
             // 賦予不同頁面資料
@@ -68,7 +68,7 @@ namespace PDMApp.Controllers.SPEC
             resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
 
             // Standard 查詢
-            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext).Where(st => string.IsNullOrWhiteSpace(value.Spec_m_id) || st.Spec_m_id.Contains(value.Spec_m_id));
+            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext).Where(st => string.IsNullOrWhiteSpace(value.Spec_m_id) || st.Spec_m_id.Equals(value.Spec_m_id));
             var resultStandard = await standard_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.StandardData = resultStandard;
 
