@@ -16,12 +16,14 @@ namespace PDMApp.Utils
                     join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
                     join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
                     join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
+                    where pn.group_key == "stage"
                     select new pdm_spec_headDto
                     {
                         Year = ph.year,
                         Season = ph.season,
                         Entrymode = sh.entrymode,
-                        Stage = sh.stage,
+                        Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
                         OutMoldNo = ph.out_mold_no,
                         MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
                         Shfactory = sh.factory,
@@ -48,11 +50,13 @@ namespace PDMApp.Utils
                     join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
                     join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
                     join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
+                    where pn.group_key == "stage"
                     select new SpecBasicDTO
                     {
                         DevNo = ph.dev_no,
                         DevColorNo = pi.dev_color_no,
-                        Stage = sh.stage,
+                        Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
                         Ver = sh.ver,
                         Entrymode = sh.entrymode,
                         SampleSize = ph.sample_size,

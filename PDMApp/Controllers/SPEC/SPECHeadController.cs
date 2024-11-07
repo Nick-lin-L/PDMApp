@@ -122,7 +122,7 @@ namespace PDMApp.Controllers.SPEC
             if (!string.IsNullOrWhiteSpace(value.Devcolorno))
                 query = query.Where(ph => ph.DevColorDispName.Contains(value.Devcolorno));
             if (!string.IsNullOrWhiteSpace(value.Stage))
-                query = query.Where(ph => ph.Stage.Contains(value.Stage));
+                query = query.Where(ph => ph.Stage.Equals(value.Stage));
             if (!string.IsNullOrWhiteSpace(value.Customer_kbn))
                 query = query.Where(ph => ph.Stage.Contains(value.Customer_kbn));
             if (!string.IsNullOrWhiteSpace(value.Out_mold_no))
