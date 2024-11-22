@@ -45,7 +45,7 @@ namespace PDMApp.Controllers.SPEC
         {
             return "value";
         }
-
+        /*
         // POST api/<GetSpec5SheetRequestController>
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<MultiPageResultDTO>>> Post([FromBody] SpecSearchParameter value)
@@ -54,12 +54,12 @@ namespace PDMApp.Controllers.SPEC
             var resultData = new MultiPageResultDTO();
 
             // Basic 查詢
-            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.Spec_m_id) || ph.SpecMId.Equals(value.Spec_m_id));
+            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext).Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
             var resultBasic = await basic_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.BasicData = resultBasic;
 
-            // Upper,Sole,Other 查詢
-            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext).Where(si => string.IsNullOrWhiteSpace(value.Spec_m_id) || si.Spec_m_id.Equals(value.Spec_m_id));
+            // Upper,Sole,Other 查詢是同一個。但條件值不同
+            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext).Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
             var allUpperData = await upper_query.ToListAsync();  // 等待查詢完成
 
             // 賦予不同頁面資料
@@ -68,13 +68,53 @@ namespace PDMApp.Controllers.SPEC
             resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
 
             // Standard 查詢
-            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext).Where(st => string.IsNullOrWhiteSpace(value.Spec_m_id) || st.Spec_m_id.Equals(value.Spec_m_id));
+            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext).Where(st => string.IsNullOrWhiteSpace(value.SpecMId) || st.SpecMId.Equals(value.SpecMId));
             var resultStandard = await standard_query.Distinct().ToListAsync();  // 等待查詢完成
             resultData.StandardData = resultStandard;
 
             return APIResponseHelper.HandleMultiPageResponse(resultData);
         }
+        */
 
+        // POST api/<GetSpec5SheetRequestController>
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] SpecSearchParameter value)
+        {
+            // 創建 MultiPageResultDTO
+            var resultData = new MultiPageResultDTO();
+
+            // BasicData 查詢
+            var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
+                .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
+            var resultBasic = await basic_query.Distinct().ToListAsync();
+            resultData.BasicData = resultBasic;
+
+            // Upper, Sole, Other 查詢
+            var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
+                .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
+            var allUpperData = await upper_query.ToListAsync();
+            resultData.UpperData = allUpperData.Where(si => si.PartClass == "A").ToList();
+            resultData.SoleData = allUpperData.Where(si => si.PartClass == "B").ToList();
+            resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
+
+            // StandardData 查詢
+            var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext)
+                .Where(st => string.IsNullOrWhiteSpace(value.SpecMId) || st.SpecMId.Equals(value.SpecMId));
+            resultData.StandardData = await standard_query.Distinct().ToListAsync();
+
+            // 手動轉換為字典
+            var dynamicData = new Dictionary<string, object>
+            {
+                { "BasicData", resultData.BasicData },
+                { "UpperData", resultData.UpperData },
+                { "SoleData", resultData.SoleData },
+                { "OtherData", resultData.OtherData },
+                { "StandardData", resultData.StandardData }
+            };
+
+            return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
+        }
+        
 
 
         // PUT api/<GetSpec5SheetRequestController>/5

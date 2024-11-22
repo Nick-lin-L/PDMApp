@@ -16,15 +16,14 @@ namespace PDMApp.Utils
                     join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
                     join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
                     join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
-                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
-                    where pn.group_key == "stage"
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc where pn.group_key == "stage"
+                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc where pnse.group_key == "season"
                     select new pdm_spec_headDto
                     {
                         Year = ph.year,
-                        Season = ph.season,
-                        Entrymode = sh.entrymode,
+                        Season = pnse.text, //使用前端傳入的「值」直接查詢key value的value
+                        EntryMode = sh.entrymode,
                         Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
-                        OutMoldNo = ph.out_mold_no,
                         MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
                         Shfactory = sh.factory,
                         Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
@@ -34,11 +33,16 @@ namespace PDMApp.Utils
                         DevNo = ph.dev_no,
                         DevColorDispName = pi.dev_color_disp_name,
                         ColorNo = pi.color_no,
-                        Spec_m_id = sh.spec_m_id,
+                        SpecMId = sh.spec_m_id,
                         Cbdlockmk = sh.cbdlockmk,
                         ProductMId = ph.product_m_id,
                         ProductDId = pi.product_d_id,
-                        pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>() // 初始化空的 Spec_ItemDtos 列表
+                        CustomerKbn = ph.customer_kbn,
+                        Mode = ph.mode_name,
+                        LastNo1 = ph.last_no1,
+                        LastNo2 = ph.last_no2,
+                        LastNo3 = ph.last_no3,
+                        pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>(), // 初始化空的 Spec_ItemDtos 列表
                     });
         }
 
@@ -101,23 +105,23 @@ namespace PDMApp.Utils
             return (from si in _pcms_Pdm_TestContext.pdm_spec_item 
                     select new SpecUpperDTO
                     {
-                        Spec_m_id = si.spec_m_id,
+                        SpecMId = si.spec_m_id,
                         No = si.no,
                         Type = si.newmaterial,
                         Parts = si.parts,
-                        Mold_no = si.moldno,
-                        Factory_mold_no = si.factory_mold_no,
-                        Material_no = si.materialno,
+                        MoldNo = si.moldno,
+                        FactoryMoldNo = si.factory_mold_no,
+                        MaterialNo = si.materialno,
                         Material = si.material,
-                        Sub_material = si.submaterial,
+                        SubMaterial = si.submaterial,
                         Standard = si.standard,
                         Supplier = si.supplier,
                         Hcha = si.hcha,
                         Sec = si.sec,
                         Colors = si.colors,
-                        Data_id = si.data_id,
+                        DataId = si.data_id,
                         Seqno = si.seqno,
-                        Act_no = si.act_no,
+                        ActNo = si.act_no,
                         Width = si.width,
                         Memo = si.memo,
                         PartClass = si.partclass
@@ -129,15 +133,15 @@ namespace PDMApp.Utils
             return (from st in _pcms_Pdm_TestContext.pdm_spec_standard
                     select new SpecStandardDTO
                     {
-                        Spec_m_id = st.spec_m_id,
+                        SpecMId = st.spec_m_id,
                         Seq = st.seqno,
                         Size = st.the_size,
-                        Shoe_lace_length = st.itemval1,
-                        Shoe_box = st.itemval2,
-                        Gel_fore = st.itemval3,
-                        Gel_rear = st.itemval4,
-                        Toe_Keeper = st.itemval5,
-                        Shoe_bag = st.itemval6,
+                        ShoeLaceLength = st.itemval1,
+                        ShoeBox = st.itemval2,
+                        GelFore = st.itemval3,
+                        GelRear = st.itemval4,
+                        ToeKeeper = st.itemval5,
+                        ShoeBag = st.itemval6,
                         Itemval7 = st.itemval7,
                         Itemval8 = st.itemval8,
                         Itemval9 = st.itemval9,
