@@ -30,37 +30,38 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options => 
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" });
             });
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowAllOrigins", builder =>
+                options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.AllowAnyOrigin()
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com") // 指定前端來源
                            .AllowAnyHeader()
-                           .AllowAnyMethod();
+                           .AllowAnyMethod()
+                           .AllowCredentials(); // 如果有 Cookie 或憑證請求，這是必需的
                 });
             });
+            services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            //if (env.IsDevelopment())
+            //{
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
-            }
+            //}
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
             app.UseRouting();
 
-            app.UseCors("AllowAllOrigins"); // 啟用允許所有來源的政策
+            app.UseCors("AllowSpecificOrigin");
 
             app.UseAuthorization();
 
