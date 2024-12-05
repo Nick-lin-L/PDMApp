@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PDMApp.Dtos;
+using PDMApp.Parameters.Spec;
+using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,9 +32,25 @@ namespace PDMApp.Controllers.SPEC
 
         // POST api/<SpecDetailsController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_itemDto>>>> Post([FromBody] SpecSearchParameter value)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            try
+            {
+
+            }
+            catch (DbException ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+
+            }
         }
 
         // PUT api/<SpecDetailsController>/5

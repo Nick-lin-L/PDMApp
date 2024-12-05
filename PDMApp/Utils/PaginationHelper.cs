@@ -8,20 +8,29 @@ namespace PDMApp.Utils
 {
     public class PagedResult<T>
     {
-        public IEnumerable<T> Items { get; set; } // 當前頁資料
-        public int TotalCount { get; set; } // 總筆數
-        public int TotalPages { get; set; } // 總頁數
-        public int PageNumber { get; set; } // 當前頁碼
-        public int PageSize { get; set; } // 每頁顯示數量
-
-        public PagedResult(IEnumerable<T> items, int totalCount, int pageNumber, int pageSize)
+        public IEnumerable<T> Results { get; set; } // 當前頁資料
+        public class PaginationInfo
         {
-            Items = items;
-            TotalCount = totalCount;
-            PageNumber = pageNumber;
-            PageSize = pageSize;
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            public int TotalCount { get; set; } // 總筆數
+            public int TotalPages { get; set; } // 總頁數
+            public int PageNumber { get; set; } // 當前頁碼
+            public int PageSize { get; set; } // 每頁顯示數量
         }
+
+        public PaginationInfo Pagination { get; set; } // 分頁資訊
+
+        public PagedResult(IEnumerable<T> results, int totalCount, int pageNumber, int pageSize)
+        {
+            Results = results;
+            Pagination = new PaginationInfo
+            {
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
     }
 
     public static class PaginationHelper
@@ -35,13 +44,13 @@ namespace PDMApp.Utils
             var totalCount = await source.CountAsync();
 
             // 當前頁資料
-            var items = await source
+            var results = await source
                 .Skip((pageNumber - 1) * pageSize) // 跳過的資料筆數
                 .Take(pageSize) // 取得的資料筆數
                 .ToListAsync();
 
             // 回傳分頁結果
-            return new PagedResult<T>(items, totalCount, pageNumber, pageSize);
+            return new PagedResult<T>(results, totalCount, pageNumber, pageSize);
         }
     }
 }

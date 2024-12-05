@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace PDMApp.Parameters
+namespace PDMApp.Parameters.Spec
 {
     public class SpecSearchParameter
     {

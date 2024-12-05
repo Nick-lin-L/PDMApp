@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
-using PDMApp.Parameters;
+using PDMApp.Parameters.Spec;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;

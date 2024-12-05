@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
-using PDMApp.Parameters;
+using PDMApp.Parameters.Spec;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace PDMApp.Controllers.SPEC
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class SpecHeadsController : ControllerBase
     {
@@ -43,7 +43,7 @@ namespace PDMApp.Controllers.SPEC
 
         // POST api/<SpecHeadsController>
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -81,14 +81,21 @@ namespace PDMApp.Controllers.SPEC
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.Outoldno.Contains(value.OutMoldNo));
                 
-                // 應用所有篩選條件
+                // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
                     query = query.Where(filter);
                 }
 
-                var result = await query.Distinct().ToListAsync();
-                return APIResponseHelper.HandleApiResponse(result);
+                // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
+                query = query.OrderBy(ph => ph.Specmid);
+
+                // 分頁
+                var pagedResult = await query.Distinct().ToPagedResultAsync(value.PageNumber, value.PageSize);
+
+                // 回傳分頁+網頁識別碼結果
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+
             }
             catch (DbException ex)
             {

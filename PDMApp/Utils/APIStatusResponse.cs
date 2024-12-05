@@ -108,13 +108,21 @@ namespace PDMApp.Utils
             string successCode = DefaultSuccessCode,
             string emptyCode = DefaultEmptyCode)
         {
-            if (paginatedResult == null || paginatedResult.Items == null || !paginatedResult.Items.Any())
+            if (paginatedResult == null || paginatedResult.Results == null || !paginatedResult.Results.Any())
             {
-                return GenerateApiResponse<PagedResult<T>>(emptyCode, DefaultEmptyMessage, null);
+                return GenerateApiResponse<PagedResult<T>>(
+                    emptyCode,
+                    DefaultEmptyMessage,
+                    new PagedResult<T>(
+                        Enumerable.Empty<T>(),
+                        totalCount: 0,
+                        pageNumber: 1,
+                        pageSize: 10));
             }
 
             return GenerateApiResponse<PagedResult<T>>(successCode, string.Empty, paginatedResult);
         }
+
 
 
 
