@@ -67,7 +67,7 @@ namespace PDMApp.Controllers.CBD
                     .AsQueryable();
 
                 // 分頁處理
-                var pagedResult = await query.ToPagedResultAsync(value.PageNumber, value.PageSize);
+                var pagedResult = await query.ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
                 // 取出當前分頁的資料
                 var currentPageItems = pagedResult.Results.ToList();
@@ -115,8 +115,8 @@ namespace PDMApp.Controllers.CBD
                 var pagedDtoResult = new PagedResult<pdm_cdbspec_itemDto>(
                     results: dtoResult, // 傳入 DTO 資料
                     totalCount: pagedResult.Pagination.TotalCount, // 使用原分頁結果的總筆數
-                    pageNumber: value.PageNumber,
-                    pageSize: value.PageSize
+                    pageNumber: value.Pagination.PageNumber,
+                    pageSize: value.Pagination.PageSize
                 );
 
                 // 回傳分頁結果

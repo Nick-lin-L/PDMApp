@@ -113,8 +113,8 @@ namespace PDMApp.Controllers.SPEC
                 var pagedDtoResult = new PagedResult<pdm_spec_itemDto>(
                     results: dtoResult, // 傳入 DTO 資料
                     totalCount: pagedResult.Pagination.TotalCount, // 使用原分頁結果的總筆數
-                    pageNumber: value.PageNumber,
-                    pageSize: value.PageSize
+                    pageNumber: value.Pagination.PageNumber,
+                    pageSize: value.Pagination.PageSize
                 );
 
                 // 回傳分頁結果

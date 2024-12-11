@@ -43,6 +43,7 @@ namespace PDMApp.Controllers.SPEC
         }
 
         // POST api/<SpecHeadsController>
+        // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
