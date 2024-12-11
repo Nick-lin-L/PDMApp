@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PDMApp.Dtos;
+using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using PDMApp.Parameters.Spec;
 using PDMApp.Utils;

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
+using PDMApp.Parameters;
 using PDMApp.Parameters.Spec;
 using PDMApp.Utils;
 using System;
@@ -91,8 +92,8 @@ namespace PDMApp.Controllers.SPEC
                 query = query.OrderBy(ph => ph.SpecMId);
 
                 // 分頁
-                var pagedResult = await query.Distinct().ToPagedResultAsync(value.PageNumber, value.PageSize);
-
+                //var pagedResult = await query.Distinct().ToPagedResultAsync(value.paginationParameter);
+                var pagedResult = await query.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
                 // 回傳分頁+網頁識別碼結果
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
 

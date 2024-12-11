@@ -36,7 +36,7 @@ namespace PDMApp.Utils
     public static class PaginationHelper
     {
         public static async Task<PagedResult<T>> ToPagedResultAsync<T>(
-            this IQueryable<T> source,
+            this IQueryable<T> source, 
             int pageNumber,
             int pageSize)
         {

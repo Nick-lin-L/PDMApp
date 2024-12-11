@@ -1,4 +1,5 @@
-﻿using PDMApp.Models;
+﻿using PDMApp.Dtos.Spec;
+using PDMApp.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
