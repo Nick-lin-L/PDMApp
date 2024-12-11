@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
 
-
-namespace PDMApp.Parameters.Spec
+namespace PDMApp.Parameters.Cbd
 {
-    public class SpecSearchParameter
+    public class CbdSearchParameter
     {
         //接收user查詢的參數
         #nullable enable

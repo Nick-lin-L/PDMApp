@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 
 namespace PDMApp.Dtos
 {
+    #nullable enable
     public class SpecBasicDTO
     {
         public string? DevNo { get; set; }
         public string? DevColorNo { get; set; }
         public string? Stage { get; set; }
         public decimal? Ver { get; set; }
-        public string? Entrymode { get; set; }
+        public string? EntryMode { get; set; }
         public string? SampleSize { get; set; }
         public string? Year { get; set; }
         public string? Season { get; set; }
@@ -74,7 +75,7 @@ namespace PDMApp.Dtos
         public string Sec { get; set; }
         public string Colors { get; set; }
         public string DataId { get; set; }
-        public int? Seqno { get; set; } //seq
+        public int? SeqNo { get; set; } //seq
         public string ActNo { get; set; }
         public string Width { get; set; }
         public string Memo { get; set; }
@@ -92,7 +93,7 @@ namespace PDMApp.Dtos
         public string ShoeBox { get; set; }
         public string GelFore { get; set; }
         public string GelRear { get; set; }
-        public string ToeKeeper { get; set; }
+        public string Toekeeper { get; set; }
         public string ShoeBag { get; set; }
         public string Itemval7 { get; set; }
         public string Itemval8 { get; set; }

@@ -22,52 +22,31 @@ namespace PDMApp.Utils
                     {
                         Year = ph.year,
                         Season = pnse.text, //使用前端傳入的「值」直接查詢key value的value
-                        Entrymode = sh.entrymode,
+                        EntryMode = sh.entrymode,
                         Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
-                        Moldno = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
+                        MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
                         Shfactory = sh.factory,
                         Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
-                        Itemnameeng = ph.item_name_eng,
-                        Itemnamejpn = ph.item_name_jpn,
-                        Itemno = ph.item_no,
-                        Devno = ph.dev_no,
-                        DevcolordispName = pi.dev_color_disp_name,
-                        Colorno = pi.color_no,
-                        Specmid = sh.spec_m_id,
+                        ItemNameEng = ph.item_name_eng,
+                        ItemNameJpn = ph.item_name_jpn,
+                        ItemNo = ph.item_no,
+                        DevNo = ph.dev_no,
+                        DevColorDispName = pi.dev_color_disp_name,
+                        ColorNo = pi.color_no,
+                        SpecMId = sh.spec_m_id,
                         Cbdlockmk = sh.cbdlockmk,
-                        Productmid = ph.product_m_id,
-                        Productdid = pi.product_d_id,
-                        Customerkbn = ph.customer_kbn,
+                        ProductMId = ph.product_m_id,
+                        ProductDId = pi.product_d_id,
+                        CustomerKbn = ph.customer_kbn,
                         Mode = ph.mode_name,
-                        Lastno1 = ph.last_no1,
-                        Lastno2 = ph.last_no2,
-                        Lastno3 = ph.last_no3,
+                        LastNo1 = ph.last_no1,
+                        LastNo2 = ph.last_no2,
+                        LastNo3 = ph.last_no3,
                         pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>(), // 初始化空的 Spec_ItemDtos 列表
                     });
         }
 
-        /*
-         * public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
-{
-    return (from ph in _pcms_Pdm_TestContext.pdm_product_head
-            join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
-            join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
-            join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
-            join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc 
-                where pn.group_key == "stage"
-            join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc 
-                where pnse.group_key == "season" && ph.year == 2023
-            orderby ph.year descending, pnse.text
-            select new pdm_spec_headDto
-            {
-                Year = ph.year,
-                Season = pnse.text,
-                Entrymode = sh.entrymode,
-                ...
-            });
-}
 
-         */
         public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             // 使用多表 Join 查詢來組合所需欄位
@@ -83,7 +62,7 @@ namespace PDMApp.Utils
                         DevColorNo = pi.dev_color_no,
                         Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
                         Ver = sh.ver,
-                        Entrymode = sh.entrymode,
+                        EntryMode = sh.entrymode,
                         SampleSize = ph.sample_size,
                         Year = ph.year,
                         Season = ph.season,
@@ -141,7 +120,7 @@ namespace PDMApp.Utils
                         Sec = si.sec,
                         Colors = si.colors,
                         DataId = si.data_id,
-                        Seqno = si.seqno,
+                        SeqNo = si.seqno,
                         ActNo = si.act_no,
                         Width = si.width,
                         Memo = si.memo,
@@ -161,7 +140,7 @@ namespace PDMApp.Utils
                         ShoeBox = st.itemval2,
                         GelFore = st.itemval3,
                         GelRear = st.itemval4,
-                        ToeKeeper = st.itemval5,
+                        Toekeeper = st.itemval5,
                         ShoeBag = st.itemval6,
                         Itemval7 = st.itemval7,
                         Itemval8 = st.itemval8,

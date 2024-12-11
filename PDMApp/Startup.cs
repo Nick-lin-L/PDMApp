@@ -44,7 +44,12 @@ namespace PDMApp
                            .AllowCredentials(); // 如果有 Cookie 或憑證請求，這是必需的
                 });
             });
-            services.AddControllers();
+            //services.AddControllers();
+            services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

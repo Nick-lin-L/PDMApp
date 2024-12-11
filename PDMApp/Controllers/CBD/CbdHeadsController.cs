@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
-using PDMApp.Parameters.Spec;
+using PDMApp.Parameters.Cbd;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
@@ -13,37 +12,39 @@ using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace PDMApp.Controllers.SPEC
+namespace PDMApp.Controllers.CBD
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class SpecHeadsController : ControllerBase
+    public class CbdHeadsController : ControllerBase
     {
 
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
 
-        public SpecHeadsController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public CbdHeadsController(pcms_pdm_testContext pcms_Pdm_testContext)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
-        // GET: api/<SpecHeadsController>
+
+
+        // GET: api/<CbdHeadsController>
         [HttpGet]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
         }
 
-        // GET api/<SpecHeadsController>/5
+        // GET api/<CbdHeadsController>/5
         [HttpGet("{id}")]
         public string Get(int id)
         {
             return "value";
         }
 
-        // POST api/<SpecHeadsController>
+        // POST api/v1/<CbdHeadsController>
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] CbdSearchParameter value)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -80,7 +81,7 @@ namespace PDMApp.Controllers.SPEC
                     filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
-                
+
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
@@ -109,13 +110,13 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
-        // PUT api/<SpecHeadsController>/5
+        // PUT api/<CbdHeadsController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<SpecHeadsController>/5
+        // DELETE api/<CbdHeadsController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

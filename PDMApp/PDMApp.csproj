@@ -40,7 +40,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\CBD\" />
     <Folder Include="Controllers\FactorySPEC\" />
     <Folder Include="Controllers\PLM\" />
     <Folder Include="Utils\Cbd\" />

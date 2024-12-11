@@ -7,14 +7,15 @@ namespace PDMApp.Dtos
 {
     public class pdm_spec_itemDto
     {
-        public string? Specmid { get; set; }
-        public string? Actno { get; set; }
-        public int? Seqno { get; set; }
+        #nullable enable
+        public string? SpecMId { get; set; }
+        public string? ActNo { get; set; }
+        public int? SeqNo { get; set; }
         public string? Parts { get; set; }
-        public string? Moldno { get; set; }
-        public string Materialno { get; set; }
+        public string? MoldNo { get; set; }
+        public string MaterialNo { get; set; }
         public string Material { get; set; }
-        public string Submaterial { get; set; }
+        public string SubMaterial { get; set; }
         public string Standard { get; set; }
         public string Supplier { get; set; }
         public string Colors { get; set; }
