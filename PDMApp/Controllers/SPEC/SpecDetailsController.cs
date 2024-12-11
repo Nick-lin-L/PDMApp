@@ -68,7 +68,7 @@ namespace PDMApp.Controllers.SPEC
                     .AsQueryable();
 
                 // 分頁處理
-                var pagedResult = await query.ToPagedResultAsync(value.PageNumber, value.PageSize);
+                var pagedResult = await query.ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
                 // 取出當前分頁的資料
                 var currentPageItems = pagedResult.Results.ToList();

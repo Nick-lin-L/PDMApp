@@ -12,7 +12,8 @@ namespace PDMApp.Parameters.Spec
         [Required]
         public string? SpecMId { get; set; }
 
-        public int PageNumber { get; set; } = 1; // 預設為第1頁
-        public int PageSize { get; set; } = 10; // 預設每頁10筆
+        //        public int PageNumber { get; set; } = 1; // 預設為第1頁
+        //        public int PageSize { get; set; } = 10; // 預設每頁10筆
+        public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
 }
