@@ -196,7 +196,7 @@ namespace PDMApp.Utils
                     select new CbdExpenseDTO
                     {
                         SpecMId = sh.spec_m_id,
-                        TargetPrice = si.no,
+/*                        TargetPrice = si.no,
                         Type = si.newmaterial,
                         Parts = si.parts,
                         MoldNo = si.moldno,
@@ -215,7 +215,7 @@ namespace PDMApp.Utils
                         Width = si.width,
                         Memo = si.memo,
                         PartClass = si.partclass
-                    });
+*/                    });
         }
     }
 }

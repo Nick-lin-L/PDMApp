@@ -26,13 +26,16 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_spec_head_factory> pdm_spec_head_factory { get; set; }
         public virtual DbSet<pdm_spec_item> pdm_spec_item { get; set; }
         public virtual DbSet<pdm_spec_item_factory> pdm_spec_item_factory { get; set; }
+        public virtual DbSet<pdm_spec_moldcharge> pdm_spec_moldcharge { get; set; }
         public virtual DbSet<pdm_spec_standard> pdm_spec_standard { get; set; }
+        public virtual DbSet<sys_menu> sys_menu { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
@@ -1115,6 +1118,38 @@ namespace PDMApp.Models
                 entity.Property(e => e.width).HasMaxLength(10);
             });
 
+            modelBuilder.Entity<pdm_spec_moldcharge>(entity =>
+            {
+                entity.HasKey(e => e.data_id)
+                    .HasName("pdm_spec_moldcharge_pkey");
+
+                entity.ToTable("pdm_spec_moldcharge", "asics_pdm");
+
+                entity.Property(e => e.data_id).HasMaxLength(36);
+
+                entity.Property(e => e.amortization)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.charge)
+                    .HasPrecision(11, 3)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.id).HasMaxLength(10);
+
+                entity.Property(e => e.item).HasMaxLength(30);
+
+                entity.Property(e => e.price)
+                    .HasPrecision(8)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.qty).HasDefaultValueSql("0");
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
+                entity.Property(e => e.years).HasDefaultValueSql("0");
+            });
+
             modelBuilder.Entity<pdm_spec_standard>(entity =>
             {
                 entity.HasKey(e => e.data_id)
@@ -1151,6 +1186,42 @@ namespace PDMApp.Models
                 entity.Property(e => e.spec_m_id).HasMaxLength(36);
 
                 entity.Property(e => e.the_size).HasMaxLength(10);
+            });
+
+            modelBuilder.Entity<sys_menu>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("sys_menu", "asics_pdm");
+
+                entity.Property(e => e.is_parents)
+                    .IsRequired()
+                    .HasMaxLength(1)
+                    .HasComment("是否為主節點");
+
+                entity.Property(e => e.menu_id)
+                    .IsRequired()
+                    .HasMaxLength(36)
+                    .HasComment("作業id");
+
+                entity.Property(e => e.menu_name)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("作業名稱");
+
+                entity.Property(e => e.menu_no)
+                    .IsRequired()
+                    .HasMaxLength(5)
+                    .HasComment("作業代號");
+
+                entity.Property(e => e.menu_pid)
+                    .HasMaxLength(36)
+                    .HasComment("主節點");
+
+                entity.Property(e => e.menu_sort)
+                    .IsRequired()
+                    .HasMaxLength(2)
+                    .HasComment("排序");
             });
 
             OnModelCreatingPartial(modelBuilder);
