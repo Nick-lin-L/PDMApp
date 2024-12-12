@@ -43,6 +43,21 @@ namespace PDMApp.Utils
             // 總筆數
             var totalCount = await source.CountAsync();
 
+            // 計算總頁數
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            // 如果 pageNumber 超過總頁數，強制調整為最後一頁
+            if (pageNumber > totalPages)
+            {
+                pageNumber = totalPages > 0 ? totalPages : 1; // 確保至少有一頁
+            }
+
+            // 如果 pageNumber 小於 1，強制調整為第一頁
+            if (pageNumber < 1)
+            {
+                pageNumber = 1;
+            }
+
             // 當前頁資料
             var results = await source
                 .Skip((pageNumber - 1) * pageSize) // 跳過的資料筆數

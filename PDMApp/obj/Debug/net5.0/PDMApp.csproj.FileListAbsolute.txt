@@ -124,3 +124,4 @@ D:\Nick_project\PDMApp\PDMApp\obj\Debug\net5.0\PDMApp.dll
 D:\Nick_project\PDMApp\PDMApp\obj\Debug\net5.0\ref\PDMApp.dll
 D:\Nick_project\PDMApp\PDMApp\obj\Debug\net5.0\PDMApp.pdb
 D:\Nick_project\PDMApp\PDMApp\obj\Debug\net5.0\PDMApp.genruntimeconfig.cache
+D:\Nick_project\PDMApp\PDMApp\obj\Debug\net5.0\PDMApp.csproj.AssemblyReference.cache

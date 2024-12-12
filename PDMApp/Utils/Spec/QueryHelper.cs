@@ -1,4 +1,5 @@
 ﻿using PDMApp.Dtos;
+using PDMApp.Dtos.Cbd;
 using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using System;
@@ -147,6 +148,73 @@ namespace PDMApp.Utils
                         Itemval8 = st.itemval8,
                         Itemval9 = st.itemval9,
                         Memo = st.memo
+                    });
+        }
+
+
+        public static IQueryable<CbdUpperDTO> CbdUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from si in _pcms_Pdm_TestContext.pdm_spec_item
+                    select new CbdUpperDTO
+                    {
+                        SpecMId = si.spec_m_id,
+                        No = si.no,
+                        Type = si.newmaterial,
+                        Parts = si.parts,
+                        MoldNo = si.moldno,
+                        FactoryMoldNo = si.factory_mold_no,
+                        MaterialNo = si.materialno,
+                        Material = si.material,
+                        SubMaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Colors = si.colors,
+                        DataId = si.data_id,
+                        SeqNo = si.seqno,
+                        ActNo = si.act_no,
+                        Width = si.width,
+                        CuttingLoss = "0.9433",
+                        Pattern = "0",
+                        UsAge1 = si.usage1,
+                        UsAge2 = si.usage2,
+                        Price = si.pricenttur,
+                        PriceM = si.pricentmst,
+                        Loss = si.materialloss,
+                        Freight = si.freight,
+                        CostUS = si.cost,
+                        Memo = si.memo,
+                        PartClass = si.partclass
+                    });
+        }
+
+
+        public static IQueryable<CbdExpenseDTO> CbdExpenseResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from sh in _pcms_Pdm_TestContext.pdm_spec_head
+                    select new CbdExpenseDTO
+                    {
+                        SpecMId = sh.spec_m_id,
+                        TargetPrice = si.no,
+                        Type = si.newmaterial,
+                        Parts = si.parts,
+                        MoldNo = si.moldno,
+                        FactoryMoldNo = si.factory_mold_no,
+                        MaterialNo = si.materialno,
+                        Material = si.material,
+                        SubMaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Colors = si.colors,
+                        DataId = si.data_id,
+                        SeqNo = si.seqno,
+                        ActNo = si.act_no,
+                        Width = si.width,
+                        Memo = si.memo,
+                        PartClass = si.partclass
                     });
         }
     }
