@@ -47,7 +47,29 @@ namespace PDMApp.Utils
                         pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>(), // 初始化空的 Spec_ItemDtos 列表
                     });
         }
-
+        public static IQueryable<pdm_spec_itemDto> QuerySpecDetails(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from si in _pcms_Pdm_TestContext.pdm_spec_item
+                    select new pdm_spec_itemDto
+                    {
+                        SpecMId = si.spec_m_id,
+                        ActNo = si.act_no,
+                        SeqNo = si.seqno,
+                        //Parts = actNoToPartsMap.ContainsKey(si.act_no) ? actNoToPartsMap[si.act_no] : si.parts,
+                        Parts = si.parts,
+                        MoldNo = si.material,
+                        MaterialNo = si.materialno,
+                        Material = si.material,
+                        SubMaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Colors = si.colors,
+                        Memo = si.memo,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Width = si.width
+                    });
+        }
 
         public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
@@ -193,29 +215,44 @@ namespace PDMApp.Utils
         public static IQueryable<CbdExpenseDTO> CbdExpenseResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from sh in _pcms_Pdm_TestContext.pdm_spec_head
+                    join sm in _pcms_Pdm_TestContext.pdm_spec_moldcharge on sh.spec_m_id equals sm.spec_m_id
                     select new CbdExpenseDTO
                     {
                         SpecMId = sh.spec_m_id,
-/*                        TargetPrice = si.no,
-                        Type = si.newmaterial,
-                        Parts = si.parts,
-                        MoldNo = si.moldno,
-                        FactoryMoldNo = si.factory_mold_no,
-                        MaterialNo = si.materialno,
-                        Material = si.material,
-                        SubMaterial = si.submaterial,
-                        Standard = si.standard,
-                        Supplier = si.supplier,
-                        Hcha = si.hcha,
-                        Sec = si.sec,
-                        Colors = si.colors,
-                        DataId = si.data_id,
-                        SeqNo = si.seqno,
-                        ActNo = si.act_no,
-                        Width = si.width,
-                        Memo = si.memo,
-                        PartClass = si.partclass
-*/                    });
+                        TargetPrice = sh.targetprice,
+                        Forecast = sh.forecast,
+                        Currency = sh.currency,
+                        Final = sh.fobfinal,
+                        Pht = sh.fobphoto,
+                        Nego = sh.fobnego,
+                        ND2 = sh.fob2ndsample,
+                        Sls = sh.fobsales,
+                        ST1 = sh.fob1stsample,
+                        MaterialTotal = sh.materialcost,
+                        SubTotal = sh.exsubtotal,
+                        DirectLabor = sh.exdirectlabor,
+                        FactoryOverHead = sh.exfactoryoverhead,
+                        Profit = sh.exprofit,
+                        Cutting = sh.cpcutting,
+                        Stiching = sh.cpstiching,
+                        OutsoleAssembly = sh.cpoutsoleassembly,
+                        Lasting = sh.cplasting,
+                        MoldAmortization = sh.exmoldamortization,
+                        TotalABC = sh.extotal,
+                        ExCommission = sh.excommission,
+                        Percent = sh.extotal * sh.excommission/100,
+                        TotalABCD = sh.extotal * (1 + (sh.extotal * sh.excommission / 100)),
+                        MoldRateCurrency = sh.mcmoldrate,
+                        MoldRate = sh.mcmoldrate,
+                        MoldYears = sh.mcmoldyears,
+                        Mold = sm.id,
+                        Item = sm.item,
+                        Price = sm.price,
+                        Qty = sm.qty,
+                        Amort = sm.amortization,
+                        Years = sm.years,
+                        Charge = sm.charge
+                    });
         }
     }
 }

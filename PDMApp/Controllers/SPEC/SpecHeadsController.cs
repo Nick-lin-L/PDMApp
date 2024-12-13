@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Models;
-using PDMApp.Parameters;
 using PDMApp.Parameters.Spec;
 using PDMApp.Utils;
 using System;

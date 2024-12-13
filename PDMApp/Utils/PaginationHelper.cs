@@ -21,11 +21,23 @@ namespace PDMApp.Utils
 
         public PagedResult(IEnumerable<T> results, int totalCount, int pageNumber, int pageSize)
         {
-            Results = results;
+            Results = results ?? Enumerable.Empty<T>();
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (pageNumber > totalPages)
+            {
+                pageNumber = totalPages > 0 ? totalPages : 1; // 確保至少有一頁
+            }
+
+            // 如果 pageNumber 小於 1，強制調整為第一頁
+            if (pageNumber < 1)
+            {
+                pageNumber = 1;
+            }
+            if (pageSize <= 0) pageSize = 10;
             Pagination = new PaginationInfo
             {
                 TotalCount = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                TotalPages = totalPages,
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
@@ -58,6 +70,7 @@ namespace PDMApp.Utils
                 pageNumber = 1;
             }
 
+            if (pageSize <= 0) pageSize = 10;
             // 當前頁資料
             var results = await source
                 .Skip((pageNumber - 1) * pageSize) // 跳過的資料筆數

@@ -13,15 +13,15 @@ namespace PDMApp.Dtos.Spec
         public int? SeqNo { get; set; }
         public string? Parts { get; set; }
         public string? MoldNo { get; set; }
-        public string MaterialNo { get; set; }
-        public string Material { get; set; }
-        public string SubMaterial { get; set; }
-        public string Standard { get; set; }
-        public string Supplier { get; set; }
-        public string Colors { get; set; }
-        public string Memo { get; set; }
-        public string Hcha { get; set; }
-        public string Sec { get; set; }
-        public string Width { get; set; }
+        public string? MaterialNo { get; set; }
+        public string? Material { get; set; }
+        public string? SubMaterial { get; set; }
+        public string? Standard { get; set; }
+        public string? Supplier { get; set; }
+        public string? Colors { get; set; }
+        public string? Memo { get; set; }
+        public string? Hcha { get; set; }
+        public string? Sec { get; set; }
+        public string? Width { get; set; }
     }
 }

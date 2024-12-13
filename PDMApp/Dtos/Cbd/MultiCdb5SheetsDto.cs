@@ -52,43 +52,44 @@ namespace PDMApp.Dtos.Cbd
 
     public class CbdExpenseDTO
     {
+        #nullable enable
         public string? SpecMId { get; set; }
-        public string TargetPrice { get; set; }
-        public string Forecast { get; set; }
-        public string Currency{ get; set; }
+        public decimal? TargetPrice { get; set; }
+        public int? Forecast { get; set; }
+        public string? Currency{ get; set; }
 
-        public string Final { get; set; }
-        public string Pht { get; set; }
-        public string Nego { get; set; }
-        public string ND2 { get; set; }
-        public string Sls { get; set; }
-        public string ST1 { get; set; }
+        public decimal? Final { get; set; }
+        public decimal? Pht { get; set; }
+        public decimal? Nego { get; set; }
+        public decimal? ND2 { get; set; }
+        public decimal? Sls { get; set; }
+        public decimal? ST1 { get; set; }
 
-        public string MaterialTotal { get; set; } //A
-        public string SubTotal { get; set; } //B
-        public string DirectLabor { get; set; }
-        public string FactoryOverHead { get; set; }
-        public string Profit { get; set; }
-        public string Cutting { get; set; }
-        public string Stiching { get; set; }
-        public string OutsoleAssembly { get; set; }
-        public string Lasting { get; set; }
-        public string MoldAmortization { get; set; } //C
-        public string TotalABC { get; set; }
-        public string ExCommission { get; set; } //D
-        public string Percent { get; set; }
-        public string TotalABCD { get; set; }
+        public decimal? MaterialTotal { get; set; } //A
+        public decimal? SubTotal { get; set; } //B
+        public decimal? DirectLabor { get; set; }
+        public decimal? FactoryOverHead { get; set; }
+        public decimal? Profit { get; set; }
+        public decimal? Cutting { get; set; }
+        public decimal? Stiching { get; set; }
+        public decimal? OutsoleAssembly { get; set; }
+        public decimal? Lasting { get; set; }
+        public decimal? MoldAmortization { get; set; } //C
+        public decimal? TotalABC { get; set; }
+        public decimal? ExCommission { get; set; } //D
+        public decimal? Percent { get; set; }
+        public decimal? TotalABCD { get; set; }
 
-        public string MoldRateCurrency { get; set; }
-        public string MoldRate { get; set; }
-        public string MoldYears { get; set; }
+        public decimal? MoldRateCurrency { get; set; }
+        public decimal? MoldRate { get; set; }
+        public int? MoldYears { get; set; }
 
-        public string Mold { get; set; }
-        public string Item { get; set; }
-        public string Price { get; set; }
-        public string Qty { get; set; }
-        public string Amort { get; set; }
-        public string Years { get; set; }
-        public string Charge { get; set; }
+        public string? Mold { get; set; }
+        public string? Item { get; set; }
+        public decimal? Price { get; set; }
+        public int? Qty { get; set; }
+        public decimal? Amort { get; set; }
+        public int? Years { get; set; }
+        public decimal? Charge { get; set; }
     }
 }

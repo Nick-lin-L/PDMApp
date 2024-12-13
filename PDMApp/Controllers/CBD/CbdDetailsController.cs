@@ -72,7 +72,7 @@ namespace PDMApp.Controllers.CBD
                 // 取出當前分頁的資料
                 var currentPageItems = pagedResult.Results.ToList();
 
-                // 處理 Parts 欄位 (如果需要)
+                // 處理 Parts 欄位
                 var actNoToPartsMap = currentPageItems
                     .GroupBy(si => si.act_no) // 根據 act_no 分組
                     .ToDictionary(

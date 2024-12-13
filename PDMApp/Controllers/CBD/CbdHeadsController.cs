@@ -92,7 +92,7 @@ namespace PDMApp.Controllers.CBD
                 query = query.OrderBy(ph => ph.SpecMId);
 
                 // 分頁
-                var pagedResult = await query.Distinct().ToPagedResultAsync(value.PageNumber, value.PageSize);
+                var pagedResult = await query.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
                 // 回傳分頁+網頁識別碼結果
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
