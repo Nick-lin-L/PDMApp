@@ -89,7 +89,9 @@ namespace PDMApp.Controllers.CBD
                 }
 
                 // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
-                query = query.OrderBy(ph => ph.SpecMId);
+                query = query.OrderBy(ph => ph.DevNo)
+                    .ThenBy(ph => ph.DevColorDispName)
+                    .ThenBy(ph => ph.Stage);
 
                 // 分頁
                 var pagedResult = await query.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);

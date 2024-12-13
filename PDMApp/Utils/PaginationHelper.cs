@@ -48,7 +48,7 @@ namespace PDMApp.Utils
             return (int)Math.Ceiling(totalCount / (double)pageSize);
         }
 
-        public static (int CorrectedPageNumber, int PageSize) ValidatePagination(int pageNumber, int pageSize, int totalPages)
+        public static (int cpageNumber, int cpageSize) ValidatePagination(int pageNumber, int pageSize, int totalPages)
         {
             if (pageSize <= 0) pageSize = DefaultPageSize;
             if (pageNumber > totalPages)

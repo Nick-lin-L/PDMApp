@@ -16,12 +16,12 @@ namespace PDMApp.Controllers.CBD
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class Cdb5SheetsController : ControllerBase
+    public class Cbd5SheetsController : ControllerBase
     {
 
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
 
-        public Cdb5SheetsController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public Cbd5SheetsController(pcms_pdm_testContext pcms_Pdm_testContext)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
@@ -30,21 +30,21 @@ namespace PDMApp.Controllers.CBD
 
 
 
-        // GET: api/<Cdb5SheetsController>
+        // GET: api/<Cbd5SheetsController>
         [HttpGet]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
         }
 
-        // GET api/<Cdb5SheetsController>/5
+        // GET api/<Cbd5SheetsController>/5
         [HttpGet("{id}")]
         public string Get(int id)
         {
             return "value";
         }
 
-        // POST api/<Cdb5SheetsController>
+        // POST api/<Cbd5SheetsController>
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] SpecMIdParameter value)
         {
@@ -96,13 +96,13 @@ namespace PDMApp.Controllers.CBD
             }
         }
 
-        // PUT api/<Cdb5SheetsController>/5
+        // PUT api/<Cbd5SheetsController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<Cdb5SheetsController>/5
+        // DELETE api/<Cbd5SheetsController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
