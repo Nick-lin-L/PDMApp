@@ -9,6 +9,7 @@ namespace PDMApp.Utils
     public class PagedResult<T>
     {
         public IEnumerable<T> Results { get; set; } // 當前頁資料
+
         public class PaginationInfo
         {
             public int TotalCount { get; set; } // 總筆數
@@ -22,63 +23,62 @@ namespace PDMApp.Utils
         public PagedResult(IEnumerable<T> results, int totalCount, int pageNumber, int pageSize)
         {
             Results = results ?? Enumerable.Empty<T>();
-            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-            if (pageNumber > totalPages)
-            {
-                pageNumber = totalPages > 0 ? totalPages : 1; // 確保至少有一頁
-            }
 
-            // 如果 pageNumber 小於 1，強制調整為第一頁
-            if (pageNumber < 1)
-            {
-                pageNumber = 1;
-            }
-            if (pageSize <= 0) pageSize = 10;
+            int totalPages = PaginationHelper.CalculateTotalPages(totalCount, pageSize);
+            var (cpageNumber, cpageSize) = PaginationHelper.ValidatePagination(pageNumber, pageSize, totalPages);
+
             Pagination = new PaginationInfo
             {
                 TotalCount = totalCount,
                 TotalPages = totalPages,
-                PageNumber = pageNumber,
-                PageSize = pageSize
+                PageNumber = cpageNumber,
+                PageSize = cpageSize
             };
         }
-
     }
+
 
     public static class PaginationHelper
     {
-        public static async Task<PagedResult<T>> ToPagedResultAsync<T>(
-            this IQueryable<T> source, 
-            int pageNumber,
-            int pageSize)
+        private const int DefaultPageSize = 10;
+
+        public static int CalculateTotalPages(int totalCount, int pageSize)
         {
-            // 總筆數
-            var totalCount = await source.CountAsync();
+            if (pageSize <= 0) pageSize = DefaultPageSize;
+            return (int)Math.Ceiling(totalCount / (double)pageSize);
+        }
 
-            // 計算總頁數
-            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-            // 如果 pageNumber 超過總頁數，強制調整為最後一頁
+        public static (int CorrectedPageNumber, int PageSize) ValidatePagination(int pageNumber, int pageSize, int totalPages)
+        {
+            if (pageSize <= 0) pageSize = DefaultPageSize;
             if (pageNumber > totalPages)
             {
-                pageNumber = totalPages > 0 ? totalPages : 1; // 確保至少有一頁
+                pageNumber = totalPages > 0 ? totalPages : 1;
             }
-
-            // 如果 pageNumber 小於 1，強制調整為第一頁
             if (pageNumber < 1)
             {
                 pageNumber = 1;
             }
+            return (pageNumber, pageSize);
+        }
 
-            if (pageSize <= 0) pageSize = 10;
-            // 當前頁資料
+        public static async Task<PagedResult<T>> ToPagedResultAsync<T>(
+            this IQueryable<T> source,
+            int pageNumber,
+            int pageSize)
+        {
+            var totalCount = await source.CountAsync();
+            int totalPages = CalculateTotalPages(totalCount, pageSize);
+
+            var (cpageNumber, cpageSize) = ValidatePagination(pageNumber, pageSize, totalPages);
+
             var results = await source
-                .Skip((pageNumber - 1) * pageSize) // 跳過的資料筆數
-                .Take(pageSize) // 取得的資料筆數
+                .Skip((cpageNumber - 1) * cpageSize)
+                .Take(cpageSize)
                 .ToListAsync();
 
-            // 回傳分頁結果
-            return new PagedResult<T>(results, totalCount, pageNumber, pageSize);
+            return new PagedResult<T>(results, totalCount, cpageNumber, cpageSize);
         }
     }
+
 }
