@@ -14,10 +14,14 @@ namespace PDMApp.Utils
         /* APIStatusResponse 狀態碼共5碼
          * 以下說明5碼代表的意義。由左到右如下
          * Ex: **10001**
-         * 1 = TreeMenu的順序 (SPEC)
+         * 1 = TreeMenu的順序 1 = SPEC
+         *                   2 = CBD
+         *                   3 = FactorySPEC
+         *                   4 = PLM
+         *                   5 = PGTSPEC
          * 0 = 第二分類，目前無
-         * 0 = 十位數程式編號
-         * 0 = 個位數程式編號
+         * 0 = 十位數程式編號，目前無
+         * 0 = 個位數程式編號，目前無
          * 1 = 是否有值  (0 = false；1 = true)
          */
     }

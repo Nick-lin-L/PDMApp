@@ -50,11 +50,11 @@ namespace PDMApp.Dtos
 
     public class MultiPageResultDTO
     {
-        public IEnumerable<SpecBasicDTO> BasicData { get; set; }
-        public IEnumerable<SpecUpperDTO> UpperData { get; set; }
-        public IEnumerable<SpecUpperDTO> SoleData { get; set; }
-        public IEnumerable<SpecUpperDTO> OtherData { get; set; }
-        public IEnumerable<SpecStandardDTO> StandardData { get; set; }
+        public IEnumerable<SpecBasicDTO>? BasicData { get; set; }
+        public IEnumerable<SpecUpperDTO>? UpperData { get; set; }
+        public IEnumerable<SpecUpperDTO>? SoleData { get; set; }
+        public IEnumerable<SpecUpperDTO>? OtherData { get; set; }
+        public IEnumerable<SpecStandardDTO>? StandardData { get; set; }
     }
      
     public class SpecUpperDTO

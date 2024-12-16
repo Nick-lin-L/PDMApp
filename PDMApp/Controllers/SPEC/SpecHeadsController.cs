@@ -45,9 +45,32 @@ namespace PDMApp.Controllers.SPEC
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            //if (!ModelState.IsValid)
+            //    return BadRequest(ModelState);
 
+
+            // 手動檢查必填欄位
+            var inputErrors = new List<string>();
+            if (string.IsNullOrWhiteSpace(value.Year))
+            {
+                inputErrors.Add("Year is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(value.Stage))
+            {
+                inputErrors.Add("Stage is required.");
+            }
+
+            // 如果有驗證錯誤，返回自定義格式的錯誤訊息
+            if (inputErrors.Any())
+            {
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "10001",
+                    Message = "One or more validation errors occurred.",
+                    Data = new { Errors = inputErrors }
+                });
+            }
             try
             {
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
@@ -105,7 +128,9 @@ namespace PDMApp.Controllers.SPEC
                 {
                     ErrorCode = "Server_ERROR",
                     Message = "ServerError",
-                    Details = ex.Message
+                    Details = ex.Message,
+                    StackTrace = ex.StackTrace,
+                    InnerException = ex.InnerException?.Message
                 });
 
             }

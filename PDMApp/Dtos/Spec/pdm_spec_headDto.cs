@@ -50,7 +50,7 @@ namespace PDMApp.Dtos
         public string? Width { get; set; }
 
 
-        public ICollection<pdm_spec_itemDto> pdm_Spec_ItemDtos { get; set; }
+        public ICollection<pdm_spec_itemDto>? pdm_Spec_ItemDtos { get; set; }
 
 
     }
