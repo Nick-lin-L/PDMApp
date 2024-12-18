@@ -54,7 +54,6 @@ namespace PDMApp.Controllers.SPEC
             {
                 using (var stream = file.OpenReadStream())
                 {
-                    // 建立 ImportExcel_NPOI 實例
                     var importExcel_NPOI = new ImportExcel_NPOI(_pcms_Pdm_TestContext);
                     importExcel_NPOI.ProcessExcel(stream, file.FileName);
                 }

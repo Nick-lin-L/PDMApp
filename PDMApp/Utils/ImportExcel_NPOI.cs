@@ -48,12 +48,13 @@ namespace PDMApp.Utils
                     IRow row = sheet.GetRow(rowIndex);
                     if (row == null) continue;
 
-                    // 解析每一行的欄位
+                    // 解析每一行的欄位，合併儲存格會被自動略過該欄位
                     var column1 = row.GetCell(0)?.ToString();
                     var column2 = row.GetCell(1)?.ToString();
                     var column3 = row.GetCell(2)?.ToString();
                     var column4 = row.GetCell(3)?.ToString();
                     var column5 = row.GetCell(4)?.ToString();
+                    var column6 = row.GetCell(5)?.ToString();
                     // 建立 TableA 資料
                     var Pdm_spec_head_test = new pdm_spec_head_test
                     {
@@ -62,14 +63,16 @@ namespace PDMApp.Utils
                         devcolorno = column2,
                         factory =column4,
                         stage = column5,
+                        lasting = column6,
                     };
                     tableAList.Add(Pdm_spec_head_test);
 
                     /* 這段是手動SQL寫傳入變數
-                     * string sql = "INSERT INTO pdm_spec_head_test (spec_m_id, entrymode, devno) VALUES ({0}, {1}, {2})";
-                       _pcms_Pdm_TestContext.Database.ExecuteSqlRaw(sql, sheetName, currentHeader ?? "Unknown", cellValue);
-                     * 
-                     * 
+                       string sql = "INSERT INTO pdm_spec_head_test (spec_m_id, devno, devcolorno) VALUES ({0}, {1}, {2})";
+                       _pcms_Pdm_TestContext.Database.ExecuteSqlRaw(sql, column1, column3, column2);
+                       
+                     
+                      
                     // 多表寫入-TableB 資料
                     var Pdm_spec_head = new pdm_spec_head
                     {
