@@ -28,6 +28,7 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_product_item> pdm_product_item { get; set; }
         public virtual DbSet<pdm_spec_head> pdm_spec_head { get; set; }
         public virtual DbSet<pdm_spec_head_factory> pdm_spec_head_factory { get; set; }
+        public virtual DbSet<pdm_spec_head_test> pdm_spec_head_test { get; set; }
         public virtual DbSet<pdm_spec_item> pdm_spec_item { get; set; }
         public virtual DbSet<pdm_spec_item_factory> pdm_spec_item_factory { get; set; }
         public virtual DbSet<pdm_spec_moldcharge> pdm_spec_moldcharge { get; set; }
@@ -46,7 +47,8 @@ namespace PDMApp.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
@@ -1162,6 +1164,226 @@ namespace PDMApp.Models
                 entity.Property(e => e.translockmk)
                     .HasMaxLength(1)
                     .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.umsubtotal)
+                    .HasPrecision(11, 3)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.ver)
+                    .HasPrecision(4)
+                    .HasDefaultValueSql("1");
+
+                entity.Property(e => e.vssver)
+                    .HasPrecision(4)
+                    .HasDefaultValueSql("0");
+            });
+
+            modelBuilder.Entity<pdm_spec_head_test>(entity =>
+            {
+                entity.HasKey(e => e.spec_m_id)
+                    .HasName("pdm_spec_head_test_pkey");
+
+                entity.ToTable("pdm_spec_head_test", "asics_pdm");
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
+                entity.Property(e => e.cbd_update_date).HasColumnType("date");
+
+                entity.Property(e => e.cbd_update_user).HasMaxLength(30);
+
+                entity.Property(e => e.cbd_xml_id).HasMaxLength(36);
+
+                entity.Property(e => e.cbdlockmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.checkoutmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.checkoutuser).HasMaxLength(40);
+
+                entity.Property(e => e.commission)
+                    .HasPrecision(4, 1)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.cpcutting)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.cplasting)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.cpoutsoleassembly)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.cpstiching)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.create_date)
+                    .HasColumnType("date")
+                    .HasDefaultValueSql("CURRENT_DATE");
+
+                entity.Property(e => e.create_user).HasMaxLength(30);
+
+                entity.Property(e => e.currency).HasMaxLength(10);
+
+                entity.Property(e => e.devcolorno).HasMaxLength(10);
+
+                entity.Property(e => e.devno).HasMaxLength(30);
+
+                entity.Property(e => e.entrymode).HasMaxLength(6);
+
+                entity.Property(e => e.excommission)
+                    .HasPrecision(7, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.exdirectlabor)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.exfactoryoverhead)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.exmoldamortization)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.exprofit)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.exsubtotal)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.extotal)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.factory).HasMaxLength(10);
+
+                entity.Property(e => e.filename).HasMaxLength(256);
+
+                entity.Property(e => e.fob1stsample)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.fob2ndsample)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.fobfinal)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.fobnego)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.fobphoto)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.fobsales)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.forecast).HasDefaultValueSql("0");
+
+                entity.Property(e => e.heelheight)
+                    .HasPrecision(6, 1)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.itemname1)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'SHOE LACE LENGTH'::character varying");
+
+                entity.Property(e => e.itemname10).HasMaxLength(50);
+
+                entity.Property(e => e.itemname2)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'SHOE BOX'::character varying");
+
+                entity.Property(e => e.itemname3)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'GEL FORE'::character varying");
+
+                entity.Property(e => e.itemname4)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'GEL REAR'::character varying");
+
+                entity.Property(e => e.itemname5)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'TOE KEEPER'::character varying");
+
+                entity.Property(e => e.itemname6)
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'SHOE BAG'::character varying");
+
+                entity.Property(e => e.itemname7).HasMaxLength(50);
+
+                entity.Property(e => e.itemname8).HasMaxLength(50);
+
+                entity.Property(e => e.itemname9).HasMaxLength(50);
+
+                entity.Property(e => e.lasting).HasMaxLength(10);
+
+                entity.Property(e => e.loginuser).HasMaxLength(30);
+
+                entity.Property(e => e.materialcost)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.materialrate)
+                    .HasPrecision(3, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.materialratecurrency).HasMaxLength(10);
+
+                entity.Property(e => e.mcmoldrate)
+                    .HasPrecision(5, 2)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.mcmoldratecurency).HasMaxLength(10);
+
+                entity.Property(e => e.mcmoldyears).HasDefaultValueSql("0");
+
+                entity.Property(e => e.omsubtotal)
+                    .HasPrecision(11, 3)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.product_d_id).HasMaxLength(36);
+
+                entity.Property(e => e.remarks_cbd).HasMaxLength(1024);
+
+                entity.Property(e => e.remarks_spec).HasMaxLength(1024);
+
+                entity.Property(e => e.smsubtotal)
+                    .HasPrecision(11, 3)
+                    .HasDefaultValueSql("0");
+
+                entity.Property(e => e.spec_pic_id).HasMaxLength(36);
+
+                entity.Property(e => e.spec_update_date).HasColumnType("date");
+
+                entity.Property(e => e.spec_update_user).HasMaxLength(30);
+
+                entity.Property(e => e.spec_xml_id).HasMaxLength(36);
+
+                entity.Property(e => e.speclockmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.stage).HasMaxLength(10);
+
+                entity.Property(e => e.targetprice)
+                    .HasPrecision(10, 2)
+                    .HasDefaultValueSql("0");
 
                 entity.Property(e => e.umsubtotal)
                     .HasPrecision(11, 3)
