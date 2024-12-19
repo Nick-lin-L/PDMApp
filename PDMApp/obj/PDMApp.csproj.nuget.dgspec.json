@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Nick_project\\PDMApp\\PDMApp\\PDMApp.csproj": {}
+    "D:\\PDM\\pdmapp\\PDMApp\\PDMApp.csproj": {}
   },
   "projects": {
-    "D:\\Nick_project\\PDMApp\\PDMApp\\PDMApp.csproj": {
+    "D:\\PDM\\pdmapp\\PDMApp\\PDMApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Nick_project\\PDMApp\\PDMApp\\PDMApp.csproj",
+        "projectUniqueName": "D:\\PDM\\pdmapp\\PDMApp\\PDMApp.csproj",
         "projectName": "PDMApp",
-        "projectPath": "D:\\Nick_project\\PDMApp\\PDMApp\\PDMApp.csproj",
-        "packagesPath": "C:\\Users\\nick.lin\\.nuget\\packages\\",
-        "outputPath": "D:\\Nick_project\\PDMApp\\PDMApp\\obj\\",
+        "projectPath": "D:\\PDM\\pdmapp\\PDMApp\\PDMApp.csproj",
+        "packagesPath": "C:\\Users\\bigway2626.huang\\.nuget\\packages\\",
+        "outputPath": "D:\\PDM\\pdmapp\\PDMApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\nick.lin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bigway2626.huang\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
