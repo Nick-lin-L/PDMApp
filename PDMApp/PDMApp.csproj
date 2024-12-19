@@ -22,6 +22,7 @@
     <PackageReference Include="Npgsql" Version="5.0.18" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+    <PackageReference Include="NPOI" Version="2.7.2" />
     <PackageReference Include="Otp.NET" Version="1.4.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
@@ -41,7 +42,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\FactorySPEC\" />
-    <Folder Include="Controllers\PLM\" />
     <Folder Include="NewFolder\" />
     <Folder Include="Utils\Cbd\" />
     <Folder Include="Utils\FactorySpec\" />
