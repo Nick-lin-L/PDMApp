@@ -30,6 +30,6 @@ namespace PDMApp.Models
         public string conn_alias { get; set; }
         public string create_user { get; set; }
 
-        public virtual pdm_user create_userNavigation { get; set; }
+        public virtual pdm_users create_userNavigation { get; set; }
     }
 }

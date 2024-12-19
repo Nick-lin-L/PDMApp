@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 #nullable disable
 
@@ -8,7 +7,6 @@ namespace PDMApp.Models
 {
     public partial class pdm_spec_head_test
     {
-        [Key]
         public string spec_m_id { get; set; }
         public string entrymode { get; set; }
         public string devno { get; set; }
