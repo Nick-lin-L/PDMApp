@@ -84,6 +84,12 @@ namespace PDMApp.Dtos.Cbd
         public decimal? MoldRate { get; set; }
         public int? MoldYears { get; set; }
 
+        public ICollection<CbdExpenseDetails>? Cbdexpensedetails { get; set; }
+    }
+
+    public class CbdExpenseDetails
+    {
+        public string? SpecMId { get; set; }
         public string? Mold { get; set; }
         public string? Item { get; set; }
         public decimal? Price { get; set; }
