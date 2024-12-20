@@ -16,6 +16,6 @@ namespace PDMApp.Models
         public decimal? update_time { get; set; }
         public int? tenant_id { get; set; }
 
-        public virtual pdm_user user { get; set; }
+        public virtual pdm_users user { get; set; }
     }
 }

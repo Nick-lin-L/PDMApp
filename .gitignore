@@ -377,7 +377,7 @@ obj/
 *.dll
 *.json
 *.cache
-*.suo
 
 # 忽略 IIS Express 設定檔
-applicationhost.config
+.vs/**/applicationhost.config
+.vs/**/DesignTimeBuild/

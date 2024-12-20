@@ -18,8 +18,10 @@ namespace PDMApp.Utils
                     join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
                     join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
                     join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
-                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc where pn.group_key == "stage"
-                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc where pnse.group_key == "season"
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
+                    where pn.group_key == "stage"
+                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
+                    where pnse.group_key == "season"
                     select new pdm_spec_headDto
                     {
                         Year = ph.year,
@@ -126,7 +128,7 @@ namespace PDMApp.Utils
         }
         public static IQueryable<SpecUpperDTO> GetSpecUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
-            return (from si in _pcms_Pdm_TestContext.pdm_spec_item 
+            return (from si in _pcms_Pdm_TestContext.pdm_spec_item
                     select new SpecUpperDTO
                     {
                         SpecMId = si.spec_m_id,
@@ -214,8 +216,24 @@ namespace PDMApp.Utils
 
         public static IQueryable<CbdExpenseDTO> CbdExpenseResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
+            var allMoldData = _pcms_Pdm_TestContext.pdm_spec_moldcharge
+                .Select(sm => new CbdExpenseDetails
+                {
+                    SpecMId = sm.spec_m_id,
+                    Mold = sm.id,
+                    Item = sm.item,
+                    Price = sm.price,
+                    Qty = sm.qty,
+                    Amort = sm.amortization,
+                    Years = sm.years,
+                    Charge = sm.charge
+                }).ToList();
+
+            var moldChargeMap = allMoldData
+                .GroupBy(sm => sm.SpecMId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
             return (from sh in _pcms_Pdm_TestContext.pdm_spec_head
-                    join sm in _pcms_Pdm_TestContext.pdm_spec_moldcharge on sh.spec_m_id equals sm.spec_m_id
                     select new CbdExpenseDTO
                     {
                         SpecMId = sh.spec_m_id,
@@ -225,9 +243,9 @@ namespace PDMApp.Utils
                         Final = sh.fobfinal,
                         Pht = sh.fobphoto,
                         Nego = sh.fobnego,
-                        ND2 = sh.fob2ndsample,
+                        Nd2 = sh.fob2ndsample,
                         Sls = sh.fobsales,
-                        ST1 = sh.fob1stsample,
+                        St1 = sh.fob1stsample,
                         MaterialTotal = sh.materialcost,
                         SubTotal = sh.exsubtotal,
                         DirectLabor = sh.exdirectlabor,
@@ -240,18 +258,12 @@ namespace PDMApp.Utils
                         MoldAmortization = sh.exmoldamortization,
                         TotalABC = sh.extotal,
                         ExCommission = sh.excommission,
-                        Percent = sh.extotal * sh.excommission/100,
+                        Percent = sh.extotal * sh.excommission / 100,
                         TotalABCD = sh.extotal * (1 + (sh.extotal * sh.excommission / 100)),
                         MoldRateCurrency = sh.mcmoldrate,
                         MoldRate = sh.mcmoldrate,
                         MoldYears = sh.mcmoldyears,
-                        Mold = sm.id,
-                        Item = sm.item,
-                        Price = sm.price,
-                        Qty = sm.qty,
-                        Amort = sm.amortization,
-                        Years = sm.years,
-                        Charge = sm.charge
+                        Cbdexpensedetails = moldChargeMap.ContainsKey(sh.spec_m_id) ? moldChargeMap[sh.spec_m_id] : new List<CbdExpenseDetails>()
                     });
         }
     }

@@ -61,9 +61,9 @@ namespace PDMApp.Dtos.Cbd
         public decimal? Final { get; set; }
         public decimal? Pht { get; set; }
         public decimal? Nego { get; set; }
-        public decimal? ND2 { get; set; }
+        public decimal? Nd2 { get; set; }
         public decimal? Sls { get; set; }
-        public decimal? ST1 { get; set; }
+        public decimal? St1 { get; set; }
 
         public decimal? MaterialTotal { get; set; } //A
         public decimal? SubTotal { get; set; } //B
@@ -84,6 +84,12 @@ namespace PDMApp.Dtos.Cbd
         public decimal? MoldRate { get; set; }
         public int? MoldYears { get; set; }
 
+        public ICollection<CbdExpenseDetails>? Cbdexpensedetails { get; set; }
+    }
+
+    public class CbdExpenseDetails
+    {
+        public string? SpecMId { get; set; }
         public string? Mold { get; set; }
         public string? Item { get; set; }
         public decimal? Price { get; set; }

@@ -70,6 +70,7 @@ namespace PDMApp.Controllers.CBD
                 // ExpenseData 查詢
                 var expense_query = QueryHelper.CbdExpenseResponse(_pcms_Pdm_TestContext)
                     .Where(st => string.IsNullOrWhiteSpace(value.SpecMId) || st.SpecMId.Equals(value.SpecMId));
+
                 resultData.ExpenseData = await expense_query.Distinct().ToListAsync();
 
                 // 手動轉換為字典
