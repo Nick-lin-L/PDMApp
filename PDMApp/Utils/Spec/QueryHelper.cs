@@ -260,7 +260,7 @@ namespace PDMApp.Utils
                         ExCommission = sh.excommission,
                         Percent = sh.extotal * sh.excommission / 100,
                         TotalABCD = sh.extotal * (1 + (sh.extotal * sh.excommission / 100)),
-                        MoldRateCurrency = sh.mcmoldrate,
+                        MoldRateCurrency = sh.mcmoldratecurency ?? "",
                         MoldRate = sh.mcmoldrate,
                         MoldYears = sh.mcmoldyears,
                         Cbdexpensedetails = moldChargeMap.ContainsKey(sh.spec_m_id) ? moldChargeMap[sh.spec_m_id] : new List<CbdExpenseDetails>()

@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using PDMApp.Dtos;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using PDMApp.Parameters.Spec;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -129,12 +132,176 @@ namespace PDMApp.Controllers.SPEC
                     ErrorCode = "Server_ERROR",
                     Message = "ServerError",
                     Details = ex.Message,
-                    StackTrace = ex.StackTrace,
+                    ex.StackTrace,
                     InnerException = ex.InnerException?.Message
                 });
 
             }
         }
+
+        [HttpPost("Upload")]
+        public IActionResult UploadExcel([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("請上傳有效的 Excel 檔案");
+
+            try
+            {
+                using (var stream = file.OpenReadStream())
+                {
+                    var importExcel_NPOI = new ImportExcel_NPOI(_pcms_Pdm_TestContext);
+                    importExcel_NPOI.ProcessExcel(stream, file.FileName);
+                }
+                return Ok("Excel 資料已成功匯入資料庫");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"發生錯誤: {ex.Message}");
+            }
+        }
+
+        [HttpPost("Export")]
+        public async Task<IActionResult> ExportMasterDetail([FromBody] SpecSearchParameter value)
+        {
+            try
+            {
+                // 1. 查詢主檔資料
+                var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
+
+
+                var filters = new List<Expression<Func<pdm_spec_headDto, bool>>>();
+                // 動態篩選條件
+                if (!string.IsNullOrWhiteSpace(value.SpecMId))
+                    filters.Add(ph => ph.SpecMId == value.SpecMId);
+                if (!string.IsNullOrWhiteSpace(value.Factory))
+                    filters.Add(ph => ph.Factory == value.Factory);
+                if (!string.IsNullOrWhiteSpace(value.EntryMode))
+                    filters.Add(ph => ph.EntryMode == value.EntryMode);
+                if (!string.IsNullOrWhiteSpace(value.Season))
+                    filters.Add(ph => ph.Season == value.Season);
+                if (!string.IsNullOrWhiteSpace(value.Year))
+                    filters.Add(ph => ph.Year == value.Year);
+                if (!string.IsNullOrWhiteSpace(value.ItemNo))
+                    filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
+                if (!string.IsNullOrWhiteSpace(value.ColorNo))
+                    filters.Add(ph => ph.ColorNo == value.ColorNo);
+                if (!string.IsNullOrWhiteSpace(value.DevNo))
+                    filters.Add(ph => ph.DevNo == value.DevNo);
+                if (!string.IsNullOrWhiteSpace(value.Devcolorno))
+                    filters.Add(ph => ph.DevColorDispName.Contains(value.Devcolorno));
+                if (!string.IsNullOrWhiteSpace(value.Stage))
+                    filters.Add(ph => ph.Stage.Equals(value.Stage));
+                if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
+                    filters.Add(ph => ph.CustomerKbn.Contains(value.CustomerKbn));
+                if (!string.IsNullOrWhiteSpace(value.ModeName))
+                    filters.Add(ph => ph.Mode.Contains(value.ModeName));
+                if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
+                    filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
+
+
+                foreach (var filter in filters)
+                {
+                    query = query.Where(filter);
+                }
+
+                // 透過 LINQ 查詢結果
+                var result = await query.Distinct()
+                    .OrderBy(ph => ph.DevNo)
+                    .ThenBy(ph => ph.DevColorDispName)
+                    .ThenBy(ph => ph.Stage)
+                    .ToListAsync();
+
+                // 提前查出子資料
+                var specMIds = result.Select(r => r.SpecMId).Distinct().ToList();
+                var allSpecItems = await _pcms_Pdm_TestContext.pdm_spec_item
+                    .Where(si => specMIds.Contains(si.spec_m_id))
+                    .OrderBy(si => Convert.ToInt32(si.act_no))
+                    .ThenBy(si => si.seqno)
+                    .ToListAsync();
+
+                // 3. 建立子檔 Parts 對應關係
+                var actNoToPartsMap = allSpecItems
+                    .GroupBy(si => si.act_no) // 根據 act_no 分組
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.FirstOrDefault(si => !string.IsNullOrWhiteSpace(si.parts))?.parts // 取第一個非空的 Parts 值
+                    );
+
+                foreach (var item in allSpecItems)
+                {
+                    if (actNoToPartsMap.ContainsKey(item.act_no) && string.IsNullOrWhiteSpace(item.parts))
+                    {
+                        item.parts = actNoToPartsMap[item.act_no];
+                    }
+                }
+
+                // 4. 組合主子檔資料
+                foreach (var item in result)
+                {
+                    item.pdm_Spec_ItemDtos = allSpecItems
+                        .Where(si => si.spec_m_id == item.SpecMId)
+                        .Select(si => new pdm_spec_itemDto
+                        {
+                            SpecMId = si.spec_m_id,
+                            ActNo = si.act_no,
+                            SeqNo = si.seqno,
+                            Parts = si.parts,
+                            MoldNo = si.material,
+                            MaterialNo = si.materialno,
+                            Material = si.material,
+                            SubMaterial = si.submaterial,
+                            Standard = si.standard,
+                            Supplier = si.supplier,
+                            Colors = si.colors,
+                            Memo = si.memo,
+                            Hcha = si.hcha,
+                            Sec = si.sec,
+                            Width = si.width
+                        })
+                        .ToList();
+                }
+
+                // 5.call ExportExcel_NPOI
+                var exporter = new ExportExcel_NPOI();
+                var fileContent = exporter.ExportMasterDetailToExcel(result);
+
+                // 6. download file
+                var fileName = $"SpecHeads_{DateTime.Now:yyyyMMddHHmmss}.xlsx"; // 檔案名稱
+                Response.Headers.Add("Message", "檔案匯出成功");
+                Response.Headers.Add("FileName", fileName);
+                return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+
+                /*
+                // 儲存檔案到C槽
+                var filePath = @"C:\ExportedFiles"; // 指定存放資料夾
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath); // 若資料夾不在則建立
+                }
+
+                var fileName = $"SpecHeads_{DateTime.Now:yyyyMMddHHmmss}.xlsx"; //檔案名稱
+                var fullPath = Path.Combine(filePath, fileName); // 路徑
+
+                System.IO.File.WriteAllBytes(fullPath, fileContent); //將內容寫入檔案
+
+                // download file
+                return Ok(new
+                {
+                    Message = "檔案匯出成功",
+                    DownloadUrl = $"http://localhost:5000/ExportedFiles/{fileName}"
+                });
+                */
+            }
+            catch (Exception ex)
+            {
+                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"匯出過程中發生錯誤: {ex.Message}",
+                    data: null
+                ));
+            }
+        }
+
 
         // PUT api/<SpecHeadsController>/5
         [HttpPut("{id}")]

@@ -83,7 +83,7 @@ namespace PDMApp.Controllers.SPEC
 
                 foreach (var item in currentPageItems)
                 {
-                    if (actNoToPartsMap.ContainsKey(item.act_no))
+                    if (actNoToPartsMap.ContainsKey(item.act_no) && string.IsNullOrWhiteSpace(item.parts))
                     {
                         item.parts = actNoToPartsMap[item.act_no]; // 更新 Parts 值
                     }

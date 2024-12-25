@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PDMApp.Models;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 namespace PDMApp
 {
@@ -63,7 +65,14 @@ namespace PDMApp
             //}
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            //app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "ExportedFiles")),
+                RequestPath = "/ExportedFiles"
+            });
+
             app.UseRouting();
 
             app.UseCors("AllowSpecificOrigin");

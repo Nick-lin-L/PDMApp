@@ -21,11 +21,16 @@ namespace PDMApp.Models
         public virtual DbSet<dms_ebom_color> dms_ebom_color { get; set; }
         public virtual DbSet<global_users> global_users { get; set; }
         public virtual DbSet<pdm_api_permission> pdm_api_permission { get; set; }
+        public virtual DbSet<pdm_factoryspec_ref_signflow> pdm_factoryspec_ref_signflow { get; set; }
         public virtual DbSet<pdm_group> pdm_group { get; set; }
         public virtual DbSet<pdm_group_mgr> pdm_group_mgr { get; set; }
+        public virtual DbSet<pdm_history_denamic_signflow> pdm_history_denamic_signflow { get; set; }
         public virtual DbSet<pdm_namevalue> pdm_namevalue { get; set; }
+        public virtual DbSet<pdm_permissions> pdm_permissions { get; set; }
         public virtual DbSet<pdm_product_head> pdm_product_head { get; set; }
         public virtual DbSet<pdm_product_item> pdm_product_item { get; set; }
+        public virtual DbSet<pdm_role_permissions> pdm_role_permissions { get; set; }
+        public virtual DbSet<pdm_roles> pdm_roles { get; set; }
         public virtual DbSet<pdm_spec_head> pdm_spec_head { get; set; }
         public virtual DbSet<pdm_spec_head_factory> pdm_spec_head_factory { get; set; }
         public virtual DbSet<pdm_spec_head_test> pdm_spec_head_test { get; set; }
@@ -35,7 +40,9 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_spec_standard> pdm_spec_standard { get; set; }
         public virtual DbSet<pdm_spec_standard_factory> pdm_spec_standard_factory { get; set; }
         public virtual DbSet<pdm_user_group> pdm_user_group { get; set; }
+        public virtual DbSet<pdm_user_roles> pdm_user_roles { get; set; }
         public virtual DbSet<pdm_users> pdm_users { get; set; }
+        public virtual DbSet<pdm_users_new> pdm_users_new { get; set; }
         public virtual DbSet<plm_cbd_head> plm_cbd_head { get; set; }
         public virtual DbSet<plm_cbd_item> plm_cbd_item { get; set; }
         public virtual DbSet<plm_cbd_moldcharge> plm_cbd_moldcharge { get; set; }
@@ -269,6 +276,19 @@ namespace PDMApp.Models
                 entity.Property(e => e.update_user).HasColumnType("character varying");
             });
 
+            modelBuilder.Entity<pdm_factoryspec_ref_signflow>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("pdm_factoryspec_ref_signflow", "asics_pdm");
+
+                entity.Property(e => e.id).HasMaxLength(4);
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
+                entity.Property(e => e.sub_bill_class).HasMaxLength(2);
+            });
+
             modelBuilder.Entity<pdm_group>(entity =>
             {
                 entity.HasKey(e => e.group_id)
@@ -401,6 +421,33 @@ namespace PDMApp.Models
                     .HasConstraintName("acl_group_mgr_fk1");
             });
 
+            modelBuilder.Entity<pdm_history_denamic_signflow>(entity =>
+            {
+                entity.ToTable("pdm_history_denamic_signflow", "asics_pdm");
+
+                entity.Property(e => e.id).ValueGeneratedNever();
+
+                entity.Property(e => e.bill_class_id).HasMaxLength(4);
+
+                entity.Property(e => e.group_key).HasMaxLength(100);
+
+                entity.Property(e => e.is_default)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::character varying");
+
+                entity.Property(e => e.signflow_cn).HasMaxLength(200);
+
+                entity.Property(e => e.signflow_detail).HasMaxLength(500);
+
+                entity.Property(e => e.status)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.sub_bill_class).HasMaxLength(2);
+
+                entity.Property(e => e.user_id).HasMaxLength(4);
+            });
+
             modelBuilder.Entity<pdm_namevalue>(entity =>
             {
                 entity.HasNoKey();
@@ -426,6 +473,39 @@ namespace PDMApp.Models
                 entity.Property(e => e.text_ex2).HasMaxLength(100);
 
                 entity.Property(e => e.value_desc).HasMaxLength(20);
+            });
+
+            modelBuilder.Entity<pdm_permissions>(entity =>
+            {
+                entity.HasKey(e => e.permission_id)
+                    .HasName("pdm_permissions_pkey");
+
+                entity.ToTable("pdm_permissions", "asics_pdm");
+
+                entity.HasIndex(e => e.permission_name, "pdm_permissions_permission_name_key")
+                    .IsUnique();
+
+                entity.Property(e => e.permission_id).HasDefaultValueSql("nextval('pdm_permissions_permission_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.permission_name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_permissionscreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_permissions_created_by_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_permissionsupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_permissions_updated_by_fkey");
             });
 
             modelBuilder.Entity<pdm_product_head>(entity =>
@@ -722,6 +802,99 @@ namespace PDMApp.Models
                 entity.Property(e => e.upper_sozai_code).HasMaxLength(10);
 
                 entity.Property(e => e.upper_sozai_code_name).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<pdm_role_permissions>(entity =>
+            {
+                entity.HasKey(e => e.role_permission_id)
+                    .HasName("pdm_role_permissions_pkey");
+
+                entity.ToTable("pdm_role_permissions", "asics_pdm");
+
+                entity.Property(e => e.role_permission_id).HasDefaultValueSql("nextval('pdm_role_permissions_role_permission_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.createp).HasDefaultValueSql("true");
+
+                entity.Property(e => e.deletep).HasDefaultValueSql("true");
+
+                entity.Property(e => e.exportp).HasDefaultValueSql("true");
+
+                entity.Property(e => e.importp).HasDefaultValueSql("true");
+
+                entity.Property(e => e.is_active).HasDefaultValueSql("true");
+
+                entity.Property(e => e.permission1).HasDefaultValueSql("true");
+
+                entity.Property(e => e.permission2).HasDefaultValueSql("true");
+
+                entity.Property(e => e.permission3).HasDefaultValueSql("true");
+
+                entity.Property(e => e.permission4).HasDefaultValueSql("true");
+
+                entity.Property(e => e.readp).HasDefaultValueSql("true");
+
+                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.updatep).HasDefaultValueSql("true");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_role_permissionscreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_role_permissions_created_by_fkey");
+
+                entity.HasOne(d => d.permission)
+                    .WithMany(p => p.pdm_role_permissions)
+                    .HasForeignKey(d => d.permission_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_role_permissions_permission_id_fkey");
+
+                entity.HasOne(d => d.role)
+                    .WithMany(p => p.pdm_role_permissions)
+                    .HasForeignKey(d => d.role_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_role_permissions_role_id_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_role_permissionsupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_role_permissions_updated_by_fkey");
+            });
+
+            modelBuilder.Entity<pdm_roles>(entity =>
+            {
+                entity.HasKey(e => e.role_id)
+                    .HasName("pdm_roles_pkey");
+
+                entity.ToTable("pdm_roles", "asics_pdm");
+
+                entity.HasIndex(e => e.role_name, "pdm_roles_role_name_key")
+                    .IsUnique();
+
+                entity.Property(e => e.role_id).HasDefaultValueSql("nextval('pdm_roles_role_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.role_name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_rolescreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_roles_created_by_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_rolesupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_roles_updated_by_fkey");
             });
 
             modelBuilder.Entity<pdm_spec_head>(entity =>
@@ -1691,6 +1864,44 @@ namespace PDMApp.Models
                     .HasConstraintName("user_group_fk_users");
             });
 
+            modelBuilder.Entity<pdm_user_roles>(entity =>
+            {
+                entity.HasKey(e => e.user_role_id)
+                    .HasName("pdm_user_roles_pkey");
+
+                entity.ToTable("pdm_user_roles", "asics_pdm");
+
+                entity.Property(e => e.user_role_id).HasDefaultValueSql("nextval('pdm_user_roles_user_role_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_user_rolescreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_user_roles_created_by_fkey");
+
+                entity.HasOne(d => d.role)
+                    .WithMany(p => p.pdm_user_roles)
+                    .HasForeignKey(d => d.role_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_user_roles_role_id_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_user_rolesupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_user_roles_updated_by_fkey");
+
+                entity.HasOne(d => d.user)
+                    .WithMany(p => p.pdm_user_rolesuser)
+                    .HasForeignKey(d => d.user_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_user_roles_user_id_fkey");
+            });
+
             modelBuilder.Entity<pdm_users>(entity =>
             {
                 entity.HasKey(e => e.user_id)
@@ -1733,6 +1944,43 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("NULL::numeric");
 
                 entity.Property(e => e.user_timezone).HasMaxLength(6);
+            });
+
+            modelBuilder.Entity<pdm_users_new>(entity =>
+            {
+                entity.HasKey(e => e.user_id)
+                    .HasName("pdm_users_new_pkey");
+
+                entity.ToTable("pdm_users_new", "asics_pdm");
+
+                entity.HasIndex(e => e.email, "pdm_users_new_email_key")
+                    .IsUnique();
+
+                entity.Property(e => e.user_id).HasDefaultValueSql("nextval('pdm_users_new_user_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.email)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.is_active).HasDefaultValueSql("true");
+
+                entity.Property(e => e.is_sso).HasDefaultValueSql("true");
+
+                entity.Property(e => e.local_name).HasMaxLength(300);
+
+                entity.Property(e => e.password_hash)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.pccuid).HasPrecision(20);
+
+                entity.Property(e => e.sso_acct).HasMaxLength(50);
+
+                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.username).HasMaxLength(300);
             });
 
             modelBuilder.Entity<plm_cbd_head>(entity =>
