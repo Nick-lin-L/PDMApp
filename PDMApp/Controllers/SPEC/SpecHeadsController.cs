@@ -106,7 +106,7 @@ namespace PDMApp.Controllers.SPEC
                     filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
-                
+
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
@@ -165,7 +165,7 @@ namespace PDMApp.Controllers.SPEC
         {
             try
             {
-                // 1. 查詢主檔資料
+                // 查詢主檔資料
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
 
 
@@ -219,58 +219,56 @@ namespace PDMApp.Controllers.SPEC
                     .ThenBy(si => si.seqno)
                     .ToListAsync();
 
-                // 3. 建立子檔 Parts 對應關係
+                // 建立子檔 Parts 對應關係
                 var actNoToPartsMap = allSpecItems
-                    .GroupBy(si => si.act_no) // 根據 act_no 分組
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.FirstOrDefault(si => !string.IsNullOrWhiteSpace(si.parts))?.parts // 取第一個非空的 Parts 值
-                    );
+                    .Where(si => !string.IsNullOrWhiteSpace(si.parts))
+                    .GroupBy(si => si.act_no)
+                    .ToDictionary(g => g.Key, g => g.First().parts);
 
                 foreach (var item in allSpecItems)
                 {
-                    if (actNoToPartsMap.ContainsKey(item.act_no) && string.IsNullOrWhiteSpace(item.parts))
+                    if (actNoToPartsMap.TryGetValue(item.act_no, out var part) && string.IsNullOrWhiteSpace(item.parts))
                     {
-                        item.parts = actNoToPartsMap[item.act_no];
+                        item.parts = part;
                     }
                 }
 
-                // 4. 組合主子檔資料
+                // 組合主子檔資料
+                var specItemDtos = allSpecItems.Select(si => new pdm_spec_itemDto
+                {
+                    SpecMId = si.spec_m_id,
+                    ActNo = si.act_no,
+                    SeqNo = si.seqno,
+                    Parts = si.parts,
+                    MoldNo = si.material,
+                    MaterialNo = si.materialno,
+                    Material = si.material,
+                    SubMaterial = si.submaterial,
+                    Standard = si.standard,
+                    Supplier = si.supplier,
+                    Colors = si.colors,
+                    Memo = si.memo,
+                    Hcha = si.hcha,
+                    Sec = si.sec,
+                    Width = si.width
+                }).ToList();
+
                 foreach (var item in result)
                 {
-                    item.pdm_Spec_ItemDtos = allSpecItems
-                        .Where(si => si.spec_m_id == item.SpecMId)
-                        .Select(si => new pdm_spec_itemDto
-                        {
-                            SpecMId = si.spec_m_id,
-                            ActNo = si.act_no,
-                            SeqNo = si.seqno,
-                            Parts = si.parts,
-                            MoldNo = si.material,
-                            MaterialNo = si.materialno,
-                            Material = si.material,
-                            SubMaterial = si.submaterial,
-                            Standard = si.standard,
-                            Supplier = si.supplier,
-                            Colors = si.colors,
-                            Memo = si.memo,
-                            Hcha = si.hcha,
-                            Sec = si.sec,
-                            Width = si.width
-                        })
-                        .ToList();
+                    item.pdm_Spec_ItemDtos = specItemDtos.Where(si => si.SpecMId == item.SpecMId).ToList();
                 }
 
-                // 5.call ExportExcel_NPOI
-                var exporter = new ExportExcel_NPOI();
+                // call ExportExcel_NPOI
+                //var exporter = new ExportExcel_NPOI();
+                var exporter = new ExportExcel_MiniExcel();
                 var fileContent = exporter.ExportMasterDetailToExcel(result);
-
-                // 6. download file
+                
+                // download file
                 var fileName = $"SpecHeads_{DateTime.Now:yyyyMMddHHmmss}.xlsx"; // 檔案名稱
                 Response.Headers.Add("Message", "檔案匯出成功");
                 Response.Headers.Add("FileName", fileName);
                 return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-
+                
                 /*
                 // 儲存檔案到C槽
                 var filePath = @"C:\ExportedFiles"; // 指定存放資料夾
@@ -283,7 +281,7 @@ namespace PDMApp.Controllers.SPEC
                 var fullPath = Path.Combine(filePath, fileName); // 路徑
 
                 System.IO.File.WriteAllBytes(fullPath, fileContent); //將內容寫入檔案
-
+                
                 // download file
                 return Ok(new
                 {
