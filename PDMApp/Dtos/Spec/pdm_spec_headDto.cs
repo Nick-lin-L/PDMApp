@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Dtos
+namespace PDMApp.Dtos.Spec
 {
     public class pdm_spec_headDto
     {

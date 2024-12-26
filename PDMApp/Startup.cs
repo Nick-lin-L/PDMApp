@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PDMApp.Models;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 namespace PDMApp
 {
@@ -63,7 +65,21 @@ namespace PDMApp
             //}
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            //app.UseStaticFiles();
+            var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
+
+            // 如果資料夾不存在，則自動建立
+            if (!Directory.Exists(exportFolder))
+            {
+                Directory.CreateDirectory(exportFolder); // 建立資料夾
+            }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(exportFolder),
+                RequestPath = "/ExportedFiles"
+            });
+
             app.UseRouting();
 
             app.UseCors("AllowSpecificOrigin");

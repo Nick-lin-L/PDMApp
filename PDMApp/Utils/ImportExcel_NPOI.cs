@@ -25,7 +25,7 @@ namespace PDMApp.Utils
         public void ProcessExcel(Stream fileStream, string fileName)
         {
             IWorkbook workbook;
-
+            // 參考至https://medium.com/selectprogram/c-npoi-上傳excel檔案-並新增至資料庫-3fd6da9bb439
             // xls or xlsx
             if (fileName.EndsWith(".xlsx"))
                 workbook = new XSSFWorkbook(fileStream);

@@ -51,26 +51,33 @@ namespace PDMApp.Utils
         }
         public static IQueryable<pdm_spec_itemDto> QuerySpecDetails(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
-            return (from si in _pcms_Pdm_TestContext.pdm_spec_item
-                    select new pdm_spec_itemDto
-                    {
-                        SpecMId = si.spec_m_id,
-                        ActNo = si.act_no,
-                        SeqNo = si.seqno,
-                        //Parts = actNoToPartsMap.ContainsKey(si.act_no) ? actNoToPartsMap[si.act_no] : si.parts,
-                        Parts = si.parts,
-                        MoldNo = si.material,
-                        MaterialNo = si.materialno,
-                        Material = si.material,
-                        SubMaterial = si.submaterial,
-                        Standard = si.standard,
-                        Supplier = si.supplier,
-                        Colors = si.colors,
-                        Memo = si.memo,
-                        Hcha = si.hcha,
-                        Sec = si.sec,
-                        Width = si.width
-                    });
+            var query = from si in _pcms_Pdm_TestContext.pdm_spec_item
+                        join partsGroup in (
+                            from si in _pcms_Pdm_TestContext.pdm_spec_item
+                            where !string.IsNullOrWhiteSpace(si.parts)
+                            group si.parts by si.act_no into g
+                            select new { ActNo = g.Key, Parts = g.First() }
+                        ) on si.act_no equals partsGroup.ActNo into pg
+                        from parts in pg.DefaultIfEmpty()
+                        select new pdm_spec_itemDto
+                        {
+                            SpecMId = si.spec_m_id,
+                            ActNo = si.act_no,
+                            SeqNo = si.seqno,
+                            Parts = parts.Parts ?? si.parts, // 使用查詢層級處理 Parts
+                            MoldNo = si.material,
+                            MaterialNo = si.materialno,
+                            Material = si.material,
+                            SubMaterial = si.submaterial,
+                            Standard = si.standard,
+                            Supplier = si.supplier,
+                            Colors = si.colors,
+                            Memo = si.memo,
+                            Hcha = si.hcha,
+                            Sec = si.sec,
+                            Width = si.width
+                        };
+            return query;
         }
 
         public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
@@ -260,7 +267,7 @@ namespace PDMApp.Utils
                         ExCommission = sh.excommission,
                         Percent = sh.extotal * sh.excommission / 100,
                         TotalABCD = sh.extotal * (1 + (sh.extotal * sh.excommission / 100)),
-                        MoldRateCurrency = sh.mcmoldrate,
+                        MoldRateCurrency = sh.mcmoldratecurency ?? "",
                         MoldRate = sh.mcmoldrate,
                         MoldYears = sh.mcmoldyears,
                         Cbdexpensedetails = moldChargeMap.ContainsKey(sh.spec_m_id) ? moldChargeMap[sh.spec_m_id] : new List<CbdExpenseDetails>()
