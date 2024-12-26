@@ -153,5 +153,48 @@ namespace PDMApp.Utils.FactorySpec
                         Memo = st.memo
                     });
         }
+        public static IQueryable<ItemSheetDTO> GetItemSheetResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from ph in _pcms_Pdm_TestContext.pdm_product_head
+                    join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
+                    join shf in _pcms_Pdm_TestContext.pdm_spec_head_factory on pi.product_d_id equals shf.product_d_id
+                    join sif in _pcms_Pdm_TestContext.pdm_spec_item_factory on shf.spec_m_id equals sif.spec_m_id
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on shf.stage equals pn.value_desc
+                    where pn.group_key == "stage"
+                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
+                    where pnse.group_key == "season"
+                    select new ItemSheetDTO
+                    {
+                        SpecMId = shf.spec_m_id,
+                        MailTo = null,  // 預設為 null，根據需求填入
+                        MailCC = null,  // 預設為 null，根據需求填入
+                        Stage = pn.text, // 使用 Join 的 stage 對應的 text 值
+                        CreateTime = DateTime.Now.ToString("yyyy/MM/dd"),              
+                        DevNo = ph.dev_no,
+                        RefDevNo = shf.ref_dev_no,
+                        ItemNameEng = ph.item_name_eng,
+                        ItemNo = ph.item_no,
+                        ColorNo = pi.color_no,
+                        SampleSize = ph.sample_size,
+                        HeelHeight = shf.heelheight,
+                        ColorNameChn = shf.color_name_chn,
+                        ColorEng = pi.color_name_eng,
+                        FactoryMoldNo1 = shf.mold_no1,
+                        LastNo1 = ph.last_no1,
+                        CreateUser = shf.create_user, 
+                        Type = sif.newmaterial,
+                        Parts = sif.parts, 
+                        No = sif.no, 
+                        Material = sif.material, 
+                        Colors = sif.colors, 
+                        Standard = sif.standard, 
+                        Hcha = sif.hcha, 
+                        Sec = sif.sec,
+                        Supplier = sif.supplier,
+                        Seqno = sif.seqno,
+                        PartClass = sif.partclass
+                    });
+        }
+
     }
 }
