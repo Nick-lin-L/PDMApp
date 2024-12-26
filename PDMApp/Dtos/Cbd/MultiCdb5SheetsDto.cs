@@ -80,7 +80,7 @@ namespace PDMApp.Dtos.Cbd
         public decimal? Percent { get; set; }
         public decimal? TotalABCD { get; set; }
 
-        public decimal? MoldRateCurrency { get; set; }
+        public string MoldRateCurrency { get; set; }
         public decimal? MoldRate { get; set; }
         public int? MoldYears { get; set; }
 

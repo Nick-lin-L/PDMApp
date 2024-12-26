@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using PDMApp.Parameters.Spec;
@@ -50,7 +51,7 @@ namespace PDMApp.Controllers.SPEC
 
             try
             {
-                // 驗證輸入參數是否正確
+                // 驗證輸入參數
                 if (string.IsNullOrWhiteSpace(value.SpecMId))
                 {
                     return BadRequest(new
@@ -60,73 +61,73 @@ namespace PDMApp.Controllers.SPEC
                     });
                 }
 
-                // 查詢子表資料 (使用 IQueryable 支持分頁查詢)
+                // 查詢所有資料
                 var query = _pcms_Pdm_TestContext.pdm_spec_item
-                    .Where(si => si.spec_m_id == value.SpecMId)
+                    .Where(si => si.spec_m_id == value.SpecMId) // 過濾 SpecMId
                     .OrderBy(si => Convert.ToInt32(si.act_no))
                     .ThenBy(si => si.seqno)
+                    .Select(si => new pdm_spec_itemDto
+                    {
+                        SpecMId = si.spec_m_id,
+                        ActNo = si.act_no,
+                        SeqNo = si.seqno,
+                        Parts = si.parts, // 預設 Parts 值
+                        MoldNo = si.material,
+                        MaterialNo = si.materialno,
+                        Material = si.material,
+                        SubMaterial = si.submaterial,
+                        Standard = si.standard,
+                        Supplier = si.supplier,
+                        Colors = si.colors,
+                        Memo = si.memo,
+                        Hcha = si.hcha,
+                        Sec = si.sec,
+                        Width = si.width
+                    })
                     .AsQueryable();
 
                 // 分頁處理
                 var pagedResult = await query.ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
-                // 取出當前分頁的資料
-                var currentPageItems = pagedResult.Results.ToList();
-
-                // 處理 Parts 欄位 (如果需要)
-                var actNoToPartsMap = currentPageItems
+                // 處理null的Parts
+                var actNoToPartsMap = _pcms_Pdm_TestContext.pdm_spec_item
+                    .Where(si => si.spec_m_id == value.SpecMId && !string.IsNullOrWhiteSpace(si.parts))
+                    .AsEnumerable()
                     .GroupBy(si => si.act_no) // 根據 act_no 分組
                     .ToDictionary(
                         g => g.Key,
-                        g => g.FirstOrDefault(si => !string.IsNullOrWhiteSpace(si.parts))?.parts // 取第一個非空的 Parts 值
+                        g => g.First().parts // 取得第一筆非空 Parts 值
                     );
 
-                foreach (var item in currentPageItems)
+                // 更新 DTO Parts 欄位
+                foreach (var item in pagedResult.Results)
                 {
-                    if (actNoToPartsMap.ContainsKey(item.act_no))
+                    if (actNoToPartsMap.ContainsKey(item.ActNo) && string.IsNullOrWhiteSpace(item.Parts))
                     {
-                        item.parts = actNoToPartsMap[item.act_no]; // 更新 Parts 值
+                        item.Parts = actNoToPartsMap[item.ActNo];
                     }
                 }
 
-                // 將資料轉換為 DTO 格式
-                var dtoResult = currentPageItems.Select(si => new pdm_spec_itemDto
-                {
-                    SpecMId = si.spec_m_id,
-                    ActNo = si.act_no,
-                    SeqNo = si.seqno,
-                    Parts = si.parts,
-                    MoldNo = si.material,
-                    MaterialNo = si.materialno,
-                    Material = si.material,
-                    SubMaterial = si.submaterial,
-                    Standard = si.standard,
-                    Supplier = si.supplier,
-                    Colors = si.colors,
-                    Memo = si.memo,
-                    Hcha = si.hcha,
-                    Sec = si.sec,
-                    Width = si.width
-                }).ToList();
-
-                // 基於 DTO 類型構建分頁結果
-                var pagedDtoResult = new PagedResult<pdm_spec_itemDto>(
-                    results: dtoResult, // 傳入 DTO 資料
-                    totalCount: pagedResult.Pagination.TotalCount, // 使用原分頁結果的總筆數
-                    pageNumber: value.Pagination.PageNumber,
-                    pageSize: value.Pagination.PageSize
-                );
-
                 // 回傳分頁結果
-                return APIResponseHelper.HandlePagedApiResponse(pagedDtoResult);
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
             catch (DbException ex)
             {
+                // **優化 3: 加強錯誤處理與日誌記錄**
                 return StatusCode(500, new
                 {
                     ErrorCode = "Server_ERROR",
-                    Message = "ServerError",
-                    Details = ex.Message
+                    Message = $"資料處理錯誤: {ex.Message}",
+                    Details = ex.InnerException?.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Unknown_ERROR",
+                    Message = $"系統異常: {ex.Message}",
+                    Details = ex.StackTrace
                 });
             }
         }
