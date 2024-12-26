@@ -363,5 +363,21 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Config
-*.config
 .v16/
+
+# 忽略編譯生成的檔案
+bin/
+obj/
+
+# 忽略 Visual Studio 設定檔
+.vs/
+
+# 忽略編譯過程中的暫存檔案
+*.pdb
+*.dll
+*.json
+*.cache
+
+# 忽略 IIS Express 設定檔
+.vs/**/applicationhost.config
+.vs/**/DesignTimeBuild/

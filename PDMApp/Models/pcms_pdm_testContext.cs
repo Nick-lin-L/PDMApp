@@ -17,10 +17,10 @@ namespace PDMApp.Models
         {
         }
 
-        public virtual DbSet<api_permission> api_permission { get; set; }
         public virtual DbSet<dms_article> dms_article { get; set; }
         public virtual DbSet<dms_ebom_color> dms_ebom_color { get; set; }
         public virtual DbSet<global_users> global_users { get; set; }
+        public virtual DbSet<pdm_api_permission> pdm_api_permission { get; set; }
         public virtual DbSet<pdm_group> pdm_group { get; set; }
         public virtual DbSet<pdm_group_mgr> pdm_group_mgr { get; set; }
         public virtual DbSet<pdm_namevalue> pdm_namevalue { get; set; }
@@ -34,8 +34,8 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_spec_moldcharge> pdm_spec_moldcharge { get; set; }
         public virtual DbSet<pdm_spec_standard> pdm_spec_standard { get; set; }
         public virtual DbSet<pdm_spec_standard_factory> pdm_spec_standard_factory { get; set; }
-        public virtual DbSet<pdm_user> pdm_user { get; set; }
         public virtual DbSet<pdm_user_group> pdm_user_group { get; set; }
+        public virtual DbSet<pdm_users> pdm_users { get; set; }
         public virtual DbSet<plm_cbd_head> plm_cbd_head { get; set; }
         public virtual DbSet<plm_cbd_item> plm_cbd_item { get; set; }
         public virtual DbSet<plm_cbd_moldcharge> plm_cbd_moldcharge { get; set; }
@@ -53,19 +53,6 @@ namespace PDMApp.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "en_US.UTF-8");
-
-            modelBuilder.Entity<api_permission>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("api_permission", "asics_pdm");
-
-                entity.Property(e => e.permission_name).HasColumnType("character varying");
-
-                entity.Property(e => e.update_time).HasColumnType("timestamp with time zone");
-
-                entity.Property(e => e.update_user).HasColumnType("character varying");
-            });
 
             modelBuilder.Entity<dms_article>(entity =>
             {
@@ -267,6 +254,19 @@ namespace PDMApp.Models
                     .HasMaxLength(100);
 
                 entity.Property(e => e.update_date).HasPrecision(0);
+            });
+
+            modelBuilder.Entity<pdm_api_permission>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("pdm_api_permission", "asics_pdm");
+
+                entity.Property(e => e.permission_name).HasColumnType("character varying");
+
+                entity.Property(e => e.update_time).HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.update_user).HasColumnType("character varying");
             });
 
             modelBuilder.Entity<pdm_group>(entity =>
@@ -1655,12 +1655,48 @@ namespace PDMApp.Models
                 entity.Property(e => e.the_size).HasMaxLength(10);
             });
 
-            modelBuilder.Entity<pdm_user>(entity =>
+            modelBuilder.Entity<pdm_user_group>(entity =>
+            {
+                entity.HasKey(e => new { e.user_id, e.group_id })
+                    .HasName("acl_user_group_pk");
+
+                entity.ToTable("pdm_user_group", "asics_pdm");
+
+                entity.Property(e => e.user_id)
+                    .HasMaxLength(22)
+                    .HasComment("PDM UserID");
+
+                entity.Property(e => e.group_id).HasMaxLength(22);
+
+                entity.Property(e => e.is_allow_deploy)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+
+                entity.Property(e => e.is_allow_modify)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::bpchar");
+
+                entity.Property(e => e.is_pass_deploy)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+
+                entity.Property(e => e.update_time).HasPrecision(19);
+
+                entity.Property(e => e.update_user).HasMaxLength(22);
+
+                entity.HasOne(d => d.user)
+                    .WithMany(p => p.pdm_user_group)
+                    .HasForeignKey(d => d.user_id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("user_group_fk_users");
+            });
+
+            modelBuilder.Entity<pdm_users>(entity =>
             {
                 entity.HasKey(e => e.user_id)
                     .HasName("users_pk");
 
-                entity.ToTable("pdm_user", "asics_pdm");
+                entity.ToTable("pdm_users", "asics_pdm");
 
                 entity.HasIndex(e => e.user_pccuid, "pdm_pccuid_index");
 
@@ -1697,42 +1733,6 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("NULL::numeric");
 
                 entity.Property(e => e.user_timezone).HasMaxLength(6);
-            });
-
-            modelBuilder.Entity<pdm_user_group>(entity =>
-            {
-                entity.HasKey(e => new { e.user_id, e.group_id })
-                    .HasName("acl_user_group_pk");
-
-                entity.ToTable("pdm_user_group", "asics_pdm");
-
-                entity.Property(e => e.user_id)
-                    .HasMaxLength(22)
-                    .HasComment("PDM UserID");
-
-                entity.Property(e => e.group_id).HasMaxLength(22);
-
-                entity.Property(e => e.is_allow_deploy)
-                    .HasMaxLength(1)
-                    .HasDefaultValueSql("'N'::bpchar");
-
-                entity.Property(e => e.is_allow_modify)
-                    .HasMaxLength(1)
-                    .HasDefaultValueSql("'Y'::bpchar");
-
-                entity.Property(e => e.is_pass_deploy)
-                    .HasMaxLength(1)
-                    .HasDefaultValueSql("'N'::bpchar");
-
-                entity.Property(e => e.update_time).HasPrecision(19);
-
-                entity.Property(e => e.update_user).HasMaxLength(22);
-
-                entity.HasOne(d => d.user)
-                    .WithMany(p => p.pdm_user_group)
-                    .HasForeignKey(d => d.user_id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("user_group_fk_users");
             });
 
             modelBuilder.Entity<plm_cbd_head>(entity =>
