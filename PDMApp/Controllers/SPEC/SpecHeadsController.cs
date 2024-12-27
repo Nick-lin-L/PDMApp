@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PDMApp.Dtos;
 using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using PDMApp.Parameters.Spec;
@@ -161,7 +162,8 @@ namespace PDMApp.Controllers.SPEC
         }
 
         [HttpPost("Export")]
-        public async Task<IActionResult> ExportMasterDetail([FromBody] SpecSearchParameter value)
+        //public async Task<IActionResult> ExportMasterDetail([FromBody] SpecSearchParameter value)
+        public async Task<ActionResult<APIStatusResponse<IEnumerable<ExportFileResponseDto>>>> ExportMasterDetail([FromBody] SpecSearchParameter value)
         {
             try
             {
@@ -262,14 +264,24 @@ namespace PDMApp.Controllers.SPEC
                 //var exporter = new ExportExcel_NPOI();
                 var exporter = new ExportExcel_MiniExcel();
                 var fileContent = exporter.ExportMasterDetailToExcel(result);
-                
+
                 // download file
+                var base64Content = Convert.ToBase64String(fileContent);
                 var fileName = $"SpecHeads_{DateTime.Now:yyyyMMddHHmmss}.xlsx"; // 檔案名稱
-                Response.Headers.Add("Access-Control-Allow-Headers", "Message,FileName");
-                Response.Headers.Add("Message", "檔案匯出成功");
-                Response.Headers.Add("FileName", fileName);
-                return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-                
+                //Response.Headers.Add("Message", "Import ok");
+                //Response.Headers.Add("FileName", fileName);
+                //return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+
+                var response = new ExportFileResponseDto
+                {
+                    FileName = fileName,
+                    FileContent = base64Content
+                };
+
+                return APIResponseHelper.HandleApiResponse(
+                    new[] { response }, // IEnumerable<ExportFileResponseDto>
+                    successCode: "OK"
+                );
                 /*
                 // 儲存檔案到C槽
                 var filePath = @"C:\ExportedFiles"; // 指定存放資料夾
