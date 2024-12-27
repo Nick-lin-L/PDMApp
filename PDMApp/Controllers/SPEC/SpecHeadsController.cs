@@ -265,6 +265,8 @@ namespace PDMApp.Controllers.SPEC
                 
                 // download file
                 var fileName = $"SpecHeads_{DateTime.Now:yyyyMMddHHmmss}.xlsx"; // 檔案名稱
+
+                Response.Headers.Add("Access-Control-Allow-Headers", "Message,FileName");
                 Response.Headers.Add("Message", "檔案匯出成功");
                 Response.Headers.Add("FileName", fileName);
                 return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
