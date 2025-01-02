@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using PDMApp.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using PDMApp.Configurations;
 
 namespace PDMApp
 {
@@ -64,16 +65,18 @@ namespace PDMApp
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
             {
-                options.Authority = Configuration["Authentication:Authority"]; // 設定 SSO 伺服器位址
-                options.ClientId = Configuration["Authentication:ClientId"];   // 設定 Client ID
-                options.ClientSecret = Configuration["Authentication:ClientSecret"]; // 設定 Secret
+                options.Authority = Configuration["Authentication:PCG:Authority"]; // 設定 SSO 伺服器位址
+                options.ClientId = Configuration["Authentication:PCG:ClientId"];   // 設定 Client ID
+                options.ClientSecret = Configuration["Authentication:PCG:ClientSecret"]; // 設定 Secret
                 options.ResponseType = "code";       // 採用 Authorization Code 模式
                 options.SaveTokens = true;           // 保存 Token
                 options.Scope.Add("openid");         // 預設範圍
                 options.Scope.Add("profile");
                 options.CallbackPath = "/signin-oidc"; // 驗證回調路徑 (與設定一致)
-                options.SignedOutRedirectUri = Configuration["Authentication:PostLogoutRedirectUri"]; // 登出重定向
+                                                       //options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; // 登出重定向
+                options.SignedOutRedirectUri = "http://localhost:44378/signout-callback-oidc";
             });
+            services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
 
 
             //services.AddAuthorization(); // 啟用授權
@@ -90,7 +93,7 @@ namespace PDMApp
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
             //}
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection(); // 使用HTTPS則開放
             app.UseStaticFiles();
             app.UseRouting();
 

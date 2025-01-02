@@ -45,10 +45,11 @@
 
   <ItemGroup>
     <Folder Include="Controllers\FactorySPEC\" />
-    <Folder Include="NewFolder\" />
     <Folder Include="Utils\Cbd\" />
     <Folder Include="Utils\FactorySpec\" />
     <Folder Include="Utils\Plm\" />
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
