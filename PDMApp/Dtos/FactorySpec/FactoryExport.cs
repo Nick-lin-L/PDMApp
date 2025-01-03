@@ -29,51 +29,41 @@ namespace Dtos.FactorySpec
         public string? Parts { get; set; }
         public string? No { get; set; }
         public string? Material { get; set; }    // 材料
+        public string? SubMaterial { get; set; }    // 材料
         public string? Colors { get; set; }
         public string? Standard { get; set; }
         public string? Hcha { get; set; }
         public string? Sec { get; set; }
         public string? Supplier { get; set; }    // 供應商
+        public object ActNo { get; internal set; }
+        public string RemarksProhibit { get; internal set; }
     }
     public class StandardSheetDTO
     {
         public string? SpecMId { get; set; }    // 範本ID
-        public string? StandardCode { get; set; } // 標準代碼
-        public string? StandardName { get; set; } // 標準名稱
-        public string? Unit { get; set; }        // 單位
-        public string? StandardValue { get; set; } // 標準值
-        public string? Supplier { get; set; }    // 供應商
-        public string? Remarks { get; set; }     // 備註
-    }
-    public class UpperFigureSheetDTO
-    {
-        public string? SpecMId { get; set; }    // 範本ID
-        public string? UpperFigureCode { get; set; } // 上層圖代碼
-        public string? Material { get; set; }   // 材料
-        public string? Color { get; set; }      // 顏色
-        public string? Size { get; set; }       // 尺寸
-        public string? Description { get; set; } // 描述
-        public string? Memo { get; set; }       // 備註
-    }
-    public class SkiveSheetDTO
-    {
-        public string? SpecMId { get; set; }    // 範本ID
-        public string? SkiveCode { get; set; }  // 削切代碼
-        public string? SkiveType { get; set; }  // 削切類型
-        public string? SkiveDescription { get; set; } // 削切描述
-        public string? Thickness { get; set; }  // 厚度
-        public string? Material { get; set; }   // 材料
-        public string? Memo { get; set; }       // 備註
-    }
-    public class SoleFigureSheetDTO
-    {
-        public string? SpecMId { get; set; }    // 範本ID
-        public string? SoleFigureCode { get; set; } // 鞋底圖代碼
-        public string? Material { get; set; }   // 材料
-        public string? Color { get; set; }      // 顏色
-        public string? Size { get; set; }       // 尺寸
-        public string? Description { get; set; } // 描述
-        public string? Memo { get; set; }       // 備註
+        public string Stage { get; internal set; }
+        public string CreateTime { get; internal set; }
+        public string DevNo { get; internal set; }
+        public string RefDevNo { get; internal set; }
+        public string ItemNameEng { get; internal set; }
+        public string ShoeBag { get; internal set; }
+        public string SampleSize { get; internal set; }
+        public string ItemNo { get; internal set; }
+        public string ColorNo { get; internal set; }
+        public decimal? HeelHeight { get; internal set; }
+        public string ColorNameChn { get; internal set; }
+        public int? Seq { get; internal set; }
+        public string ColorEng { get; internal set; }
+        public string FactoryMoldNo1 { get; internal set; }
+        public string CreateUser { get; internal set; }
+        public string LastNo1 { get; internal set; }
+        public string ShoeLaceLength { get; internal set; }
+        public string Size { get; internal set; }
+        public string ShoeBox { get; internal set; }
+        public string GelRear { get; internal set; }
+        public string Toekeeper { get; internal set; }
+        public string GelFore { get; internal set; }
+        public int? Seqno { get; internal set; }
     }
 }
 

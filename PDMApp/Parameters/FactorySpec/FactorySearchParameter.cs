@@ -21,24 +21,7 @@ namespace PDMApp.Parameters.FactorySpec
         public string? DevNo { get; set; }
         public string? Devcolorno { get; set; }
         [Required]
-        public string? Stage { get; set; }
-        //public string? CustomerKbn { get; set; }
-        //public string? ModeName { get; set; }
-        //public string? OutMoldNo { get; set; }
-        //public string? LastNo { get; set; }
-        //public string? ItemNameENG { get; set; }
-        //public string? ItemNameJPN { get; set; }
-        //public string? PartName { get; set; } // PDM_SPEC_ITEM.PARS
-        //public string? PartNo { get; set; } // PDM_SPEC_ITEM.ACT_NO
-        //public string? MatColor { get; set; } // PDM_SPEC_ITEM.colors
-        //public string? Material { get; set; }
-        //public string? SubMaterial { get; set; }
-        //public string? Supplier { get; set; }
-        //public string? Width { get; set; }
-        //public string? HeelHeight { get; set; }
-
-
-        //public ICollection<PaginationParameter> paginationParameter { get; set; } 
+        public string? Stage { get; set; } 
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
     // 新增 FactorySpec5SheetsSearchParameter 類別

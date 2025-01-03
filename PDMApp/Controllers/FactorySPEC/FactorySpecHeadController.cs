@@ -1,6 +1,5 @@
 ﻿using Dtos.FactorySpec;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.FactorySpec;
 using PDMApp.Utils;

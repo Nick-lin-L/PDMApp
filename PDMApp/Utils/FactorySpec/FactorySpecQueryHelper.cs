@@ -161,14 +161,22 @@ namespace PDMApp.Utils.FactorySpec
                     join sif in _pcms_Pdm_TestContext.pdm_spec_item_factory on shf.spec_m_id equals sif.spec_m_id
                     join pn in _pcms_Pdm_TestContext.pdm_namevalue on shf.stage equals pn.value_desc
                     where pn.group_key == "stage"
-                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
-                    where pnse.group_key == "season"
+
+                    let mailTo = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "01"
+                                  select h.signflow_cn).FirstOrDefault()
+                    let mailCC = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "02"
+                                  select h.signflow_cn).FirstOrDefault()
                     select new ItemSheetDTO
                     {
                         SpecMId = shf.spec_m_id,
-                        MailTo = null,  // 預設為 null，根據需求填入
-                        MailCC = null,  // 預設為 null，根據需求填入
+                        MailTo = mailTo,  // 預設為 null，根據需求填入
+                        MailCC = mailCC,  // 預設為 null，根據需求填入
                         Stage = pn.text, // 使用 Join 的 stage 對應的 text 值
+                        ActNo = sif.act_no,
                         CreateTime = DateTime.Now.ToString("yyyy/MM/dd"),              
                         DevNo = ph.dev_no,
                         RefDevNo = shf.ref_dev_no,
@@ -181,18 +189,56 @@ namespace PDMApp.Utils.FactorySpec
                         ColorEng = pi.color_name_eng,
                         FactoryMoldNo1 = shf.mold_no1,
                         LastNo1 = ph.last_no1,
-                        CreateUser = shf.create_user, 
-                        Type = sif.newmaterial,
+                        CreateUser = shf.create_user,
+                        Type = sif.newmaterial == "*" ? "△" : sif.newmaterial, // 轉換邏輯
                         Parts = sif.parts, 
-                        No = sif.no, 
-                        Material = sif.material, 
+                        No = sif.no,
+                        Material = sif.material ?? sif.submaterial, // 如果 Material 為 null，就使用 SubMaterial
+                        SubMaterial = sif.submaterial,
                         Colors = sif.colors, 
                         Standard = sif.standard, 
                         Hcha = sif.hcha, 
                         Sec = sif.sec,
                         Supplier = sif.supplier,
                         Seqno = sif.seqno,
-                        PartClass = sif.partclass
+                        PartClass = sif.partclass,
+                        RemarksProhibit = shf.remarks_prohibit 
+                    });
+        }
+        public static IQueryable<StandardSheetDTO> GetSpecStandardSheetResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from ph in _pcms_Pdm_TestContext.pdm_product_head
+                    join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
+                    join shf in _pcms_Pdm_TestContext.pdm_spec_head_factory on pi.product_d_id equals shf.product_d_id
+                    join st in _pcms_Pdm_TestContext.pdm_spec_standard_factory on shf.spec_m_id equals st.spec_m_id
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on shf.stage equals pn.value_desc
+                    where pn.group_key == "stage"
+                    select new StandardSheetDTO
+                    {
+                        SpecMId = st.spec_m_id,
+                        Stage = pn.text,
+                        CreateTime = DateTime.Now.ToString("yyyy/MM/dd"),
+                        DevNo = ph.dev_no,
+                        RefDevNo = shf.ref_dev_no,
+                        ItemNameEng = ph.item_name_eng,
+                        ItemNo = ph.item_no,
+                        ColorNo = pi.color_no,
+                        SampleSize = ph.sample_size,
+                        HeelHeight = shf.heelheight,
+                        ColorNameChn = shf.color_name_chn,
+                        ColorEng = pi.color_name_eng,
+                        FactoryMoldNo1 = shf.mold_no1,
+                        LastNo1 = ph.last_no1,
+                        CreateUser = shf.create_user,
+                        Seq = st.seqno,
+                        Size = st.the_size,
+                        ShoeLaceLength = st.itemval1,
+                        ShoeBox = st.itemval2,
+                        GelFore = st.itemval3,
+                        GelRear = st.itemval4,
+                        Toekeeper = st.itemval5,
+                        ShoeBag = st.itemval6,
+                        Seqno = st.seqno,
                     });
         }
 
