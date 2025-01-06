@@ -61,6 +61,16 @@ namespace PDMApp.Utils.FactorySpec
                     where pn.group_key == "stage"
                     join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
                     where pnse.group_key == "season"
+
+                    let mailTo = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "01"
+                                  select h.signflow_cn).FirstOrDefault()
+                    let mailCC = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "02"
+                                  select h.signflow_cn).FirstOrDefault()
+
                     select new SpecBasicDTO
                     {
                         SpecMId = shf.spec_m_id,
@@ -95,8 +105,8 @@ namespace PDMApp.Utils.FactorySpec
                         FactoryMoldNo1 = shf.mold_no1,
                         FactoryMoldNo2 = shf.mold_no2,
                         FactoryMoldNo3 = shf.mold_no3,
-                        MailTo = null,
-                        MailCC = null,
+                        MailTo = mailTo,
+                        MailCC = mailCC,
                         ColorNo = pi.color_no,
                         SizeConversionType = ph.kanzan_type,
                         SpecialConversion = ph.sp_kanzan,
