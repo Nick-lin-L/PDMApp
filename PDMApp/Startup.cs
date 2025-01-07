@@ -40,7 +40,7 @@ namespace PDMApp
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com") // 指定前端來源
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:8080", "http://*") // 指定前端來源
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials() // 如果有 Cookie 或憑證請求，這是必需的
@@ -65,7 +65,7 @@ namespace PDMApp
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
             //}
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             //app.UseStaticFiles();
             var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
 

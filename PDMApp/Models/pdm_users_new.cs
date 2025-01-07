@@ -9,6 +9,7 @@ namespace PDMApp.Models
     {
         public pdm_users_new()
         {
+            pdm_permission_logs = new HashSet<pdm_permission_logs>();
             pdm_permissionscreated_byNavigation = new HashSet<pdm_permissions>();
             pdm_permissionsupdated_byNavigation = new HashSet<pdm_permissions>();
             pdm_role_permissionscreated_byNavigation = new HashSet<pdm_role_permissions>();
@@ -35,6 +36,7 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
 
+        public virtual ICollection<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionscreated_byNavigation { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionsupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_role_permissions> pdm_role_permissionscreated_byNavigation { get; set; }
