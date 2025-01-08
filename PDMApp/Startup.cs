@@ -43,7 +43,8 @@ namespace PDMApp
                     builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // 指定前端來源
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials(); // 如果有 Cookie 或憑證請求，這是必需的
+                           .AllowCredentials() // 如果有 Cookie 或憑證請求，這是必需的
+                           .WithExposedHeaders("Message", "FileName"); // 如果又加了新Heads，這邊還要加上前端才能看到
                 });
             });
             //services.AddControllers();

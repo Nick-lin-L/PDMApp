@@ -26,6 +26,7 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_group_mgr> pdm_group_mgr { get; set; }
         public virtual DbSet<pdm_history_denamic_signflow> pdm_history_denamic_signflow { get; set; }
         public virtual DbSet<pdm_namevalue> pdm_namevalue { get; set; }
+        public virtual DbSet<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual DbSet<pdm_permissions> pdm_permissions { get; set; }
         public virtual DbSet<pdm_product_head> pdm_product_head { get; set; }
         public virtual DbSet<pdm_product_item> pdm_product_item { get; set; }
@@ -475,6 +476,36 @@ namespace PDMApp.Models
                 entity.Property(e => e.value_desc).HasMaxLength(20);
             });
 
+            modelBuilder.Entity<pdm_permission_logs>(entity =>
+            {
+                entity.HasKey(e => e.log_id)
+                    .HasName("pdm_permission_logs_pkey");
+
+                entity.ToTable("pdm_permission_logs", "asics_pdm");
+
+                entity.Property(e => e.log_id).HasDefaultValueSql("nextval('pdm_permission_logs_log_id_seq'::regclass)");
+
+                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.factory).HasMaxLength(50);
+
+                entity.Property(e => e.operation)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.HasOne(d => d.role)
+                    .WithMany(p => p.pdm_permission_logs)
+                    .HasForeignKey(d => d.role_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_permission_logs_role_id_fkey");
+
+                entity.HasOne(d => d.user)
+                    .WithMany(p => p.pdm_permission_logs)
+                    .HasForeignKey(d => d.user_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_permission_logs_user_id_fkey");
+            });
+
             modelBuilder.Entity<pdm_permissions>(entity =>
             {
                 entity.HasKey(e => e.permission_id)
@@ -821,6 +852,11 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.exportp).HasDefaultValueSql("true");
 
+                entity.Property(e => e.factory)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'ALL'::character varying");
+
                 entity.Property(e => e.importp).HasDefaultValueSql("true");
 
                 entity.Property(e => e.is_active).HasDefaultValueSql("true");
@@ -877,6 +913,11 @@ namespace PDMApp.Models
                 entity.Property(e => e.role_id).HasDefaultValueSql("nextval('pdm_roles_role_id_seq'::regclass)");
 
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.factory)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("'DEFAULT'::character varying");
 
                 entity.Property(e => e.role_name)
                     .IsRequired()
