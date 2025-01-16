@@ -25,7 +25,6 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
-        public string factory { get; set; }
 
         public virtual pdm_users_new created_byNavigation { get; set; }
         public virtual pdm_permissions permission { get; set; }

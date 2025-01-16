@@ -23,13 +23,15 @@ namespace PDMApp.Controllers
 
 
         // 1. 查詢角色列表
-        [HttpPost("roles/query")]
-        public IActionResult GetRoles([FromBody] RoleQueryRequest request)
+        [HttpPost("roles")]
+        public IActionResult GetRoles([FromBody] RoleRequest request)
         {
             try
             {
                 var roles = _pcms_Pdm_TestContext.pdm_roles
                     .Where(r => string.IsNullOrEmpty(request.Factory) || r.factory == request.Factory)
+                    .Where(r=> string.IsNullOrEmpty(request.RoleName) || r.role_name == request.RoleName)
+                    .Where(r => string.IsNullOrEmpty(request.Description) || r.description.Contains(request.Description))
                     .Select(r => new
                     {
                         r.role_id,
@@ -37,7 +39,7 @@ namespace PDMApp.Controllers
                         r.description,
                         r.factory
                     })
-                    .ToList();
+                    .ToList().OrderBy(r=>r.role_id);
 
                 return Ok(roles);
             }
@@ -48,15 +50,23 @@ namespace PDMApp.Controllers
         }
 
         // 2. 查詢角色權限
-        [HttpPost("permissions/query")]
+        [HttpPost("permissions")]
         public IActionResult GetPermissions([FromBody] PermissionQueryRequest request)
         {
             try
             {
+                int? roleId = null;
+                if (!string.IsNullOrWhiteSpace(request.RoleId) && int.TryParse(request.RoleId, out var parsedRoleId))
+                {
+                    roleId = parsedRoleId;
+                }
+
                 var permissions = _pcms_Pdm_TestContext.pdm_role_permissions
-                    .Where(rp => rp.role_id == request.RoleId)
+                    .Where(rp => !roleId.HasValue || rp.role_id == roleId)
                     .Select(rp => new
                     {
+                        rp.role_permission_id,
+                        rp.role_id,
                         rp.permission_id,
                         rp.is_active,
                         rp.createp,
@@ -67,7 +77,9 @@ namespace PDMApp.Controllers
                         rp.importp,
                         rp.factory
                     })
-                    .ToList();
+                    .ToList().OrderBy(rp => rp.role_permission_id)
+                    .ThenBy(rp => rp.role_id)
+                    .ThenBy(rp => rp.permission_id);
 
                 return Ok(new { RoleId = request.RoleId, Permissions = permissions });
             }
@@ -77,13 +89,17 @@ namespace PDMApp.Controllers
             }
         }
 
-
         // 3. 新增或更新角色資料
-        [HttpPost("roles")]
+        [HttpPost("roles/update")]
         public async Task<IActionResult> AddOrUpdateRole([FromBody] RoleRequest request)
         {
             try
             {
+                var user = _pcms_Pdm_TestContext.pdm_users_new.FirstOrDefault(u => u.user_id == request.UpdatedBy);
+                if (user == null)
+                {
+                    return BadRequest($"更新者 '{request.UpdatedBy}' 不存在於使用者表中。");
+                }
                 var role = _pcms_Pdm_TestContext.pdm_roles.FirstOrDefault(r => r.role_id == request.RoleId);
                 if (role == null)
                 {
@@ -92,7 +108,7 @@ namespace PDMApp.Controllers
                     {
                         role_name = request.RoleName,
                         description = request.Description,
-                        factory = request.Factory,
+                        factory = request.Factory ?? "default",
                         created_by = request.UpdatedBy,
                         created_at = DateTime.UtcNow,
                         updated_by = request.UpdatedBy,
@@ -103,9 +119,9 @@ namespace PDMApp.Controllers
                 else
                 {
                     // 更新角色
-                    role.role_name = request.RoleName;
-                    role.description = request.Description;
-                    role.factory = request.Factory;
+                    role.role_name = request.RoleName ?? role.role_name;
+                    role.description = request.Description ?? role.description;
+                    role.factory = request.Factory ?? role.factory;
                     role.updated_by = request.UpdatedBy;
                     role.updated_at = DateTime.UtcNow;
                 }
@@ -118,9 +134,51 @@ namespace PDMApp.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
+        // 4. 刪除角色資料
+        [HttpPost("roles/delete")]
+        public async Task<IActionResult> DeleteRole([FromBody] RoleDeleteRequest request)
+        {
+            try
+            {
+                // 驗證使用者
+                var user = _pcms_Pdm_TestContext.pdm_users_new.FirstOrDefault(u => u.user_id == request.DeletedBy);
+                if (user == null)
+                {
+                    return BadRequest($"刪除者 '{request.DeletedBy}' 不存在於使用者表中。");
+                }
 
-        // 4. 新增或更新權限設定
-        [HttpPost("permissions")]
+                // 查找角色
+                var role = _pcms_Pdm_TestContext.pdm_roles.FirstOrDefault(r => r.role_id == request.RoleId);
+                if (role == null)
+                {
+                    return NotFound($"角色 ID {request.RoleId} 不存在，無法刪除。");
+                }
+                _pcms_Pdm_TestContext.pdm_roles.Remove(role);
+
+                // 級聯刪除關聯的權限記錄
+                var rolePermissions = _pcms_Pdm_TestContext.pdm_role_permissions
+                    .Where(rp => rp.role_id == request.RoleId)
+                    .ToList();
+                _pcms_Pdm_TestContext.pdm_role_permissions.RemoveRange(rolePermissions);
+                /*
+                // 邏輯刪除
+                role.is_active = false;
+                role.updated_by = request.DeletedBy;
+                role.updated_at = DateTime.UtcNow;
+                */
+                // 保存更改
+                await _pcms_Pdm_TestContext.SaveChangesAsync();
+                return Ok($"角色 ID {request.RoleId} 已成功刪除。");
+                //return Ok($"角色 ID {request.RoleId} 已成功刪除（邏輯刪除）。");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
+
+        // 5. 新增或更新權限設定
+        [HttpPost("permissions/update")]
         public async Task<IActionResult> UpdatePermissions([FromBody] PermissionUpdateRequest request)
         {
             try
@@ -137,18 +195,21 @@ namespace PDMApp.Controllers
                 {
                     var existingPerm = _pcms_Pdm_TestContext.pdm_role_permissions
                         .FirstOrDefault(rp => rp.role_id == request.RoleId && rp.permission_id == perm.PermissionId);
-
+                    
                     if (existingPerm != null)
                     {
-                        // 更新權限設定
-                        existingPerm.is_active = perm.IsActive;
-                        existingPerm.createp = perm.CreateP;
-                        existingPerm.readp = perm.ReadP;
-                        existingPerm.updatep = perm.UpdateP;
-                        existingPerm.deletep = perm.DeleteP;
-                        existingPerm.exportp = perm.ExportP;
-                        existingPerm.importp = perm.ImportP;
-                        existingPerm.factory = perm.Factory;
+                        existingPerm.is_active = perm.IsActive ?? existingPerm.is_active;
+                        existingPerm.createp = perm.CreateP ?? existingPerm.createp;
+                        existingPerm.readp = perm.ReadP ?? existingPerm.readp;
+                        existingPerm.updatep = perm.UpdateP ?? existingPerm.updatep;
+                        existingPerm.deletep = perm.DeleteP ?? existingPerm.deletep;
+                        existingPerm.exportp = perm.ExportP ?? existingPerm.exportp;
+                        existingPerm.importp = perm.ImportP ?? existingPerm.importp;
+                        existingPerm.permission1 = perm.Permission1 ?? existingPerm.permission1;
+                        existingPerm.permission2 = perm.Permission2 ?? existingPerm.permission2;
+                        existingPerm.permission3 = perm.Permission3 ?? existingPerm.permission3;
+                        existingPerm.permission4 = perm.Permission4 ?? existingPerm.permission4;
+                        existingPerm.factory = perm.Factory ?? existingPerm.factory;
                         existingPerm.updated_by = request.UpdatedBy;
                         existingPerm.updated_at = DateTime.UtcNow;
                     }
@@ -159,19 +220,24 @@ namespace PDMApp.Controllers
                         {
                             role_id = request.RoleId,
                             permission_id = perm.PermissionId,
-                            is_active = perm.IsActive,
-                            createp = perm.CreateP,
-                            readp = perm.ReadP,
-                            updatep = perm.UpdateP,
-                            deletep = perm.DeleteP,
-                            exportp = perm.ExportP,
-                            importp = perm.ImportP,
-                            factory = perm.Factory,
+                            is_active = perm.IsActive ?? true, // 預設為 true
+                            createp = perm.CreateP ?? false,
+                            readp = perm.ReadP ?? false,
+                            updatep = perm.UpdateP ?? false,
+                            deletep = perm.DeleteP ?? false,
+                            exportp = perm.ExportP ?? false,
+                            importp = perm.ImportP ?? false,
+                            permission1 = perm.Permission1 ?? false,
+                            permission2 = perm.Permission2 ?? false,
+                            permission3 = perm.Permission3 ?? false,
+                            permission4 = perm.Permission4 ?? false,
+                            factory = perm.Factory ?? "DEFAULT",
                             created_by = request.UpdatedBy,
                             created_at = DateTime.UtcNow,
                             updated_by = request.UpdatedBy,
                             updated_at = DateTime.UtcNow
                         };
+
                         _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
                     }
 
@@ -182,7 +248,7 @@ namespace PDMApp.Controllers
                         role_id = request.RoleId,
                         operation = existingPerm != null ? "Update" : "Add",
                         permission_detail = $"{(existingPerm != null ? "Updated" : "Added")} permission {perm.PermissionId} for role {request.RoleId}.",
-                        factory = perm.Factory,
+                        factory = perm.Factory ?? "default",
                         created_at = DateTime.UtcNow
                     });
                 }
@@ -198,12 +264,14 @@ namespace PDMApp.Controllers
     }
     public class RoleQueryRequest
     {
+        public string RoleName { get; set; }
+        public string Description { get; set; }
         public string Factory { get; set; }
     }
 
     public class PermissionQueryRequest
     {
-        public int RoleId { get; set; }
+        public string? RoleId { get; set; }
     }
 
     public class RoleRequest
@@ -225,13 +293,25 @@ namespace PDMApp.Controllers
     public class PermissionRequest
     {
         public int PermissionId { get; set; }
-        public bool IsActive { get; set; }
-        public bool CreateP { get; set; }
-        public bool ReadP { get; set; }
-        public bool UpdateP { get; set; }
-        public bool DeleteP { get; set; }
-        public bool ExportP { get; set; }
-        public bool ImportP { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? CreateP { get; set; }
+        public bool? ReadP { get; set; }
+        public bool? UpdateP { get; set; }
+        public bool? DeleteP { get; set; }
+        public bool? ExportP { get; set; }
+        public bool? ImportP { get; set; }
+        public bool? Permission1 { get; set; }
+        public bool? Permission2 { get; set; }
+        public bool? Permission3 { get; set; }
+        public bool? Permission4 { get; set; }
         public string Factory { get; set; }
     }
+
+
+    public class RoleDeleteRequest
+    {
+        public int RoleId { get; set; }
+        public long DeletedBy { get; set; } // 刪除操作的執行者
+    }
+
 }

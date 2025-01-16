@@ -14,6 +14,7 @@ namespace PDMApp.Models
         public string operation { get; set; }
         public string permission_detail { get; set; }
         public DateTime? created_at { get; set; }
+        public string ip_address { get; set; }
 
         public virtual pdm_roles role { get; set; }
         public virtual pdm_users_new user { get; set; }
