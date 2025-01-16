@@ -9,6 +9,8 @@ namespace PDMApp.Models
     {
         public pdm_users_new()
         {
+            pdm_factorycreated_byNavigation = new HashSet<pdm_factory>();
+            pdm_factoryupdated_byNavigation = new HashSet<pdm_factory>();
             pdm_permission_logs = new HashSet<pdm_permission_logs>();
             pdm_permissionscreated_byNavigation = new HashSet<pdm_permissions>();
             pdm_permissionsupdated_byNavigation = new HashSet<pdm_permissions>();
@@ -16,6 +18,9 @@ namespace PDMApp.Models
             pdm_role_permissionsupdated_byNavigation = new HashSet<pdm_role_permissions>();
             pdm_rolescreated_byNavigation = new HashSet<pdm_roles>();
             pdm_rolesupdated_byNavigation = new HashSet<pdm_roles>();
+            pdm_user_factcreated_byNavigation = new HashSet<pdm_user_fact>();
+            pdm_user_factupdated_byNavigation = new HashSet<pdm_user_fact>();
+            pdm_user_factuser = new HashSet<pdm_user_fact>();
             pdm_user_rolescreated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesupdated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesuser = new HashSet<pdm_user_roles>();
@@ -36,6 +41,8 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
 
+        public virtual ICollection<pdm_factory> pdm_factorycreated_byNavigation { get; set; }
+        public virtual ICollection<pdm_factory> pdm_factoryupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionscreated_byNavigation { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionsupdated_byNavigation { get; set; }
@@ -43,6 +50,9 @@ namespace PDMApp.Models
         public virtual ICollection<pdm_role_permissions> pdm_role_permissionsupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_roles> pdm_rolescreated_byNavigation { get; set; }
         public virtual ICollection<pdm_roles> pdm_rolesupdated_byNavigation { get; set; }
+        public virtual ICollection<pdm_user_fact> pdm_user_factcreated_byNavigation { get; set; }
+        public virtual ICollection<pdm_user_fact> pdm_user_factupdated_byNavigation { get; set; }
+        public virtual ICollection<pdm_user_fact> pdm_user_factuser { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolescreated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesuser { get; set; }

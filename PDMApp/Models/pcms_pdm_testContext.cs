@@ -20,7 +20,10 @@ namespace PDMApp.Models
         public virtual DbSet<dms_article> dms_article { get; set; }
         public virtual DbSet<dms_ebom_color> dms_ebom_color { get; set; }
         public virtual DbSet<global_users> global_users { get; set; }
+        public virtual DbSet<pcg_spec_head> pcg_spec_head { get; set; }
+        public virtual DbSet<pcg_spec_item> pcg_spec_item { get; set; }
         public virtual DbSet<pdm_api_permission> pdm_api_permission { get; set; }
+        public virtual DbSet<pdm_factory> pdm_factory { get; set; }
         public virtual DbSet<pdm_factoryspec_ref_signflow> pdm_factoryspec_ref_signflow { get; set; }
         public virtual DbSet<pdm_group> pdm_group { get; set; }
         public virtual DbSet<pdm_group_mgr> pdm_group_mgr { get; set; }
@@ -40,6 +43,7 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_spec_moldcharge> pdm_spec_moldcharge { get; set; }
         public virtual DbSet<pdm_spec_standard> pdm_spec_standard { get; set; }
         public virtual DbSet<pdm_spec_standard_factory> pdm_spec_standard_factory { get; set; }
+        public virtual DbSet<pdm_user_fact> pdm_user_fact { get; set; }
         public virtual DbSet<pdm_user_group> pdm_user_group { get; set; }
         public virtual DbSet<pdm_user_roles> pdm_user_roles { get; set; }
         public virtual DbSet<pdm_users> pdm_users { get; set; }
@@ -55,6 +59,8 @@ namespace PDMApp.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
@@ -264,6 +270,215 @@ namespace PDMApp.Models
                 entity.Property(e => e.update_date).HasPrecision(0);
             });
 
+            modelBuilder.Entity<pcg_spec_head>(entity =>
+            {
+                entity.HasKey(e => e.spec_m_id)
+                    .HasName("pcg_spec_head_pkey");
+
+                entity.ToTable("pcg_spec_head", "asics_pdm");
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
+                entity.Property(e => e.cbd_update_date).HasColumnType("date");
+
+                entity.Property(e => e.cbd_update_user).HasMaxLength(30);
+
+                entity.Property(e => e.cbd_xml_id).HasMaxLength(36);
+
+                entity.Property(e => e.cbdlockmk).HasMaxLength(1);
+
+                entity.Property(e => e.check_out_area).HasMaxLength(40);
+
+                entity.Property(e => e.checkoutmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.checkoutuser).HasMaxLength(40);
+
+                entity.Property(e => e.create_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.create_mode).HasMaxLength(1);
+
+                entity.Property(e => e.create_user).HasMaxLength(30);
+
+                entity.Property(e => e.create_user_id).HasMaxLength(10);
+
+                entity.Property(e => e.create_user_nm).HasMaxLength(30);
+
+                entity.Property(e => e.currency).HasMaxLength(10);
+
+                entity.Property(e => e.devcolorno).HasMaxLength(10);
+
+                entity.Property(e => e.devno).HasMaxLength(30);
+
+                entity.Property(e => e.entrymode).HasMaxLength(6);
+
+                entity.Property(e => e.factory).HasMaxLength(10);
+
+                entity.Property(e => e.filename).HasMaxLength(256);
+
+                entity.Property(e => e.itemname1).HasMaxLength(50);
+
+                entity.Property(e => e.itemname10).HasMaxLength(50);
+
+                entity.Property(e => e.itemname2).HasMaxLength(50);
+
+                entity.Property(e => e.itemname3).HasMaxLength(50);
+
+                entity.Property(e => e.itemname4).HasMaxLength(50);
+
+                entity.Property(e => e.itemname5).HasMaxLength(50);
+
+                entity.Property(e => e.itemname6).HasMaxLength(50);
+
+                entity.Property(e => e.itemname7).HasMaxLength(50);
+
+                entity.Property(e => e.itemname8).HasMaxLength(50);
+
+                entity.Property(e => e.itemname9).HasMaxLength(50);
+
+                entity.Property(e => e.lan).HasMaxLength(5);
+
+                entity.Property(e => e.lasting).HasMaxLength(10);
+
+                entity.Property(e => e.loginuser).HasMaxLength(30);
+
+                entity.Property(e => e.materialratecurrency).HasMaxLength(10);
+
+                entity.Property(e => e.mcmoldratecurency).HasMaxLength(10);
+
+                entity.Property(e => e.mold_no1).HasMaxLength(80);
+
+                entity.Property(e => e.mold_no2).HasMaxLength(80);
+
+                entity.Property(e => e.mold_no3).HasMaxLength(80);
+
+                entity.Property(e => e.pgt_color_name).HasMaxLength(80);
+
+                entity.Property(e => e.product_d_id).HasMaxLength(36);
+
+                entity.Property(e => e.ref_bill_id).HasMaxLength(36);
+
+                entity.Property(e => e.ref_dev_no).HasMaxLength(80);
+
+                entity.Property(e => e.remarks_cbd).HasMaxLength(1024);
+
+                entity.Property(e => e.remarks_prohibit).HasMaxLength(1024);
+
+                entity.Property(e => e.remarks_spec).HasMaxLength(1024);
+
+                entity.Property(e => e.spec_pic_id).HasMaxLength(36);
+
+                entity.Property(e => e.spec_update_date).HasColumnType("date");
+
+                entity.Property(e => e.spec_update_user).HasMaxLength(30);
+
+                entity.Property(e => e.spec_xml_id).HasMaxLength(36);
+
+                entity.Property(e => e.speclockmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.stage).HasMaxLength(10);
+
+                entity.Property(e => e.stage_code).HasMaxLength(10);
+
+                entity.Property(e => e.translockmk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.update_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.update_user_id).HasMaxLength(10);
+
+                entity.Property(e => e.update_user_nm).HasMaxLength(30);
+
+                entity.Property(e => e.ver).HasDefaultValueSql("1");
+
+                entity.Property(e => e.vssver).HasDefaultValueSql("1");
+            });
+
+            modelBuilder.Entity<pcg_spec_item>(entity =>
+            {
+                entity.HasKey(e => e.spec_d_id)
+                    .HasName("pcg_spec_item_pkey");
+
+                entity.ToTable("pcg_spec_item", "asics_pdm");
+
+                entity.Property(e => e.spec_d_id).HasMaxLength(36);
+
+                entity.Property(e => e.act_part_no).HasMaxLength(4);
+
+                entity.Property(e => e.add_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.agent).HasMaxLength(200);
+
+                entity.Property(e => e.basecolor).HasMaxLength(200);
+
+                entity.Property(e => e.clr_comment).HasMaxLength(200);
+
+                entity.Property(e => e.detail).HasMaxLength(200);
+
+                entity.Property(e => e.effect).HasMaxLength(200);
+
+                entity.Property(e => e.hcha).HasMaxLength(30);
+
+                entity.Property(e => e.mat_comment).HasMaxLength(200);
+
+                entity.Property(e => e.mat_type).HasMaxLength(1);
+
+                entity.Property(e => e.material).HasMaxLength(200);
+
+                entity.Property(e => e.material_color).HasMaxLength(200);
+
+                entity.Property(e => e.material_group).HasMaxLength(5);
+
+                entity.Property(e => e.material_new).HasMaxLength(10);
+
+                entity.Property(e => e.memo).HasMaxLength(400);
+
+                entity.Property(e => e.mtrbase).HasMaxLength(200);
+
+                entity.Property(e => e.mtrtype).HasMaxLength(200);
+
+                entity.Property(e => e.part_mk).HasMaxLength(1);
+
+                entity.Property(e => e.parts).HasMaxLength(200);
+
+                entity.Property(e => e.parts_no).HasMaxLength(4);
+
+                entity.Property(e => e.process_mk).HasMaxLength(3);
+
+                entity.Property(e => e.processing).HasMaxLength(200);
+
+                entity.Property(e => e.quote_supplier).HasMaxLength(200);
+
+                entity.Property(e => e.recycle).HasMaxLength(200);
+
+                entity.Property(e => e.ref_bill_id).HasMaxLength(36);
+
+                entity.Property(e => e.releasepaper).HasMaxLength(200);
+
+                entity.Property(e => e.sec).HasMaxLength(10);
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
+                entity.Property(e => e.standard).HasMaxLength(20);
+
+                entity.Property(e => e.supplier).HasMaxLength(200);
+
+                entity.Property(e => e.translate_lock_mk).HasMaxLength(1);
+
+                entity.Property(e => e.translate_rule).HasMaxLength(1024);
+
+                entity.Property(e => e.update_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(d => d.spec_m)
+                    .WithMany(p => p.pcg_spec_item)
+                    .HasForeignKey(d => d.spec_m_id)
+                    .HasConstraintName("fk_pcg_spec_item");
+            });
+
             modelBuilder.Entity<pdm_api_permission>(entity =>
             {
                 entity.HasNoKey();
@@ -275,6 +490,102 @@ namespace PDMApp.Models
                 entity.Property(e => e.update_time).HasColumnType("timestamp with time zone");
 
                 entity.Property(e => e.update_user).HasColumnType("character varying");
+            });
+
+            modelBuilder.Entity<pdm_factory>(entity =>
+            {
+                entity.HasKey(e => e.factory_id)
+                    .HasName("pdm_factory_pkey");
+
+                entity.ToTable("pdm_factory", "asics_pdm");
+
+                entity.HasIndex(e => e.factory_no, "pdm_factory_factory_no_key")
+                    .IsUnique();
+
+                entity.Property(e => e.factory_id)
+                    .HasDefaultValueSql("nextval('pdm_factory_factory_id_seq'::regclass)")
+                    .HasComment("廠別 ID");
+
+                entity.Property(e => e.area_no)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("區域別");
+
+                entity.Property(e => e.bu)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("BU");
+
+                entity.Property(e => e.bu_no)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("事業單位別");
+
+                entity.Property(e => e.company_no)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("公司代號 (SAP)");
+
+                entity.Property(e => e.country)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("國別");
+
+                entity.Property(e => e.created_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("新建時間");
+
+                entity.Property(e => e.created_by).HasComment("新建人員");
+
+                entity.Property(e => e.custom_region_no)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("關區");
+
+                entity.Property(e => e.factory_abbr)
+                    .IsRequired()
+                    .HasMaxLength(60)
+                    .HasComment("廠別簡稱");
+
+                entity.Property(e => e.factory_abbr_en)
+                    .HasMaxLength(60)
+                    .HasComment("廠別英文簡稱");
+
+                entity.Property(e => e.factory_name)
+                    .IsRequired()
+                    .HasMaxLength(120)
+                    .HasComment("廠別名稱");
+
+                entity.Property(e => e.factory_name_en)
+                    .HasMaxLength(120)
+                    .HasComment("廠別英文名稱");
+
+                entity.Property(e => e.factory_no)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment("廠別代號");
+
+                entity.Property(e => e.pca_no)
+                    .HasMaxLength(10)
+                    .HasComment("利潤中心代號");
+
+                entity.Property(e => e.updated_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("異動時間");
+
+                entity.Property(e => e.updated_by).HasComment("異動人員");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_factorycreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_factory_created_by_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_factoryupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_factory_updated_by_fkey");
             });
 
             modelBuilder.Entity<pdm_factoryspec_ref_signflow>(entity =>
@@ -488,6 +799,8 @@ namespace PDMApp.Models
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.Property(e => e.factory).HasMaxLength(50);
+
+                entity.Property(e => e.ip_address).HasMaxLength(50);
 
                 entity.Property(e => e.operation)
                     .IsRequired()
@@ -852,11 +1165,6 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.exportp).HasDefaultValueSql("true");
 
-                entity.Property(e => e.factory)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .HasDefaultValueSql("'ALL'::character varying");
-
                 entity.Property(e => e.importp).HasDefaultValueSql("true");
 
                 entity.Property(e => e.is_active).HasDefaultValueSql("true");
@@ -914,10 +1222,7 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.Property(e => e.factory)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .HasDefaultValueSql("'DEFAULT'::character varying");
+                entity.Property(e => e.role_level).HasDefaultValueSql("3");
 
                 entity.Property(e => e.role_name)
                     .IsRequired()
@@ -1869,6 +2174,57 @@ namespace PDMApp.Models
                 entity.Property(e => e.the_size).HasMaxLength(10);
             });
 
+            modelBuilder.Entity<pdm_user_fact>(entity =>
+            {
+                entity.HasKey(e => new { e.user_id, e.factory_no })
+                    .HasName("pdm_user_fact_pk");
+
+                entity.ToTable("pdm_user_fact", "asics_pdm");
+
+                entity.Property(e => e.user_id).HasComment("使用者 ID，連結至 pdm_users_new 表");
+
+                entity.Property(e => e.factory_no)
+                    .HasMaxLength(50)
+                    .HasComment("廠別代號");
+
+                entity.Property(e => e.created_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("建立時間");
+
+                entity.Property(e => e.created_by).HasComment("建立者 ID，連結至 pdm_users_new 表");
+
+                entity.Property(e => e.is_active)
+                    .HasDefaultValueSql("true")
+                    .HasComment("啟用狀態");
+
+                entity.Property(e => e.updated_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("修改時間");
+
+                entity.Property(e => e.updated_by).HasComment("修改者 ID，連結至 pdm_users_new 表");
+
+                entity.Property(e => e.user_fact_id)
+                    .HasDefaultValueSql("nextval('pdm_user_fact_user_fact_id_seq'::regclass)")
+                    .HasComment("Table ID");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_user_factcreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_user_fact_created_by_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_user_factupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_user_fact_updated_by_fkey");
+
+                entity.HasOne(d => d.user)
+                    .WithMany(p => p.pdm_user_factuser)
+                    .HasForeignKey(d => d.user_id)
+                    .HasConstraintName("pdm_user_fact_user_id_fkey");
+            });
+
             modelBuilder.Entity<pdm_user_group>(entity =>
             {
                 entity.HasKey(e => new { e.user_id, e.group_id })
@@ -1994,41 +2350,75 @@ namespace PDMApp.Models
 
                 entity.ToTable("pdm_users_new", "asics_pdm");
 
+                entity.HasIndex(e => e.email, "idx_email");
+
                 entity.HasIndex(e => e.email, "pdm_users_new_email_key")
                     .IsUnique();
 
-                entity.Property(e => e.user_id).HasDefaultValueSql("nextval('pdm_users_new_user_id_seq'::regclass)");
+                entity.HasIndex(e => e.sso_acct, "unique_sso_acct")
+                    .IsUnique();
 
-                entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.user_id)
+                    .HasDefaultValueSql("nextval('pdm_users_new_user_id_seq'::regclass)")
+                    .HasComment("ID流水號");
+
+                entity.Property(e => e.created_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("新建時間");
+
+                entity.Property(e => e.created_by).HasComment("新建人員");
 
                 entity.Property(e => e.email)
                     .IsRequired()
-                    .HasMaxLength(100);
+                    .HasMaxLength(100)
+                    .HasComment("Email");
 
-                entity.Property(e => e.is_active).HasDefaultValueSql("true");
+                entity.Property(e => e.is_active)
+                    .HasDefaultValueSql("true")
+                    .HasComment("是否生效");
 
-                entity.Property(e => e.is_sso).HasDefaultValueSql("true");
+                entity.Property(e => e.is_sso)
+                    .HasDefaultValueSql("true")
+                    .HasComment("是否來自SSO建立帳號");
 
-                entity.Property(e => e.local_name).HasMaxLength(300);
+                entity.Property(e => e.last_login).HasComment("上次登入時間");
+
+                entity.Property(e => e.local_name)
+                    .HasMaxLength(300)
+                    .HasComment("當地名稱");
 
                 entity.Property(e => e.password_hash)
                     .IsRequired()
-                    .HasMaxLength(255);
+                    .HasMaxLength(255)
+                    .HasComment("預設密碼");
 
-                entity.Property(e => e.pccuid).HasPrecision(20);
+                entity.Property(e => e.pccuid)
+                    .HasPrecision(20)
+                    .HasComment("PCCUID");
 
-                entity.Property(e => e.sso_acct).HasMaxLength(50);
+                entity.Property(e => e.sso_acct)
+                    .HasMaxLength(50)
+                    .HasComment("SSO帳號");
 
-                entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.updated_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("異動時間");
 
-                entity.Property(e => e.username).HasMaxLength(300);
+                entity.Property(e => e.updated_by).HasComment("異動人員");
+
+                entity.Property(e => e.username)
+                    .HasMaxLength(300)
+                    .HasComment("User名稱");
             });
 
             modelBuilder.Entity<plm_cbd_head>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.data_m_id)
+                    .HasName("plm_cbd_head_pk");
 
                 entity.ToTable("plm_cbd_head", "asics_pdm");
+
+                entity.Property(e => e.data_m_id).HasMaxLength(36);
 
                 entity.Property(e => e.bom).HasMaxLength(80);
 
@@ -2075,10 +2465,6 @@ namespace PDMApp.Models
                 entity.Property(e => e.create_user).HasMaxLength(30);
 
                 entity.Property(e => e.currency).HasMaxLength(10);
-
-                entity.Property(e => e.data_m_id)
-                    .IsRequired()
-                    .HasMaxLength(36);
 
                 entity.Property(e => e.excommisiion)
                     .HasPrecision(10, 2)
@@ -2167,9 +2553,12 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<plm_cbd_item>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.data_d_id)
+                    .HasName("plm_cbd_item_pk");
 
                 entity.ToTable("plm_cbd_item", "asics_pdm");
+
+                entity.Property(e => e.data_d_id).HasMaxLength(36);
 
                 entity.Property(e => e.act_no).HasMaxLength(5);
 
@@ -2196,10 +2585,6 @@ namespace PDMApp.Models
                 entity.Property(e => e.cost)
                     .HasPrecision(11, 3)
                     .HasDefaultValueSql("0");
-
-                entity.Property(e => e.data_d_id)
-                    .IsRequired()
-                    .HasMaxLength(36);
 
                 entity.Property(e => e.data_id)
                     .IsRequired()
@@ -2284,9 +2669,12 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<plm_cbd_moldcharge>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.data_d_id)
+                    .HasName("plm_cbd_moldcharge_pk");
 
                 entity.ToTable("plm_cbd_moldcharge", "asics_pdm");
+
+                entity.Property(e => e.data_d_id).HasMaxLength(36);
 
                 entity.Property(e => e.amortization)
                     .HasPrecision(10, 2)
@@ -2297,10 +2685,6 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("0");
 
                 entity.Property(e => e.cost).HasPrecision(11, 3);
-
-                entity.Property(e => e.data_d_id)
-                    .IsRequired()
-                    .HasMaxLength(36);
 
                 entity.Property(e => e.data_m_id).HasMaxLength(36);
 
