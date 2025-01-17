@@ -3,14 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Dtos.FactorySpec;
 using PDMApp.Models;
 using PDMApp.Parameters.FactorySpec;
-using PDMApp.Parameters.Spec;
-using PDMApp.Utils;
-using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Utils.FactorySpec;
+using System;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -28,23 +26,9 @@ namespace PDMApp.Controllers.SPEC
         }
 
 
-        // GET: api/<GetSpec5SheetRequestController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<GetSpec5SheetRequestController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
         // POST api/<GetSpec5SheetRequestController>
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] FactorySpec5SheetsSearchParameter value)
+        public async Task<ActionResult<Utils.APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] FactorySpec5SheetsSearchParameter value)
         {
             try
             {
@@ -80,7 +64,7 @@ namespace PDMApp.Controllers.SPEC
                     { "StandardData", resultData.StandardData }
                 };
 
-                return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
+                return Utils.APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
             }
             catch (DbException ex)
             {
@@ -94,18 +78,58 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
-
-
-        // PUT api/<GetSpec5SheetRequestController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // POST: api/v1/FactorySpec5Sheets/Export
+        [HttpPost("Export")]
+        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] FactorySpec5SheetsSearchParameter value)
         {
-        }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-        // DELETE api/<GetSpec5SheetRequestController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            try
+            {
+                // ItemSheet 查詢
+                var itemSheetData = Utils.FactorySpec.FactorySpecQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
+                    .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
+                    .ToList(); // 執行查詢，轉為 List
+
+                // standardSheet 查詢
+                var standardSheetData = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecStandardSheetResponse(_pcms_Pdm_TestContext)
+                    .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
+                    .ToList(); // 執行查詢，轉為 List
+
+                string devNo = itemSheetData.FirstOrDefault()?.DevNo;
+                string itemNo = itemSheetData.FirstOrDefault()?.ItemNo;
+                string colorNo = itemSheetData.FirstOrDefault()?.ColorNo;
+
+                // 生成檔案名稱
+                string fileName = $"PCC.{devNo}({itemNo})_{colorNo}_量產中文.xlsx";
+
+                // 使用 HttpUtility.UrlEncode 進行 UTF-8 編碼
+                string encodedFileName = System.Web.HttpUtility.UrlEncode(fileName, System.Text.Encoding.UTF8);
+
+                // 使用 FactoryExportHelper 匯出資料
+                var fileContent = FactoryExportHelper.ExportToExcel(itemSheetData, standardSheetData);
+
+                string base64File = Convert.ToBase64String(fileContent); // 轉 Base64
+
+                var response = new Dtos.ExportFileResponseDto
+                {
+                    FileName = fileName,
+                    FileContent = base64File
+                };
+
+                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+            }
+            catch (DbException ex)
+            {
+                return new ObjectResult(Utils.APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"匯出過程中發生錯誤: {ex.Message}",
+                    data: null
+                ));
+            }
+
         }
+       
     }
 }
