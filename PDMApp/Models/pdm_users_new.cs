@@ -18,9 +18,6 @@ namespace PDMApp.Models
             pdm_role_permissionsupdated_byNavigation = new HashSet<pdm_role_permissions>();
             pdm_rolescreated_byNavigation = new HashSet<pdm_roles>();
             pdm_rolesupdated_byNavigation = new HashSet<pdm_roles>();
-            pdm_user_factcreated_byNavigation = new HashSet<pdm_user_fact>();
-            pdm_user_factupdated_byNavigation = new HashSet<pdm_user_fact>();
-            pdm_user_factuser = new HashSet<pdm_user_fact>();
             pdm_user_rolescreated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesupdated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesuser = new HashSet<pdm_user_roles>();
@@ -50,9 +47,6 @@ namespace PDMApp.Models
         public virtual ICollection<pdm_role_permissions> pdm_role_permissionsupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_roles> pdm_rolescreated_byNavigation { get; set; }
         public virtual ICollection<pdm_roles> pdm_rolesupdated_byNavigation { get; set; }
-        public virtual ICollection<pdm_user_fact> pdm_user_factcreated_byNavigation { get; set; }
-        public virtual ICollection<pdm_user_fact> pdm_user_factupdated_byNavigation { get; set; }
-        public virtual ICollection<pdm_user_fact> pdm_user_factuser { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolescreated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesuser { get; set; }

@@ -111,5 +111,6 @@ namespace PDMApp.Models
         public string lp03_yearly_forecast { get; set; }
         public string assigned_agents { get; set; }
         public string global_rid { get; set; }
+        public string brand_no { get; set; }
     }
 }
