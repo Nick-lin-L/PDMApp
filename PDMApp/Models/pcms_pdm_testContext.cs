@@ -59,8 +59,6 @@ namespace PDMApp.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
@@ -499,32 +497,12 @@ namespace PDMApp.Models
 
                 entity.ToTable("pdm_factory", "asics_pdm");
 
-                entity.HasIndex(e => e.dev_center, "pdm_factory_dev_center_key")
+                entity.HasIndex(e => e.dev_factory_no, "pdm_factory_dev_center_key")
                     .IsUnique();
 
                 entity.Property(e => e.factory_id)
                     .HasDefaultValueSql("nextval('pdm_factory_factory_id_seq'::regclass)")
                     .HasComment("廠別 ID");
-
-                entity.Property(e => e.area_no)
-                    .HasMaxLength(20)
-                    .HasComment("區域別");
-
-                entity.Property(e => e.bu)
-                    .HasMaxLength(10)
-                    .HasComment("BU");
-
-                entity.Property(e => e.bu_no)
-                    .HasMaxLength(20)
-                    .HasComment("事業單位別");
-
-                entity.Property(e => e.company_no)
-                    .HasMaxLength(10)
-                    .HasComment("公司代號 (SAP)");
-
-                entity.Property(e => e.country)
-                    .HasMaxLength(10)
-                    .HasComment("國別");
 
                 entity.Property(e => e.created_at)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -532,43 +510,15 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.created_by).HasComment("新建人員");
 
-                entity.Property(e => e.custom_region_no)
-                    .HasMaxLength(10)
-                    .HasComment("關區");
-
-                entity.Property(e => e.dev_center)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .HasComment("開發中心代號");
-
-                entity.Property(e => e.dev_center_name)
+                entity.Property(e => e.dev_factory_name)
                     .IsRequired()
                     .HasMaxLength(120)
                     .HasComment("開發中心名稱");
 
-                entity.Property(e => e.factory_abbr)
-                    .HasMaxLength(60)
-                    .HasComment("廠別簡稱");
-
-                entity.Property(e => e.factory_abbr_en)
-                    .HasMaxLength(60)
-                    .HasComment("廠別英文簡稱");
-
-                entity.Property(e => e.factory_name)
-                    .HasMaxLength(120)
-                    .HasComment("廠別名稱");
-
-                entity.Property(e => e.factory_name_en)
-                    .HasMaxLength(120)
-                    .HasComment("廠別英文名稱");
-
-                entity.Property(e => e.factory_no)
+                entity.Property(e => e.dev_factory_no)
+                    .IsRequired()
                     .HasMaxLength(50)
-                    .HasComment("廠別代號");
-
-                entity.Property(e => e.pca_no)
-                    .HasMaxLength(10)
-                    .HasComment("利潤中心代號");
+                    .HasComment("開發中心代號");
 
                 entity.Property(e => e.updated_at)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")

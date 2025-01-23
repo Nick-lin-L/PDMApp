@@ -23,8 +23,8 @@ namespace PDMApp.Controllers
 
 
         // 1. 查詢角色列表
-        [HttpPost("roles/query")]
-        public IActionResult GetRoles([FromBody] RoleQueryRequest request)
+        [HttpPost("roles")]
+        public IActionResult Roles([FromBody] RoleQueryRequest request)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace PDMApp.Controllers
         }
 
         // 2. 查詢角色權限
-        [HttpPost("permissions/query")]
+        [HttpPost("permissions")]
         public IActionResult GetPermissions([FromBody] PermissionQueryRequest request)
         {
             try
@@ -79,7 +79,7 @@ namespace PDMApp.Controllers
 
 
         // 3. 新增或更新角色資料
-        [HttpPost("roles")]
+        [HttpPost("roles/update")]
         public async Task<IActionResult> AddOrUpdateRole([FromBody] RoleRequest request)
         {
             try
@@ -120,7 +120,7 @@ namespace PDMApp.Controllers
         }
 
         // 4. 新增或更新權限設定
-        [HttpPost("permissions")]
+        [HttpPost("permissions/update")]
         public async Task<IActionResult> UpdatePermissions([FromBody] PermissionUpdateRequest request)
         {
             try
