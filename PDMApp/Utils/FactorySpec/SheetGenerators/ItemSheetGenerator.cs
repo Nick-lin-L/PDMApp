@@ -51,12 +51,8 @@ namespace Utils.FactorySpec.SheetGenerators
 
             int dataCount = data.Count();// 計算筆數
 
-            // 表頭占用的行數
-            int headerRowCount = 8;
-            int effectivePageLimit = pageLimit - headerRowCount;  // 每頁實際可用的行數
-
             // 計算總頁數
-            int totalPages = (int)Math.Ceiling((double)dataCount / effectivePageLimit);
+            int totalPages = (int)Math.Ceiling((double)dataCount / pageLimit);
 
             // 用於支持多頁格式的頁碼
             int currentPage = (startRow / pageLimit) + 1; // 計算當前頁數
