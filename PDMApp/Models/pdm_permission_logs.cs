@@ -10,7 +10,7 @@ namespace PDMApp.Models
         public int log_id { get; set; }
         public long? user_id { get; set; }
         public int? role_id { get; set; }
-        public string dev_center { get; set; }
+        public string dev_factory_no { get; set; }
         public string factory_no { get; set; }
         public string operation { get; set; }
         public string permission_detail { get; set; }
@@ -18,6 +18,6 @@ namespace PDMApp.Models
         public string ip_address { get; set; }
 
         public virtual pdm_roles role { get; set; }
-        public virtual pdm_users_new user { get; set; }
+        public virtual pdm_users user { get; set; }
     }
 }

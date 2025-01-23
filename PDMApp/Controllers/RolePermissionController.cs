@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
+using PDMApp.Parameters.Basic;
+using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -24,26 +28,49 @@ namespace PDMApp.Controllers
 
         // 1. 查詢角色列表
         [HttpPost("roles")]
-        public IActionResult Roles([FromBody] RoleQueryRequest request)
+        //public IActionResult Roles([FromBody] RoleQueryRequest request)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_rolesDto>>>> Roles([FromBody] RolesParameter value)
         {
             try
             {
-                var roles = _pcms_Pdm_TestContext.pdm_roles
-                    .Where(r => string.IsNullOrEmpty(request.Dev_center) || r.dev_center == request.Dev_center)
-                    .Select(r => new
-                    {
-                        r.role_id,
-                        r.role_name,
-                        r.description,
-                        r.dev_center
-                    })
-                    .ToList();
+                var query = QueryHelper.QueryRoles(_pcms_Pdm_TestContext);
+                var filters = new List<Expression<Func<pdm_rolesDto, bool>>>();
 
-                return Ok(roles);
+                if (!string.IsNullOrWhiteSpace(value.RoleName))
+                    filters.Add(proles => proles.RoleName.Contains(value.RoleName));
+                if (!string.IsNullOrWhiteSpace(value.Description))
+                    filters.Add(proles => proles.Description.Contains(value.Description));
+                if (!string.IsNullOrWhiteSpace(value.DevFactoryNo))
+                    filters.Add(proles => proles.DevFactoryNo.Contains(value.DevFactoryNo));
+
+                if (!string.IsNullOrWhiteSpace(value.IsActive?.ToString()))
+                {
+                    bool isActive;
+                    if (bool.TryParse(value.IsActive.ToString(), out isActive))
+                    {
+                        filters.Add(proles => proles.IsActive == isActive);
+                    }
+                }
+
+                foreach (var filter in filters)
+                {
+                    query = query.Where(filter);
+                }
+
+                // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
+                //query = query.OrderBy(proles => proles.RoleId);
+                var pagedResult = await query.Distinct().OrderBy(proles => proles.RoleId)
+                                             .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error: {ex.Message}");
+                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"匯出過程中發生錯誤: {ex.Message}",
+                    data: null
+                ));
             }
         }
 
@@ -65,7 +92,7 @@ namespace PDMApp.Controllers
                         rp.deletep,
                         rp.exportp,
                         rp.importp,
-                        rp.dev_center
+                        rp.dev_factory_no
                     })
                     .ToList();
 
@@ -92,7 +119,7 @@ namespace PDMApp.Controllers
                     {
                         role_name = request.RoleName,
                         description = request.Description,
-                        dev_center = request.Dev_center,
+                        dev_factory_no = request.DevFactoryNo,
                         created_by = request.UpdatedBy,
                         created_at = DateTime.UtcNow,
                         updated_by = request.UpdatedBy,
@@ -105,7 +132,7 @@ namespace PDMApp.Controllers
                     // 更新角色
                     role.role_name = request.RoleName;
                     role.description = request.Description;
-                    role.dev_center = request.Dev_center;
+                    role.dev_factory_no = request.DevFactoryNo;
                     role.updated_by = request.UpdatedBy;
                     role.updated_at = DateTime.UtcNow;
                 }
@@ -148,7 +175,7 @@ namespace PDMApp.Controllers
                         existingPerm.deletep = perm.DeleteP;
                         existingPerm.exportp = perm.ExportP;
                         existingPerm.importp = perm.ImportP;
-                        existingPerm.dev_center = perm.Dev_center;
+                        existingPerm.dev_factory_no = perm.DevFactoryNo;
                         existingPerm.updated_by = request.UpdatedBy;
                         existingPerm.updated_at = DateTime.UtcNow;
                     }
@@ -166,7 +193,7 @@ namespace PDMApp.Controllers
                             deletep = perm.DeleteP,
                             exportp = perm.ExportP,
                             importp = perm.ImportP,
-                            dev_center = perm.Dev_center,
+                            dev_factory_no = perm.DevFactoryNo,
                             created_by = request.UpdatedBy,
                             created_at = DateTime.UtcNow,
                             updated_by = request.UpdatedBy,
@@ -175,7 +202,7 @@ namespace PDMApp.Controllers
                         _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
                     }
 
-                    // 記錄操作日誌
+                    /*/ 記錄操作日誌
                     _pcms_Pdm_TestContext.pdm_permission_logs.Add(new pdm_permission_logs
                     {
                         user_id = request.UpdatedBy,
@@ -184,7 +211,7 @@ namespace PDMApp.Controllers
                         permission_detail = $"{(existingPerm != null ? "Updated" : "Added")} permission {perm.PermissionId} for role {request.RoleId}.",
                         dev_center = perm.Dev_center,
                         created_at = DateTime.UtcNow
-                    });
+                    });*/
                 }
 
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
@@ -198,7 +225,11 @@ namespace PDMApp.Controllers
     }
     public class RoleQueryRequest
     {
-        public string Dev_center { get; set; }
+        public int? RoleId { get; set; }
+        public string RoleName { get; set; }
+        public string Description { get; set; }
+        public string DevFactoryNo { get; set; }
+
     }
 
     public class PermissionQueryRequest
@@ -211,7 +242,7 @@ namespace PDMApp.Controllers
         public int? RoleId { get; set; } // 若為 null 表示新增
         public string RoleName { get; set; }
         public string Description { get; set; }
-        public string Dev_center { get; set; }
+        public string DevFactoryNo { get; set; }
         public long UpdatedBy { get; set; }
     }
 
@@ -232,6 +263,6 @@ namespace PDMApp.Controllers
         public bool DeleteP { get; set; }
         public bool ExportP { get; set; }
         public bool ImportP { get; set; }
-        public string Dev_center { get; set; }
+        public string DevFactoryNo { get; set; }
     }
 }

@@ -43,7 +43,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\FactorySPEC\" />
-    <Folder Include="Dtos\BasicProgram\" />
     <Folder Include="NewFolder\" />
     <Folder Include="Utils\Cbd\" />
     <Folder Include="Utils\FactorySpec\" />

@@ -10,7 +10,7 @@ namespace PDMApp.Models
         public int role_permission_id { get; set; }
         public int? role_id { get; set; }
         public int? permission_id { get; set; }
-        public string dev_center { get; set; }
+        public string dev_factory_no { get; set; }
         public bool? is_active { get; set; }
         public bool? createp { get; set; }
         public bool? readp { get; set; }
@@ -27,9 +27,9 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
 
-        public virtual pdm_users_new created_byNavigation { get; set; }
+        public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_permissions permission { get; set; }
         public virtual pdm_roles role { get; set; }
-        public virtual pdm_users_new updated_byNavigation { get; set; }
+        public virtual pdm_users updated_byNavigation { get; set; }
     }
 }

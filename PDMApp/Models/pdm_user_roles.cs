@@ -15,9 +15,9 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
 
-        public virtual pdm_users_new created_byNavigation { get; set; }
+        public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_roles role { get; set; }
-        public virtual pdm_users_new updated_byNavigation { get; set; }
-        public virtual pdm_users_new user { get; set; }
+        public virtual pdm_users updated_byNavigation { get; set; }
+        public virtual pdm_users user { get; set; }
     }
 }
