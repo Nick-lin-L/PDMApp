@@ -8,8 +8,8 @@ namespace PDMApp.Models
     public partial class pdm_factory
     {
         public int factory_id { get; set; }
-        public string dev_center { get; set; }
-        public string dev_center_name { get; set; }
+        public string dev_factory_no { get; set; }
+        public string dev_factory_name { get; set; }
         public string factory_no { get; set; }
         public string factory_name { get; set; }
         public string factory_name_en { get; set; }
@@ -27,7 +27,7 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
 
-        public virtual pdm_users_new created_byNavigation { get; set; }
-        public virtual pdm_users_new updated_byNavigation { get; set; }
+        public virtual pdm_users created_byNavigation { get; set; }
+        public virtual pdm_users updated_byNavigation { get; set; }
     }
 }
