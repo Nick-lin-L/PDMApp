@@ -49,6 +49,8 @@ namespace PDMApp.Models
         public virtual DbSet<plm_cbd_moldcharge> plm_cbd_moldcharge { get; set; }
         public virtual DbSet<plm_product_head> plm_product_head { get; set; }
         public virtual DbSet<plm_product_item> plm_product_item { get; set; }
+        public virtual DbSet<plm_spec_head> plm_spec_head { get; set; }
+        public virtual DbSet<plm_spec_item> plm_spec_item { get; set; }
         public virtual DbSet<sys_menu> sys_menu { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -303,7 +305,7 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.create_user).HasMaxLength(30);
 
-                entity.Property(e => e.create_user_id).HasMaxLength(10);
+                entity.Property(e => e.create_user_id).HasMaxLength(14);
 
                 entity.Property(e => e.create_user_nm).HasMaxLength(30);
 
@@ -2480,10 +2482,12 @@ namespace PDMApp.Models
                 entity.Property(e => e.item).HasMaxLength(200);
 
                 entity.Property(e => e.price)
-                    .HasPrecision(8, 2)
+                    .HasPrecision(8)
                     .HasDefaultValueSql("0");
 
-                entity.Property(e => e.qty).HasDefaultValueSql("0");
+                entity.Property(e => e.qty)
+                    .HasPrecision(10)
+                    .HasDefaultValueSql("0");
 
                 entity.Property(e => e.rate).HasPrecision(10, 2);
 
@@ -2780,6 +2784,106 @@ namespace PDMApp.Models
                 entity.Property(e => e.sub_color).HasMaxLength(30);
 
                 entity.Property(e => e.update_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
+            modelBuilder.Entity<plm_spec_head>(entity =>
+            {
+                entity.HasKey(e => new { e.product_d_id, e.spec_m_id })
+                    .HasName("plm_spec_head_pkey");
+
+                entity.ToTable("plm_spec_head", "asics_pdm");
+
+                entity.Property(e => e.product_d_id).HasMaxLength(32);
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(32);
+
+                entity.Property(e => e.colorcode).HasMaxLength(10);
+
+                entity.Property(e => e.colorway).HasMaxLength(100);
+
+                entity.Property(e => e.create_date).HasColumnType("date");
+
+                entity.Property(e => e.create_user).HasMaxLength(30);
+
+                entity.Property(e => e.development_color).HasMaxLength(5);
+
+                entity.Property(e => e.development_no).HasMaxLength(40);
+
+                entity.Property(e => e.stage).HasMaxLength(10);
+
+                entity.Property(e => e.stage_code).HasMaxLength(5);
+
+                entity.Property(e => e.update_date).HasColumnType("date");
+            });
+
+            modelBuilder.Entity<plm_spec_item>(entity =>
+            {
+                entity.HasKey(e => new { e.spec_m_id, e.spec_d_id })
+                    .HasName("plm_spec_item_pkey");
+
+                entity.ToTable("plm_spec_item", "asics_pdm");
+
+                entity.Property(e => e.spec_m_id).HasMaxLength(32);
+
+                entity.Property(e => e.spec_d_id).HasMaxLength(32);
+
+                entity.Property(e => e.act_part_no).HasMaxLength(3);
+
+                entity.Property(e => e.act_parts).HasMaxLength(200);
+
+                entity.Property(e => e.add_date).HasColumnType("date");
+
+                entity.Property(e => e.agent).HasMaxLength(200);
+
+                entity.Property(e => e.basecolor).HasMaxLength(200);
+
+                entity.Property(e => e.clr_comment).HasMaxLength(200);
+
+                entity.Property(e => e.detail).HasMaxLength(200);
+
+                entity.Property(e => e.effect).HasMaxLength(200);
+
+                entity.Property(e => e.hcha).HasMaxLength(30);
+
+                entity.Property(e => e.mat_comment).HasMaxLength(200);
+
+                entity.Property(e => e.material).HasMaxLength(200);
+
+                entity.Property(e => e.material_color).HasMaxLength(200);
+
+                entity.Property(e => e.material_group).HasMaxLength(5);
+
+                entity.Property(e => e.material_new).HasMaxLength(10);
+
+                entity.Property(e => e.mtrbase).HasMaxLength(200);
+
+                entity.Property(e => e.mtrtype).HasMaxLength(200);
+
+                entity.Property(e => e.part_mk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.parts).HasMaxLength(200);
+
+                entity.Property(e => e.parts_no).HasMaxLength(3);
+
+                entity.Property(e => e.process_mk).HasMaxLength(3);
+
+                entity.Property(e => e.processing).HasMaxLength(200);
+
+                entity.Property(e => e.quote_supplier).HasMaxLength(200);
+
+                entity.Property(e => e.recycle).HasMaxLength(200);
+
+                entity.Property(e => e.releasepaper).HasMaxLength(200);
+
+                entity.Property(e => e.sec).HasMaxLength(15);
+
+                entity.Property(e => e.standard).HasMaxLength(50);
+
+                entity.Property(e => e.supplier).HasMaxLength(200);
+
+                entity.Property(e => e.update_date).HasColumnType("date");
             });
 
             modelBuilder.Entity<sys_menu>(entity =>

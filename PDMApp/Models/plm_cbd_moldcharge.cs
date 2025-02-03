@@ -12,7 +12,7 @@ namespace PDMApp.Models
         public string id { get; set; }
         public string item { get; set; }
         public decimal? price { get; set; }
-        public int? qty { get; set; }
+        public decimal? qty { get; set; }
         public decimal? amortization { get; set; }
         public decimal? charge { get; set; }
         public decimal? years { get; set; }
