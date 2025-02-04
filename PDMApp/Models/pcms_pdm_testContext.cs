@@ -283,16 +283,6 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.spec_m_id).HasMaxLength(36);
 
-                entity.Property(e => e.cbd_update_date).HasColumnType("date");
-
-                entity.Property(e => e.cbd_update_user).HasMaxLength(30);
-
-                entity.Property(e => e.cbd_xml_id).HasMaxLength(36);
-
-                entity.Property(e => e.cbdlockmk).HasMaxLength(1);
-
-                entity.Property(e => e.check_out_area).HasMaxLength(40);
-
                 entity.Property(e => e.checkoutmk)
                     .HasMaxLength(1)
                     .HasDefaultValueSql("'N'::character varying");
@@ -303,53 +293,13 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.create_mode).HasMaxLength(1);
 
-                entity.Property(e => e.create_user).HasMaxLength(30);
-
                 entity.Property(e => e.create_user_id).HasMaxLength(14);
 
                 entity.Property(e => e.create_user_nm).HasMaxLength(30);
 
-                entity.Property(e => e.currency).HasMaxLength(10);
-
-                entity.Property(e => e.devcolorno).HasMaxLength(10);
-
-                entity.Property(e => e.devno).HasMaxLength(30);
-
-                entity.Property(e => e.entrymode).HasMaxLength(6);
-
-                entity.Property(e => e.factory).HasMaxLength(10);
-
                 entity.Property(e => e.filename).HasMaxLength(256);
 
-                entity.Property(e => e.itemname1).HasMaxLength(50);
-
-                entity.Property(e => e.itemname10).HasMaxLength(50);
-
-                entity.Property(e => e.itemname2).HasMaxLength(50);
-
-                entity.Property(e => e.itemname3).HasMaxLength(50);
-
-                entity.Property(e => e.itemname4).HasMaxLength(50);
-
-                entity.Property(e => e.itemname5).HasMaxLength(50);
-
-                entity.Property(e => e.itemname6).HasMaxLength(50);
-
-                entity.Property(e => e.itemname7).HasMaxLength(50);
-
-                entity.Property(e => e.itemname8).HasMaxLength(50);
-
-                entity.Property(e => e.itemname9).HasMaxLength(50);
-
                 entity.Property(e => e.lan).HasMaxLength(5);
-
-                entity.Property(e => e.lasting).HasMaxLength(10);
-
-                entity.Property(e => e.loginuser).HasMaxLength(30);
-
-                entity.Property(e => e.materialratecurrency).HasMaxLength(10);
-
-                entity.Property(e => e.mcmoldratecurency).HasMaxLength(10);
 
                 entity.Property(e => e.mold_no1).HasMaxLength(80);
 
@@ -365,25 +315,15 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.ref_dev_no).HasMaxLength(80);
 
-                entity.Property(e => e.remarks_cbd).HasMaxLength(1024);
-
                 entity.Property(e => e.remarks_prohibit).HasMaxLength(1024);
 
                 entity.Property(e => e.remarks_spec).HasMaxLength(1024);
 
                 entity.Property(e => e.spec_pic_id).HasMaxLength(36);
 
-                entity.Property(e => e.spec_update_date).HasColumnType("date");
-
-                entity.Property(e => e.spec_update_user).HasMaxLength(30);
-
-                entity.Property(e => e.spec_xml_id).HasMaxLength(36);
-
                 entity.Property(e => e.speclockmk)
                     .HasMaxLength(1)
                     .HasDefaultValueSql("'N'::character varying");
-
-                entity.Property(e => e.stage).HasMaxLength(10);
 
                 entity.Property(e => e.stage_code).HasMaxLength(10);
 
@@ -1130,6 +1070,9 @@ namespace PDMApp.Models
                 entity.ToTable("pdm_roles", "asics_pdm");
 
                 entity.HasIndex(e => e.role_name, "pdm_roles_role_name_key")
+                    .IsUnique();
+
+                entity.HasIndex(e => e.role_name, "unique_role_name")
                     .IsUnique();
 
                 entity.Property(e => e.role_id).HasDefaultValueSql("nextval('pdm_roles_role_id_seq'::regclass)");
