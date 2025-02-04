@@ -135,6 +135,14 @@ namespace PDMApp.Controllers
                     }
 
                     pdm_roles role;
+                    // 1. **檢查角色名稱與描述是否衝突**
+                    bool isDuplicate = await _pcms_Pdm_TestContext.pdm_roles
+                        .AnyAsync(r => r.role_name == request.RoleName && r.description == request.Description
+                                       && r.role_id.ToString() != request.RoleId); // 排除自己（更新時）
+                    if (isDuplicate)
+                    {
+                        return Conflict("Role with the same name and description already exists.");
+                    }
 
                     if (string.IsNullOrWhiteSpace(request.RoleId))
                     {
@@ -288,95 +296,18 @@ namespace PDMApp.Controllers
             }
         }
 
-            /*
-                    // 4. 新增或更新權限設定
-                    [HttpPost("permissions/update")]
-                    public async Task<IActionResult> UpdatePermissions([FromBody] PermissionUpdateRequest request)
-                    {
-                        try
-                        {
-                            // 確認角色存在
-                            var role = await _pcms_Pdm_TestContext.pdm_roles.FindAsync(request.RoleId);
-                            if (role == null)
-                            {
-                                return NotFound($"Role ID {request.RoleId} 不存在");
-                            }
-
-                            // 更新或新增權限設定
-                            foreach (var perm in request.Permissions)
-                            {
-                                var existingPerm = _pcms_Pdm_TestContext.pdm_role_permissions
-                                    .FirstOrDefault(rp => rp.role_id == request.RoleId && rp.permission_id == perm.PermissionId);
-
-                                if (existingPerm != null)
-                                {
-                                    // 更新權限設定
-                                    existingPerm.is_active = perm.IsActive;
-                                    existingPerm.createp = perm.CreateP;
-                                    existingPerm.readp = perm.ReadP;
-                                    existingPerm.updatep = perm.UpdateP;
-                                    existingPerm.deletep = perm.DeleteP;
-                                    existingPerm.exportp = perm.ExportP;
-                                    existingPerm.importp = perm.ImportP;
-                                    existingPerm.dev_factory_no = perm.DevFactoryNo;
-                                    existingPerm.updated_by = request.UpdatedBy;
-                                    existingPerm.updated_at = DateTime.UtcNow;
-                                }
-                                else
-                                {
-                                    // 新增權限設定
-                                    var newPerm = new pdm_role_permissions
-                                    {
-                                        role_id = request.RoleId,
-                                        permission_id = perm.PermissionId,
-                                        is_active = perm.IsActive,
-                                        createp = perm.CreateP,
-                                        readp = perm.ReadP,
-                                        updatep = perm.UpdateP,
-                                        deletep = perm.DeleteP,
-                                        exportp = perm.ExportP,
-                                        importp = perm.ImportP,
-                                        dev_factory_no = perm.DevFactoryNo,
-                                        created_by = request.UpdatedBy,
-                                        created_at = DateTime.UtcNow,
-                                        updated_by = request.UpdatedBy,
-                                        updated_at = DateTime.UtcNow
-                                    };
-                                    _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
-                                }
-
-                                 記錄操作日誌
-                                _pcms_Pdm_TestContext.pdm_permission_logs.Add(new pdm_permission_logs
-                                {
-                                    user_id = request.UpdatedBy,
-                                    role_id = request.RoleId,
-                                    operation = existingPerm != null ? "Update" : "Add",
-                                    permission_detail = $"{(existingPerm != null ? "Updated" : "Added")} permission {perm.PermissionId} for role {request.RoleId}.",
-                                    dev_center = perm.Dev_center,
-                                    created_at = DateTime.UtcNow
-                                });
-                            }
-
-                            await _pcms_Pdm_TestContext.SaveChangesAsync();
-                            return Ok("Permissions updated successfully.");
-                        }
-                        catch (Exception ex)
-                        {
-                            return StatusCode(500, $"Error: {ex.Message}");
-                        }
-                    }*/
             private IActionResult HandleError(string errorCode, string message, Exception ex)
-        {
-            return new ObjectResult(new
             {
-                ErrorCode = errorCode,
-                Message = $"{message}: {ex.Message}",
-                Data = (object)null
-            })
-            {
-                StatusCode = 500
-            };
-        }
+                return new ObjectResult(new
+                {
+                    ErrorCode = errorCode,
+                    Message = $"{message}: {ex.Message}",
+                    Data = (object)null
+                })
+                {
+                    StatusCode = 500
+                };
+            }
     }
     public class RoleRequest
     {
