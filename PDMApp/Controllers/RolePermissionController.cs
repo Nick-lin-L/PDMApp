@@ -78,17 +78,17 @@ namespace PDMApp.Controllers
 
         // 2. 查詢權限列表
         [HttpPost("permissions")]
-        //public IActionResult Permissions([FromBody] PermissionQueryRequest request)
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
+        //public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
+        public ActionResult<APIStatusResponse<IEnumerable<PermissionsWrapper>>> Permissions([FromBody] PermissionsParameter value)
         {
             try
             {
                 var query = BasicQueryHelper.QueryPermissions(_pcms_Pdm_TestContext);
                 var filters = new List<Expression<Func<pdm_permissionsDto, bool>>>();
 
-                if (!string.IsNullOrWhiteSpace(value.PermissionId)) // 判斷字串是否非空
+                if (!string.IsNullOrWhiteSpace(value.PermissionId))
                 {
-                    if (int.TryParse(value.PermissionId, out int permissionId)) // 將字串轉為整數
+                    if (int.TryParse(value.PermissionId, out int permissionId))
                     {
                         filters.Add(ppe => ppe.PermissionId == permissionId);
                     }
@@ -103,12 +103,16 @@ namespace PDMApp.Controllers
                     query = query.Where(filter);
                 }
 
-                // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
-                //query = query.OrderBy(proles => proles.RoleId);
-                var pagedResult = await query.Distinct().OrderBy(ppe => ppe.PermissionId)
-                                             .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+                var permissions = query.Distinct().OrderBy(ppe => ppe.PermissionId).ToList();
+                var wrapper = new List<PermissionsWrapper>
+                {
+                    new PermissionsWrapper
+                    {
+                        Permissions = permissions
+                    }
+                };
 
-                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+                return APIResponseHelper.HandleApiResponse(wrapper);
             }
             catch (Exception ex)
             {
@@ -123,7 +127,7 @@ namespace PDMApp.Controllers
 
         // 3. 新增或更新角色資料
         [HttpPost("upsert")]
-        public async Task<IActionResult> UpsertRolePermission([FromBody] RoleRequest request)
+        public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         {
             using (var transaction = await _pcms_Pdm_TestContext.Database.BeginTransactionAsync())
             {
@@ -309,27 +313,8 @@ namespace PDMApp.Controllers
                 };
             }
     }
-    public class RoleRequest
+    public class PermissionsWrapper
     {
-        public string? RoleId { get; set; } // 角色 ID（新增時為 null）
-        public string? RoleName { get; set; } // 角色名稱
-        public string? Description { get; set; } // 角色描述
-        public string? DevFactoryNo { get; set; } // 開發工廠編號
-        public bool? IsActive { get; set; } // 是否生效
-        public string? UpdatedBy { get; set; } // 更新者 ID
-        public List<PermissionRequest> Permissions { get; set; } // 權限列表
-    }
-
-    public class PermissionRequest
-    {
-        public int PermissionId { get; set; } // 權限 ID
-        public bool IsActive { get; set; } // 是否啟用
-        public bool CreateP { get; set; } // 新增權限
-        public bool ReadP { get; set; } // 讀取權限
-        public bool UpdateP { get; set; } // 更新權限
-        public bool DeleteP { get; set; } // 刪除權限
-        public bool ExportP { get; set; } // 匯出權限
-        public bool ImportP { get; set; } // 匯入權限
-        public string DevFactoryNo { get; set; } // 開發工廠編號
+        public IEnumerable<pdm_permissionsDto> Permissions { get; set; }
     }
 }
