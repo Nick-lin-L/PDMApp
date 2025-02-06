@@ -7,6 +7,7 @@ using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -27,6 +28,39 @@ namespace PDMApp.Controllers
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
+        // 0. Pageload 下拉查詢列表
+        [HttpPost("Initial")]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePageInitial([FromBody] PermissionsParameter value)
+        {
+            try
+            {
+                // 創建 InitialPageLoadDTO
+                var InitialData = new RolesPageLoadInitialDto();
+
+                // Factory 查詢
+                var query = BasicQueryHelper.QueryFactory(_pcms_Pdm_TestContext);
+                var factoryq = await query.Distinct().ToListAsync();
+                InitialData.DevFactoryNo = factoryq;
+
+                var dynamicData = new Dictionary<string, object>
+                {
+                    { "DevFactoryNo", InitialData.DevFactoryNo }
+                };
+
+                return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
+
+            }
+            catch (DbException ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+
+            }
+        }
 
         // 1. 查詢角色列表
         [HttpPost("roles")]

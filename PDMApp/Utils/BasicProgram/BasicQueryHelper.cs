@@ -33,6 +33,7 @@ namespace PDMApp.Utils.BasicProgram
 
         }
 
+        // 查詢作業、作業權限權限
         public static IQueryable<pdm_permissionsDto> QueryPermissions(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from Pp in _pcms_Pdm_TestContext.pdm_permissions
@@ -47,7 +48,34 @@ namespace PDMApp.Utils.BasicProgram
                         CreatedAt = Pp.created_at,
                         CreatedBy = Pu.username,
                         UpdatedAt = Pp.updated_at,
-                        UpdatedBy = Pu.username
+                        UpdatedBy = Pu.username,
+                        //以下為pdm_role_permissions資料
+                        RolePermissionId = Prp.role_permission_id,
+                        RoleId = Prp.role_id,
+                        DevFactoryNo = Prp.dev_factory_no,
+                        IsActive = Prp.is_active,
+                        Createp = Prp.createp,
+                        Readp = Prp.readp,
+                        Updatep = Prp.updatep,
+                        Deletep = Prp.deletep,
+                        Exportp = Prp.exportp,
+                        Importp = Prp.importp,
+                        Permission1 = Prp.permission1,
+                        Permission2 = Prp.permission2,
+                        Permission3 = Prp.permission3,
+                        Permission4 = Prp.permission4
+                    });
+        }
+
+        // 廠別下拉預設
+        public static IQueryable<pdm_factoryDto> QueryFactory(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from Pf in _pcms_Pdm_TestContext.pdm_factory
+                    select new pdm_factoryDto
+                    {
+                        FactoryId = Pf.factory_id,
+                        DevFactoryNo = Pf.dev_factory_no,
+                        DevFactoryName = Pf.dev_factory_name
                     });
         }
     }
