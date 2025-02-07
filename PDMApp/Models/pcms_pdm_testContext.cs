@@ -333,7 +333,7 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.update_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.Property(e => e.update_user_id).HasMaxLength(10);
+                entity.Property(e => e.update_user_id).HasMaxLength(14);
 
                 entity.Property(e => e.update_user_nm).HasMaxLength(30);
 
