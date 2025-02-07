@@ -16,6 +16,8 @@ namespace PDMApp.Utils.BasicProgram
         public static IQueryable<pdm_rolesDto> QueryRoles (pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from rolesTable in _pcms_Pdm_TestContext.pdm_roles
+                    join pur in _pcms_Pdm_TestContext.pdm_user_roles on rolesTable.role_id equals pur.role_id
+                    join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id
                     select new pdm_rolesDto
                     {
                         RoleId = rolesTable.role_id,
@@ -23,25 +25,57 @@ namespace PDMApp.Utils.BasicProgram
                         Description = rolesTable.description,
                         DevFactoryNo = rolesTable.dev_factory_no,
                         CreatedAt = rolesTable.created_at,
-                        CreatedBy = rolesTable.created_by,
+                        CreatedBy = pu.username,
                         UpdatedAt = rolesTable.updated_at,
-                        UpdatedBy = rolesTable.updated_by,
+                        UpdatedBy = pu.username,
                         IsActive = rolesTable.is_active
                     });
+
         }
 
+        // 查詢作業、作業權限權限
         public static IQueryable<pdm_permissionsDto> QueryPermissions(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                    join Prp in _pcms_Pdm_TestContext.pdm_role_permissions on Pp.permission_id equals Prp.permission_id
+                    join Pur in _pcms_Pdm_TestContext.pdm_user_roles on Prp.role_id equals Pur.role_id
+                    join Pu in _pcms_Pdm_TestContext.pdm_users on Pur.user_id equals Pu.user_id
                     select new pdm_permissionsDto
                     {
                         PermissionId = Pp.permission_id,
                         PermissionName = Pp.permission_name,
                         Description = Pp.description,
                         CreatedAt = Pp.created_at,
-                        CreatedBy = Pp.created_by,
+                        CreatedBy = Pu.username,
                         UpdatedAt = Pp.updated_at,
-                        UpdatedBy = Pp.updated_by
+                        UpdatedBy = Pu.username,
+                        //以下為pdm_role_permissions資料
+                        RolePermissionId = Prp.role_permission_id,
+                        RoleId = Prp.role_id,
+                        DevFactoryNo = Prp.dev_factory_no,
+                        IsActive = Prp.is_active,
+                        Createp = Prp.createp,
+                        Readp = Prp.readp,
+                        Updatep = Prp.updatep,
+                        Deletep = Prp.deletep,
+                        Exportp = Prp.exportp,
+                        Importp = Prp.importp,
+                        Permission1 = Prp.permission1,
+                        Permission2 = Prp.permission2,
+                        Permission3 = Prp.permission3,
+                        Permission4 = Prp.permission4
+                    });
+        }
+
+        // 廠別下拉預設
+        public static IQueryable<pdm_factoryDto> QueryFactory(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from Pf in _pcms_Pdm_TestContext.pdm_factory
+                    select new pdm_factoryDto
+                    {
+                        FactoryId = Pf.factory_id,
+                        DevFactoryNo = Pf.dev_factory_no,
+                        DevFactoryName = Pf.dev_factory_name
                     });
         }
     }

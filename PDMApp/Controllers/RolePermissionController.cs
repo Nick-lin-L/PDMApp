@@ -7,6 +7,7 @@ using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -27,6 +28,39 @@ namespace PDMApp.Controllers
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
+        // 0. Pageload 下拉查詢列表
+        [HttpPost("Initial")]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePageInitial([FromBody] PermissionsParameter value)
+        {
+            try
+            {
+                // 創建 InitialPageLoadDTO
+                var InitialData = new RolesPageLoadInitialDto();
+
+                // Factory 查詢
+                var query = BasicQueryHelper.QueryFactory(_pcms_Pdm_TestContext);
+                var factoryq = await query.Distinct().ToListAsync();
+                InitialData.DevFactoryNo = factoryq;
+
+                var dynamicData = new Dictionary<string, object>
+                {
+                    { "DevFactoryNo", InitialData.DevFactoryNo }
+                };
+
+                return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
+
+            }
+            catch (DbException ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+
+            }
+        }
 
         // 1. 查詢角色列表
         [HttpPost("roles")]
@@ -78,17 +112,17 @@ namespace PDMApp.Controllers
 
         // 2. 查詢權限列表
         [HttpPost("permissions")]
-        //public IActionResult Permissions([FromBody] PermissionQueryRequest request)
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
+        //public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
+        public ActionResult<APIStatusResponse<IEnumerable<PermissionsWrapper>>> Permissions([FromBody] PermissionsParameter value)
         {
             try
             {
                 var query = BasicQueryHelper.QueryPermissions(_pcms_Pdm_TestContext);
                 var filters = new List<Expression<Func<pdm_permissionsDto, bool>>>();
 
-                if (!string.IsNullOrWhiteSpace(value.PermissionId)) // 判斷字串是否非空
+                if (!string.IsNullOrWhiteSpace(value.PermissionId))
                 {
-                    if (int.TryParse(value.PermissionId, out int permissionId)) // 將字串轉為整數
+                    if (int.TryParse(value.PermissionId, out int permissionId))
                     {
                         filters.Add(ppe => ppe.PermissionId == permissionId);
                     }
@@ -103,12 +137,16 @@ namespace PDMApp.Controllers
                     query = query.Where(filter);
                 }
 
-                // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
-                //query = query.OrderBy(proles => proles.RoleId);
-                var pagedResult = await query.Distinct().OrderBy(ppe => ppe.PermissionId)
-                                             .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+                var permissions = query.Distinct().OrderBy(ppe => ppe.PermissionId).ToList();
+                var wrapper = new List<PermissionsWrapper>
+                {
+                    new PermissionsWrapper
+                    {
+                        Permissions = permissions
+                    }
+                };
 
-                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+                return APIResponseHelper.HandleApiResponse(wrapper);
             }
             catch (Exception ex)
             {
@@ -123,71 +161,145 @@ namespace PDMApp.Controllers
 
         // 3. 新增或更新角色資料
         [HttpPost("upsert")]
-        public async Task<IActionResult> UpsertRolePermission([FromBody] RoleRequest request)
+        public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         {
             using (var transaction = await _pcms_Pdm_TestContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    // 1. 處理角色
-                    var role = await _pcms_Pdm_TestContext.pdm_roles
-                        .Include(r => r.pdm_role_permissions) // 包含角色權限
-                        .FirstOrDefaultAsync(r => r.role_id.Equals(request.RoleId));
-
-                    if (role == null || role.role_id == 0 )
+                    if (!int.TryParse(request.UpdatedBy, out int updatedBy))
                     {
-                        // 新增角色
+                        return BadRequest("Invalid UpdatedBy value.");
+                    }
+
+                    pdm_roles role;
+                    // 1. **檢查角色名稱與描述是否衝突**
+                    bool isDuplicate = await _pcms_Pdm_TestContext.pdm_roles
+                        .AnyAsync(r => r.role_name == request.RoleName && r.description == request.Description
+                                       && r.role_id.ToString() != request.RoleId); // 排除自己（更新時）
+                    if (isDuplicate)
+                    {
+                        return Conflict("Role with the same name and description already exists.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(request.RoleId))
+                    {
                         role = new pdm_roles
                         {
                             role_name = request.RoleName,
                             description = request.Description,
                             dev_factory_no = request.DevFactoryNo,
-                            created_by = request.UpdatedBy,
+                            created_by = updatedBy,
                             created_at = DateTime.UtcNow,
-                            updated_by = request.UpdatedBy,
+                            updated_by = updatedBy,
                             updated_at = DateTime.UtcNow,
-                            is_active = true // 預設為啟用
+                            is_active = true
                         };
                         _pcms_Pdm_TestContext.pdm_roles.Add(role);
+                        await _pcms_Pdm_TestContext.SaveChangesAsync();
                     }
                     else
                     {
-                        // 更新角色
-                        role.role_name = request.RoleName;
-                        role.description = request.Description;
-                        role.dev_factory_no = request.DevFactoryNo;
-                        role.updated_by = request.UpdatedBy;
-                        role.updated_at = DateTime.UtcNow;
+                        if (!int.TryParse(request.RoleId, out int roleId))
+                        {
+                            return BadRequest($"Invalid RoleId: {request.RoleId}");
+                        }
+
+                        role = await _pcms_Pdm_TestContext.pdm_roles
+                            .Include(r => r.pdm_role_permissions)
+                            .FirstOrDefaultAsync(r => r.role_id == roleId);
+
+                        if (role == null)
+                        {
+                            return NotFound($"Role with ID {request.RoleId} does not exist.");
+                        }
+
+                        bool isModified = false;
+
+                        if (role.role_name != request.RoleName && !string.IsNullOrWhiteSpace(request.RoleName))
+                        {
+                            role.role_name = request.RoleName;
+                            isModified = true;
+                        }
+                        if (role.description != request.Description && !string.IsNullOrWhiteSpace(request.Description))
+                        {
+                            role.description = request.Description;
+                            isModified = true;
+                        }
+                        if (role.dev_factory_no != request.DevFactoryNo && !string.IsNullOrWhiteSpace(request.DevFactoryNo))
+                        {
+                            role.dev_factory_no = request.DevFactoryNo;
+                            isModified = true;
+                        }
+                        if (role.is_active != request.IsActive)
+                        {
+                            role.is_active = request.IsActive ?? role.is_active;
+                            isModified = true;
+                        }
+
+                        if (isModified)
+                        {
+                            role.updated_by = updatedBy;
+                            role.updated_at = DateTime.UtcNow;
+                            await _pcms_Pdm_TestContext.SaveChangesAsync();
+                        }
                     }
 
-                    // 保存角色變更
-                    await _pcms_Pdm_TestContext.SaveChangesAsync();
-
-                    // 2. 處理角色權限
                     if (request.Permissions != null && request.Permissions.Any())
                     {
                         foreach (var perm in request.Permissions)
                         {
-                            var existingPerm = role.pdm_role_permissions
-                                .FirstOrDefault(rp => rp.permission_id == perm.PermissionId);
+                            var existingPerm = _pcms_Pdm_TestContext.pdm_role_permissions
+                                .FirstOrDefault(rp => rp.role_id == role.role_id && rp.permission_id == perm.PermissionId);
 
                             if (existingPerm != null)
                             {
-                                // 更新權限
-                                existingPerm.is_active = perm.IsActive;
-                                existingPerm.createp = perm.CreateP;
-                                existingPerm.readp = perm.ReadP;
-                                existingPerm.updatep = perm.UpdateP;
-                                existingPerm.deletep = perm.DeleteP;
-                                existingPerm.exportp = perm.ExportP;
-                                existingPerm.importp = perm.ImportP;
-                                existingPerm.dev_factory_no = perm.DevFactoryNo;
-                                existingPerm.updated_by = request.UpdatedBy;
-                                existingPerm.updated_at = DateTime.UtcNow;
+                                bool permModified = false;
+
+                                if (existingPerm.is_active != perm.IsActive)
+                                {
+                                    existingPerm.is_active = perm.IsActive;
+                                    permModified = true;
+                                }
+                                if (existingPerm.createp != perm.CreateP)
+                                {
+                                    existingPerm.createp = perm.CreateP;
+                                    permModified = true;
+                                }
+                                if (existingPerm.readp != perm.ReadP)
+                                {
+                                    existingPerm.readp = perm.ReadP;
+                                    permModified = true;
+                                }
+                                if (existingPerm.updatep != perm.UpdateP)
+                                {
+                                    existingPerm.updatep = perm.UpdateP;
+                                    permModified = true;
+                                }
+                                if (existingPerm.deletep != perm.DeleteP)
+                                {
+                                    existingPerm.deletep = perm.DeleteP;
+                                    permModified = true;
+                                }
+                                if (existingPerm.exportp != perm.ExportP)
+                                {
+                                    existingPerm.exportp = perm.ExportP;
+                                    permModified = true;
+                                }
+                                if (existingPerm.importp != perm.ImportP)
+                                {
+                                    existingPerm.importp = perm.ImportP;
+                                    permModified = true;
+                                }
+
+                                if (permModified)
+                                {
+                                    existingPerm.updated_by = updatedBy;
+                                    existingPerm.updated_at = DateTime.UtcNow;
+                                }
                             }
                             else
                             {
-                                // 新增權限
                                 var newPerm = new pdm_role_permissions
                                 {
                                     role_id = role.role_id,
@@ -200,142 +312,43 @@ namespace PDMApp.Controllers
                                     exportp = perm.ExportP,
                                     importp = perm.ImportP,
                                     dev_factory_no = perm.DevFactoryNo,
-                                    created_by = request.UpdatedBy,
+                                    created_by = updatedBy,
                                     created_at = DateTime.UtcNow,
-                                    updated_by = request.UpdatedBy,
+                                    updated_by = updatedBy,
                                     updated_at = DateTime.UtcNow
                                 };
                                 _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
                             }
                         }
-
-                        // 保存權限變更
                         await _pcms_Pdm_TestContext.SaveChangesAsync();
                     }
 
-                    // 提交事務
                     await transaction.CommitAsync();
-
                     return Ok(new { Message = "角色及權限處理成功", RoleId = role.role_id });
                 }
                 catch (Exception ex)
                 {
-                    // 回滾事務
                     await transaction.RollbackAsync();
                     return HandleError("10001", "處理過程中發生錯誤", ex);
                 }
             }
         }
-        /*
-                // 4. 新增或更新權限設定
-                [HttpPost("permissions/update")]
-                public async Task<IActionResult> UpdatePermissions([FromBody] PermissionUpdateRequest request)
+
+            private IActionResult HandleError(string errorCode, string message, Exception ex)
+            {
+                return new ObjectResult(new
                 {
-                    try
-                    {
-                        // 確認角色存在
-                        var role = await _pcms_Pdm_TestContext.pdm_roles.FindAsync(request.RoleId);
-                        if (role == null)
-                        {
-                            return NotFound($"Role ID {request.RoleId} 不存在");
-                        }
-
-                        // 更新或新增權限設定
-                        foreach (var perm in request.Permissions)
-                        {
-                            var existingPerm = _pcms_Pdm_TestContext.pdm_role_permissions
-                                .FirstOrDefault(rp => rp.role_id == request.RoleId && rp.permission_id == perm.PermissionId);
-
-                            if (existingPerm != null)
-                            {
-                                // 更新權限設定
-                                existingPerm.is_active = perm.IsActive;
-                                existingPerm.createp = perm.CreateP;
-                                existingPerm.readp = perm.ReadP;
-                                existingPerm.updatep = perm.UpdateP;
-                                existingPerm.deletep = perm.DeleteP;
-                                existingPerm.exportp = perm.ExportP;
-                                existingPerm.importp = perm.ImportP;
-                                existingPerm.dev_factory_no = perm.DevFactoryNo;
-                                existingPerm.updated_by = request.UpdatedBy;
-                                existingPerm.updated_at = DateTime.UtcNow;
-                            }
-                            else
-                            {
-                                // 新增權限設定
-                                var newPerm = new pdm_role_permissions
-                                {
-                                    role_id = request.RoleId,
-                                    permission_id = perm.PermissionId,
-                                    is_active = perm.IsActive,
-                                    createp = perm.CreateP,
-                                    readp = perm.ReadP,
-                                    updatep = perm.UpdateP,
-                                    deletep = perm.DeleteP,
-                                    exportp = perm.ExportP,
-                                    importp = perm.ImportP,
-                                    dev_factory_no = perm.DevFactoryNo,
-                                    created_by = request.UpdatedBy,
-                                    created_at = DateTime.UtcNow,
-                                    updated_by = request.UpdatedBy,
-                                    updated_at = DateTime.UtcNow
-                                };
-                                _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
-                            }
-
-                             記錄操作日誌
-                            _pcms_Pdm_TestContext.pdm_permission_logs.Add(new pdm_permission_logs
-                            {
-                                user_id = request.UpdatedBy,
-                                role_id = request.RoleId,
-                                operation = existingPerm != null ? "Update" : "Add",
-                                permission_detail = $"{(existingPerm != null ? "Updated" : "Added")} permission {perm.PermissionId} for role {request.RoleId}.",
-                                dev_center = perm.Dev_center,
-                                created_at = DateTime.UtcNow
-                            });
-                        }
-
-                        await _pcms_Pdm_TestContext.SaveChangesAsync();
-                        return Ok("Permissions updated successfully.");
-                    }
-                    catch (Exception ex)
-                    {
-                        return StatusCode(500, $"Error: {ex.Message}");
-                    }
-                }*/
-        private IActionResult HandleError(string errorCode, string message, Exception ex)
-        {
-            return new ObjectResult(new
-            {
-                ErrorCode = errorCode,
-                Message = $"{message}: {ex.Message}",
-                Data = (object)null
-            })
-            {
-                StatusCode = 500
-            };
-        }
+                    ErrorCode = errorCode,
+                    Message = $"{message}: {ex.Message}",
+                    Data = (object)null
+                })
+                {
+                    StatusCode = 500
+                };
+            }
     }
-    public class RoleRequest
+    public class PermissionsWrapper
     {
-        public string? RoleId { get; set; } // 角色 ID（新增時為 null）
-        public string RoleName { get; set; } // 角色名稱
-        public string Description { get; set; } // 角色描述
-        public string DevFactoryNo { get; set; } // 開發工廠編號
-        public long UpdatedBy { get; set; } // 更新者 ID
-        public List<PermissionRequest> Permissions { get; set; } // 權限列表
-    }
-
-    public class PermissionRequest
-    {
-        public int PermissionId { get; set; } // 權限 ID
-        public bool IsActive { get; set; } // 是否啟用
-        public bool CreateP { get; set; } // 新增權限
-        public bool ReadP { get; set; } // 讀取權限
-        public bool UpdateP { get; set; } // 更新權限
-        public bool DeleteP { get; set; } // 刪除權限
-        public bool ExportP { get; set; } // 匯出權限
-        public bool ImportP { get; set; } // 匯入權限
-        public string DevFactoryNo { get; set; } // 開發工廠編號
+        public IEnumerable<pdm_permissionsDto> Permissions { get; set; }
     }
 }
