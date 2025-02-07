@@ -130,6 +130,7 @@ namespace Dtos.FactorySpec
         public string? Fty3 { get; set; }
         public decimal? Ver { get; set; }
         public decimal? VssVer { get; set; }
+        [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? SpecUpdateDate { get; set; }
         public string? SpecUpdateUser { get; set; }
     }

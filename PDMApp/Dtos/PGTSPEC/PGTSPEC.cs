@@ -20,6 +20,7 @@ namespace Dtos.PGTSPEC
         public string CheckoutMk { get; internal set; }
         public string CheckoutUser { get; internal set; }
         public string SpecLockMk { get; internal set; }
+        [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? UpdateDate { get; internal set; }
         public string UpdateUser { get; internal set; }
     }
