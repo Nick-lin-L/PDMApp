@@ -20,7 +20,6 @@ namespace PDMApp.Parameters.FactorySpec
         public string? ColorNo { get; set; }
         public string? DevNo { get; set; }
         public string? Devcolorno { get; set; }
-        [Required]
         public string? Stage { get; set; } 
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
