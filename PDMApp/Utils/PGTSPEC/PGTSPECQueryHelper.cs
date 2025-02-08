@@ -1,15 +1,16 @@
 ﻿using Dtos.PGTSPEC;
+using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading.Tasks;
 
 namespace PDMApp.Utils.PGTSPEC
 {
     public static class PGTSPECQueryHelper
     {
-        public static IQueryable<BrandDto> QueryBrand(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
+        public static IQueryable<ComboDto> QueryBrand(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
         {
             var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
                         where n.group_key == "brand"
@@ -29,15 +30,17 @@ namespace PDMApp.Utils.PGTSPEC
             // 排序 (根據 ValueDesc 排序)
             query = query.OrderBy(n => n.ValueDesc);
 
-            // 轉換成 BrandDto
-            return query.Select(n => new BrandDto
+            // 轉換成 ComboDto
+            return query.Select(n => new ComboDto
             {
-                Brand = n.Brand
+                Text = n.Brand,
+                Value = n.Brand
             });
+
         }
 
 
-        public static IQueryable<SpecSourceDto> QuerySpecSource(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
+        public static IQueryable<ComboDto> QuerySpecSource(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
         {
             var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
                         where n.group_key == "specsource"
@@ -55,13 +58,15 @@ namespace PDMApp.Utils.PGTSPEC
 
             query = query.OrderBy(n => n.ValueDesc);
 
-            return query.Select(n => new SpecSourceDto
+            // 轉換成 ComboDto
+            return query.Select(n => new ComboDto
             {
-                SpecSource = n.SpecSource
+                Text = n.SpecSource,
+                Value = n.SpecSource
             });
         }
 
-        public static IQueryable<StageDto> QueryStage(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
+        public static IQueryable<ComboDto> QueryStage(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter value)
         {
             var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
                         where n.group_key == "stage" 
@@ -77,17 +82,17 @@ namespace PDMApp.Utils.PGTSPEC
                 query = query.Where(n => n.FactNo == value.DevFactoryNo);
             }
 
-            query = query.OrderBy(n => n.ValueDesc);  
+            query = query.OrderBy(n => n.ValueDesc);
 
-            return query.Select(n => new StageDto
+            // 轉換成 ComboDto
+            return query.Select(n => new ComboDto
             {
-                Stage = n.Stage
+                Text = n.Stage,
+                Value = n.Stage
             });
         }
 
-
-
-        public static IQueryable<DevelopmentNoDto> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<Dictionary<string, List<DevelopmentNoDto>>> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             var query = (from ph in _pcms_Pdm_TestContext.plm_product_head
                          join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.value_desc
@@ -99,37 +104,52 @@ namespace PDMApp.Utils.PGTSPEC
                              Brand = n.text
                          }).Distinct();
 
+            // **先執行 SQL 查詢，將結果載入記憶體**
+            var rawData = await query.ToListAsync();
 
-            return query
-                .Select(ph => new DevelopmentNoDto
-                {
-                    ProductMId = ph.ProductMId,
-                    DevelopmentNo = ph.DevelopmentNo,
-                    Brand = ph.Brand
-                });
+            // **在 C# 端執行 GroupBy**
+            var groupedData = rawData
+                .GroupBy(ph => ph.Brand)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(ph => new DevelopmentNoDto
+                    {
+                        ProductMId = ph.ProductMId,
+                        Text = ph.DevelopmentNo,
+                        Value = ph.DevelopmentNo
+                    }).ToList()
+                );
+
+            return groupedData;
         }
 
-        public static IQueryable<DevelopmentColorNoDto> QueryDevelopmentColorNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<Dictionary<string, List<DevelopmentColorNoDto>>> QueryDevelopmentColorNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             var query = (from pi in _pcms_Pdm_TestContext.plm_product_item
-                 select new
-                 {
-                     ProductMId = pi.product_m_id,
-                     DevelopmentColorNo = pi.development_color_no
-                 }).Distinct();
+                         select new
+                         {
+                             ProductMId = pi.product_m_id,
+                             DevelopmentColorNo = pi.development_color_no
+                         }).Distinct();
 
-            //if (!string.IsNullOrWhiteSpace(value.ProductMId))
-            //{
-            //    query = query.Where(pi => pi.ProductMId == value.ProductMId); 
-            //}
+            // **先執行 SQL 查詢，將結果載入記憶體**
+            var rawData = await query.ToListAsync();
 
-            return query
-                .Select(pi => new DevelopmentColorNoDto
-                {
-                    ProductMId = pi.ProductMId,
-                    DevelopmentColorNo = pi.DevelopmentColorNo
-                });
+            // **在 C# 端執行 GroupBy**
+            var groupedData = rawData
+                .GroupBy(pi => pi.ProductMId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(pi => new DevelopmentColorNoDto
+                    {
+                        Text = pi.DevelopmentColorNo,
+                        Value = pi.DevelopmentColorNo
+                    }).ToList()
+                );
+
+            return groupedData;
         }
+
 
         public static IQueryable<PGTSPECHeaderDto> QuerySpecHead( pcms_pdm_testContext _pcms_Pdm_TestContext,bool latestVerOnly,PGTSPECSearchParameter value)
         {

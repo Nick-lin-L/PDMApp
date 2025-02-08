@@ -286,6 +286,75 @@ namespace PDMApp.Controllers.PGTSPEC
             }
         }
 
+        // POST api/v1/PGTSpecHead/LockSpec
+        [HttpPost("LockSpec")]
+        public async Task<ActionResult<APIStatusResponse<string>>> LockSpec([FromBody] SpecLockParameter value)
+        {
+            try
+            {
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true);
+
+                if (!isSuccess)
+                {
+                    return BadRequest(new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                return Ok(new
+                {
+                    ErrorCode = "OK",
+                    Message = message
+                });
+            }
+            catch (DbException ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        // POST api/v1/PGTSpecHead/UnlockSpec
+        [HttpPost("UnlockSpec")]
+        public async Task<ActionResult<APIStatusResponse<string>>> UnlockSpec([FromBody] SpecLockParameter value)
+        {
+            try
+            {
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false);
+
+                if (!isSuccess)
+                {
+                    return BadRequest(new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                return Ok(new
+                {
+                    ErrorCode = "OK",
+                    Message = message
+                });
+            }
+            catch (DbException ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
+
 
         // POST api/v1/PGTSpecHead/ComboData
         [HttpPost("ComboData")]
@@ -300,8 +369,8 @@ namespace PDMApp.Controllers.PGTSPEC
                 resultData["BrandCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["SpecSourceCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecSource(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["StageCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["DevelopmentNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext).ToListAsync();
-                resultData["DevelopmentColorNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext).ToListAsync();
+                resultData["DevelopmentNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
+                resultData["DevelopmentColorNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);

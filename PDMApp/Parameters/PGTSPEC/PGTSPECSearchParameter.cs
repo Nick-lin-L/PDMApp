@@ -49,5 +49,10 @@
     {
         public string SpecMId { get; set; }
     }
+    public class SpecLockParameter
+    {
+        public string SpecMId { get; set; }
+    }
+
 
 }
