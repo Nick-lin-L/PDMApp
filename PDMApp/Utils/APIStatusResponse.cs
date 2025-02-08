@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using PDMApp.Dtos;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,8 +82,8 @@ namespace PDMApp.Utils
             string emptyCode = DefaultEmptyCode,
             string partialCode = DefaultPartialCode)
         {
-            var totalPages = data.Count;
-            var nonEmptyPages = data.Count(kv => kv.Value is IEnumerable<object> collection && collection.Any());
+            int totalPages = data.Count;
+            int nonEmptyPages = data.Count(kv => HasNonEmptyCollection(kv.Value));
 
             if (nonEmptyPages == 0)
             {
@@ -97,6 +98,41 @@ namespace PDMApp.Utils
                 return GenerateApiResponse<IDictionary<string, object>>(partialCode, "資料集缺少", data);
             }
         }
+
+        private static bool HasNonEmptyCollection(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+
+            // 檢查是否為集合且有內容
+            if (value is IEnumerable<object> collection && collection.Any())
+            {
+                return true;
+            }
+
+            // 檢查是否為字典並遞迴檢查內部是否有非空集合
+            if (value is IDictionary<string, object> nestedDict)
+            {
+                return nestedDict.Values.Any(HasNonEmptyCollection);
+            }
+
+            // 檢查是否為 JArray 或 JObject (支援多層 JSON 結構)
+            if (value is JArray jArray)
+            {
+                return jArray.Count > 0;
+            }
+            if (value is JObject jObject)
+            {
+                return jObject.HasValues;
+            }
+
+            // 其他非集合類型一律視為非空
+            return true;
+        }
+
+
 
         // 處理錯誤的通用方法
         public static ActionResult<APIStatusResponse<T>> HandleApiError<T>(
