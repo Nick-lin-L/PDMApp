@@ -5,6 +5,15 @@
 	  <!-- <Nullable>enable</Nullable> 是否提示警告，預設(不寫)也是不提示--> 
 	  <ImplicitUsing>enable</ImplicitUsing>
   </PropertyGroup>
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<!-- 生成 XML 文件 -->
+		<NoWarn>1591</NoWarn>
+		<!-- 忽略警告 CS1591 -->
+	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>D:\Nick_project\PDMApp\PDMApp\PDMApp.xml</DocumentationFile>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML.Report" Version="0.2.10" />
@@ -25,6 +34,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
     <PackageReference Include="NPOI" Version="2.7.2" />
+    <PackageReference Include="NSwag.AspNetCore" Version="13.20.0" />
+    <PackageReference Include="NSwag.Generation" Version="13.20.0" />
     <PackageReference Include="Otp.NET" Version="1.4.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />

@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using PDMApp.Models;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
+using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp
 {
@@ -32,10 +33,17 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options => 
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            services.AddSwaggerGen(c =>
+            /* 原生swagger文件配置
+            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
+
+            // NSwag OpenAPI文件配置
+            services.AddOpenApiDocument(config =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" });
+                config.Title = "PDMApp";
+                config.Version = "v1";
+                config.Description = "PDMApp API 文件 (自動生成)";
             });
+
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
@@ -48,7 +56,8 @@ namespace PDMApp
                 });
             });
             //services.AddControllers();
-            services.AddControllers().AddJsonOptions(options =>
+            services.AddControllers()
+            .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
             });
@@ -60,8 +69,10 @@ namespace PDMApp
             //if (env.IsDevelopment())
             //{
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
+                app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
+                //app.UseSwagger(); 原生swagger
+                app.UseSwaggerUi3(); // NSwag
+                //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
             //}
 
             //app.UseHttpsRedirection();
