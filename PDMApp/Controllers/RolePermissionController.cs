@@ -29,6 +29,13 @@ namespace PDMApp.Controllers
         }
 
         // 0. Pageload 下拉查詢列表
+        /// <summary>
+        /// Roles頁面初始化傳入的參數
+        /// </summary>
+        /// <param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
+        /// <returns>回傳一個包含初始數據的 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
+        [ProducesResponseType(typeof(APIStatusResponse<IDictionary<string, object>>), 200)]
+        [ProducesResponseType(typeof(object), 500)]
         [HttpPost("Initial")]
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePageInitial([FromBody] PermissionsParameter value)
         {
@@ -46,6 +53,7 @@ namespace PDMApp.Controllers
                 {
                     { "DevFactoryNo", InitialData.DevFactoryNo }
                 };
+
 
                 return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
 
