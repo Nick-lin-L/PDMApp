@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PDMApp</name>
+    </assembly>
+    <members>
+        <member name="M:PDMApp.Controllers.RolePermissionController.RolePageInitial(PDMApp.Parameters.Basic.PermissionsParameter)">
+            <summary>
+            Roles頁面初始化傳入的參數
+            </summary>
+            <param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
+            <returns>回傳一個包含初始數據的 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
+        </member>
+    </members>
+</doc>
