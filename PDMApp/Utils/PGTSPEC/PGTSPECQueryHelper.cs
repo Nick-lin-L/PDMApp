@@ -1,9 +1,10 @@
 ﻿using Dtos.PGTSPEC;
+using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading.Tasks;
 
 namespace PDMApp.Utils.PGTSPEC
 {
@@ -91,9 +92,7 @@ namespace PDMApp.Utils.PGTSPEC
             });
         }
 
-
-
-        public static IQueryable<DevelopmentNoDto> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<Dictionary<string, List<DevelopmentNoDto>>> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             var query = (from ph in _pcms_Pdm_TestContext.plm_product_head
                          join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.value_desc
@@ -105,34 +104,52 @@ namespace PDMApp.Utils.PGTSPEC
                              Brand = n.text
                          }).Distinct();
 
+            // **先執行 SQL 查詢，將結果載入記憶體**
+            var rawData = await query.ToListAsync();
 
-            return query
-                .Select(ph => new DevelopmentNoDto
-                {
-                    ProductMId = ph.ProductMId,
-                    Text = ph.DevelopmentNo,
-                    Value = ph.DevelopmentNo,
-                    Brand = ph.Brand
-                });
+            // **在 C# 端執行 GroupBy**
+            var groupedData = rawData
+                .GroupBy(ph => ph.Brand)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(ph => new DevelopmentNoDto
+                    {
+                        ProductMId = ph.ProductMId,
+                        Text = ph.DevelopmentNo,
+                        Value = ph.DevelopmentNo
+                    }).ToList()
+                );
+
+            return groupedData;
         }
 
-        public static IQueryable<DevelopmentColorNoDto> QueryDevelopmentColorNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<Dictionary<string, List<DevelopmentColorNoDto>>> QueryDevelopmentColorNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             var query = (from pi in _pcms_Pdm_TestContext.plm_product_item
-                 select new
-                 {
-                     ProductMId = pi.product_m_id,
-                     DevelopmentColorNo = pi.development_color_no
-                 }).Distinct();
+                         select new
+                         {
+                             ProductMId = pi.product_m_id,
+                             DevelopmentColorNo = pi.development_color_no
+                         }).Distinct();
 
-            return query
-                .Select(pi => new DevelopmentColorNoDto
-                {
-                    ProductMId = pi.ProductMId,
-                    Text = pi.DevelopmentColorNo,
-                    Value = pi.DevelopmentColorNo
-                });
+            // **先執行 SQL 查詢，將結果載入記憶體**
+            var rawData = await query.ToListAsync();
+
+            // **在 C# 端執行 GroupBy**
+            var groupedData = rawData
+                .GroupBy(pi => pi.ProductMId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(pi => new DevelopmentColorNoDto
+                    {
+                        Text = pi.DevelopmentColorNo,
+                        Value = pi.DevelopmentColorNo
+                    }).ToList()
+                );
+
+            return groupedData;
         }
+
 
         public static IQueryable<PGTSPECHeaderDto> QuerySpecHead( pcms_pdm_testContext _pcms_Pdm_TestContext,bool latestVerOnly,PGTSPECSearchParameter value)
         {

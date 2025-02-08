@@ -31,12 +31,10 @@ namespace Dtos.PGTSPEC
         public string? ProductMId { get; set; }
         public string Text { get; set; }
         public string Value { get; set; }
-        public string? Brand { get; set; }
     }
 
     public class DevelopmentColorNoDto
     { 
-        public string? ProductMId { get; set; }
         public string Text { get; set; }
         public string Value { get; set; }
     }

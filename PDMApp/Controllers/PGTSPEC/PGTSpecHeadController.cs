@@ -369,8 +369,8 @@ namespace PDMApp.Controllers.PGTSPEC
                 resultData["BrandCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["SpecSourceCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecSource(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["StageCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["DevelopmentNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext).ToListAsync();
-                resultData["DevelopmentColorNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext).ToListAsync();
+                resultData["DevelopmentNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
+                resultData["DevelopmentColorNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
