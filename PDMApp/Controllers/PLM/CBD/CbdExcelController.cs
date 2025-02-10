@@ -17,10 +17,11 @@ using System.Data;
 using System.ComponentModel.DataAnnotations;
 using System.Dynamic;
 using Microsoft.Extensions.Logging;
-using static PDMApp.Dtos.Cbd.CbdExcelDto;
-namespace PDMApp.Controllers.CBD
+using static PDMApp.Dtos.PLM.CBD.CbdExcelDto;
+
+namespace PDMApp.Controllers.PLM.CBD
 {
-    [Route("api/v1/[controller]/[action]")]
+    [Route("api/v1/PLM/[controller]/[action]")]
     [ApiController]
     public class CbdExcelController : ControllerBase
     {

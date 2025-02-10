@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -5,39 +6,39 @@ using System.Linq;
 using System.Threading.Tasks;
 using PDMApp.Models;
 
-namespace PDMApp.Dtos.Cbd
+namespace PDMApp.Dtos.PLM.CBD
 {
     public class CbdExcelDto
     {
         public class CbdSearch
         {
-            public string Parameter { get; set; }
+            public string? Parameter { get; set; }
         }
 
         public class CbdExcel
         {
             [Required]
-            public String DevNo { get; set; }
+            public String? DevNo { get; set; }
             [Required]
-            public String DevColorName { get; set; }
+            public String? DevColorName { get; set; }
             [Required]
-            public String Stage { get; set; }
+            public String? Stage { get; set; }
             [Required]
-            public ExcelData Data { get; set; }
+            public ExcelData? Data { get; set; }
         }
 
         public class ExcelData
         {
             [Required]
-            public HeaderData Header { get; set; }
+            public HeaderData? Header { get; set; }
             [Required]
-            public List<cbd_item> Upper { get; set; }
+            public List<cbd_item>? Upper { get; set; }
             [Required]
-            public List<cbd_item> Sole { get; set; }
+            public List<cbd_item>? Sole { get; set; }
             [Required]
-            public List<cbd_item> Other { get; set; }
+            public List<cbd_item>? Other { get; set; }
             [Required]
-            public List<plm_cbd_moldcharge> MoldCharge { get; set; }
+            public List<plm_cbd_moldcharge>? MoldCharge { get; set; }
         }
 
         public class HeaderData

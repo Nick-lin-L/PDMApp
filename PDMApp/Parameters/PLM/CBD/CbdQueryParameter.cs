@@ -1,12 +1,14 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Parameters.Cbd
+namespace PDMApp.Parameters.PLM.CBD
 {
     public class CbdQueryParameter
     {
+
         public string? development_no { set; get; }
         public string? working_name { set; get; }
         public string? stage { set; get; }

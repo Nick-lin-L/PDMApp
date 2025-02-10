@@ -11,17 +11,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql.TypeHandlers.NetworkHandlers;
-using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
-using PDMApp.Parameters;
-using PDMApp.Parameters.Cbd;
 using PDMApp.Utils;
-using static PDMApp.Dtos.Cbd.CbdQueryDto;
 
-namespace PDMApp.Controllers.CBD
+namespace PDMApp.Controllers.PLM.CBD
 {
-    [Route("api/v1/[controller]/[action]")]
+    [Route("api/v1/PLM/[controller]/[action]")]
     [ApiController]
     public class CbdQueryController : ControllerBase
     {
@@ -170,7 +166,7 @@ namespace PDMApp.Controllers.CBD
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<QueryDto>>>> Query(CbdQueryParameter parameter)
+        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.PLM.CBD.CbdQueryDto.QueryDto>>>> Query(Parameters.PLM.CBD.CbdQueryParameter parameter)
         {
             var response = new APIStatusResponse<Utils.PagedResult<object>>();
             try
@@ -181,7 +177,7 @@ namespace PDMApp.Controllers.CBD
                             join ch in _pcms_Pdm_TestContext.plm_cbd_head
                             on pi.product_d_id equals ch.product_d_id
                             orderby ph.development_no ascending, ch.ver ascending
-                            select new QueryDto
+                            select new Dtos.PLM.CBD.CbdQueryDto.QueryDto
                             {
                                 Data_m_id = ch.data_m_id,
                                 Product_m_id = ph.product_m_id,
@@ -271,7 +267,7 @@ namespace PDMApp.Controllers.CBD
             {
                 var item = (from x in _pcms_Pdm_TestContext.plm_cbd_item
                             where x.data_m_id == Data_m_id
-                            select new CbdItemDto
+                            select new Dtos.PLM.CBD.CbdQueryDto.CbdItemDto
                             {
                                 Data_m_id = x.data_m_id,
                                 Data_d_id = x.data_d_id,
@@ -351,19 +347,19 @@ namespace PDMApp.Controllers.CBD
                 //                           pi = pi,
                 //                       }).FirstOrDefaultAsync();
 
-                var basic = new BasicDto();
+                var basic = new Dtos.PLM.CBD.CbdQueryDto.BasicDto();
                 basic.SetValues(query.ch.GetPropertiesWithValues());
                 basic.SetValues(query.pi.GetPropertiesWithValues());
                 basic.SetValues(query.ph.GetPropertiesWithValues());
 
-                var expense = new ExpenseDto();
+                var expense = new Dtos.PLM.CBD.CbdQueryDto.ExpenseDto();
                 expense.SetValues(query.ph.GetPropertiesWithValues());
                 expense.SetValues(query.ph.GetPropertiesWithValues());
                 expense.SetValues(query.ch.GetPropertiesWithValues());
 
                 foreach (var molditem in moldcharge)
                 {
-                    var tmp = new MoldDto();
+                    var tmp = new Dtos.PLM.CBD.CbdQueryDto.MoldDto();
                     tmp.SetValues(molditem.GetPropertiesWithValues());
                     expense.mold.Add(tmp);
                 }
@@ -386,6 +382,44 @@ namespace PDMApp.Controllers.CBD
                 response.ErrorCode = "21001";
             }
             return response;
+        }
+        [HttpGet()]
+        public async Task<ActionResult<APIStatusResponse<object>>> Initial()
+        {
+            var response = new APIStatusResponse<object>();
+            try
+            {
+                var dev_no = await _pcms_Pdm_TestContext.plm_product_head.Where(x => !string.IsNullOrWhiteSpace(x.development_no)).
+                                                                             Select(x => x.development_no).
+                                                                             Distinct().
+                                                                             ToListAsync();
+                var development_color_no = await _pcms_Pdm_TestContext.plm_product_item.Where(x => !string.IsNullOrWhiteSpace(x.development_color_no)).
+                                                                             Select(x => new { key = x.development_color_no, displayvalue = @$"{x.development_color_no}[{x.color_code}]" }).
+                                                                             Distinct().
+                                                                             ToListAsync();
+                var stage = await _pcms_Pdm_TestContext.pdm_namevalue.Where(x => x.group_key == "stage").
+                                                                             Select(x => new { key = x.value_desc, displayvalue = @$"{x.value_desc}[{x.text}]" }).
+                                                                             Distinct().
+                                                                             ToListAsync();
+
+                var dynamicData = new Dictionary<string, object>
+                {
+                    { "Development_Color_no", development_color_no.OrderBy(x=>x.key) },
+                    { "Stage", stage.OrderBy(x=>x.key) },
+                    { "Development_No", dev_no }
+                };
+
+                response.Data = dynamicData;
+                response.Message = "OK";
+                return response;
+            }
+            catch (Exception e)
+            {
+                var Data = new Dictionary<string, object>();
+                response.ErrorCode = "20001";
+                response.Message = e.Message;
+                return response;
+            }
         }
 
     }
