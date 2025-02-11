@@ -155,7 +155,6 @@ namespace PDMApp.Controllers
             }
         }
 
-        [Route("")]
         // 3. 新增或更新角色資料
         [HttpPost("upsert")]
         public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
