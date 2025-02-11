@@ -36,29 +36,21 @@ namespace PDMApp.Controllers
         /// <returns>回傳一個包含初始數據的 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
         [ProducesResponseType(typeof(APIStatusResponse<IDictionary<string, object>>), 200)]
         [ProducesResponseType(typeof(object), 500)]
-        [HttpPost("Initial")]
+        [HttpPost("initial")]
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePageInitial([FromBody] PermissionsParameter value)
         {
             try
             {
-                // 創建 InitialPageLoadDTO
-                var InitialData = new RolesPageLoadInitialDto();
-
                 // Factory 查詢
                 var query = BasicQueryHelper.QueryFactory(_pcms_Pdm_TestContext);
                 var factoryq = await query.Distinct().ToListAsync();
-                InitialData.DevFactoryNo = factoryq;
-
                 var dynamicData = new Dictionary<string, object>
                 {
-                    { "DevFactoryNo", InitialData.DevFactoryNo }
+                    { "DevFactoryNo", factoryq }
                 };
-
-
                 return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
-
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -66,7 +58,6 @@ namespace PDMApp.Controllers
                     Message = "ServerError",
                     Details = ex.Message
                 });
-
             }
         }
 
@@ -87,13 +78,11 @@ namespace PDMApp.Controllers
                 if (!string.IsNullOrWhiteSpace(value.DevFactoryNo))
                     filters.Add(proles => proles.DevFactoryNo.Contains(value.DevFactoryNo));
 
-                if (!string.IsNullOrWhiteSpace(value.IsActive?.ToString()))
+                if (!string.IsNullOrWhiteSpace(value.IsActive))
                 {
-                    bool isActive;
-                    if (bool.TryParse(value.IsActive.ToString(), out isActive))
-                    {
-                        filters.Add(proles => proles.IsActive == isActive);
-                    }
+                    // 將字串"Y"或"N"轉換為bool
+                    bool isActive = value.IsActive.Trim().ToUpper() == "Y";
+                    filters.Add(proles => proles.IsActive == isActive);
                 }
 
                 foreach (var filter in filters)
@@ -166,7 +155,7 @@ namespace PDMApp.Controllers
             }
         }
 
-
+        [Route("")]
         // 3. 新增或更新角色資料
         [HttpPost("upsert")]
         public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)

@@ -67,15 +67,19 @@ namespace PDMApp.Utils.BasicProgram
                     });
         }
 
-        // 廠別下拉預設
-        public static IQueryable<pdm_factoryDto> QueryFactory(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        /// <summary>
+        /// 廠別下拉，只要是下拉都預設使用pdm_DropDownDto
+        /// </summary>
+        /// <param name="_pcms_Pdm_TestContext"></param>
+        /// <returns></returns>
+        public static IQueryable<pdm_DropDownDto> QueryFactory(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from Pf in _pcms_Pdm_TestContext.pdm_factory
-                    select new pdm_factoryDto
+                    select new pdm_DropDownDto
                     {
-                        FactoryId = Pf.factory_id,
-                        DevFactoryNo = Pf.dev_factory_no,
-                        DevFactoryName = Pf.dev_factory_name
+                        Id = Pf.factory_id,
+                        Value = Pf.dev_factory_no,
+                        Text = Pf.dev_factory_name
                     });
         }
     }
