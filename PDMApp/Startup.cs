@@ -16,6 +16,7 @@ using PDMApp.Models;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using PDMApp.Utils.BasicProgram;
+using Microsoft.AspNetCore.Routing;
 
 namespace PDMApp
 {
@@ -60,6 +61,10 @@ namespace PDMApp
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            });
+            services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true; // ? 讓 API URL 變成小寫
             });
         }
 

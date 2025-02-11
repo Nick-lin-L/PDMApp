@@ -36,5 +36,12 @@
             頁碼
             </summary>
         </member>
+        <member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryFactory(PDMApp.Models.pcms_pdm_testContext)">
+            <summary>
+            廠別下拉，只要是下拉都預設使用pdm_DropDownDto
+            </summary>
+            <param name="_pcms_Pdm_TestContext"></param>
+            <returns></returns>
+        </member>
     </members>
 </doc>
