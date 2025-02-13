@@ -16,7 +16,7 @@ namespace PDMApp.Utils.PGTSPEC
             try
             {
                 if (string.IsNullOrWhiteSpace(value.DevelopmentNo) ||
-                    string.IsNullOrWhiteSpace(value.DevelopmentColor) ||
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) ||
                     string.IsNullOrWhiteSpace(value.Stage) ||
                     string.IsNullOrWhiteSpace(value.DevFactoryNo) ||
                     string.IsNullOrWhiteSpace(value.SpecSource) ||
@@ -44,7 +44,7 @@ namespace PDMApp.Utils.PGTSPEC
                                          join n in _pcms_Pdm_TestContext.pdm_namevalue_new
                                              on ph.brand_no equals n.value_desc
                                          where ph.development_no == value.DevelopmentNo
-                                               && pi.development_color_no == value.DevelopmentColor
+                                               && pi.development_color_no == value.DevelopmentColorNo
                                                && n.text == value.Brand // 根據品牌過濾
                                          select new
                                          {

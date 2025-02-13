@@ -21,7 +21,7 @@ namespace PDMApp.Parameters.PGTSPEC
     public class InsertSpecParameter
     {
         public string DevelopmentNo { get; set; }
-        public string DevelopmentColor { get; set; }
+        public string DevelopmentColorNo { get; set; }
         public string Stage { get; set; }
         public string DevFactoryNo { get; set; } // 工廠編號 
         public string SpecSource { get; set; }
@@ -32,7 +32,7 @@ namespace PDMApp.Parameters.PGTSPEC
     public class CopyToSpecParameter
     {
         public string DevelopmentNo { get; set; }
-        public string DevelopmentColor { get; set; }
+        public string DevelopmentColorNo { get; set; }
         public string Stage { get; set; }
         public string DevFactoryNo { get; set; } // 開發工廠編號
         public string SpecMId { get; set; } // 被複製的 SPEC_M_ID
@@ -54,7 +54,6 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class PGTSpec5SheetsUpdateParameter
     {
-        public string SpecMId { get; set; } // 要更新的 SPEC_M_ID
         public HeadDataParameter HeadData { get; set; } = new HeadDataParameter();
         public List<SpecItemUpdateParameter> UpperData { get; set; } = new List<SpecItemUpdateParameter>();
         public List<SpecItemUpdateParameter> SoleData { get; set; } = new List<SpecItemUpdateParameter>();
@@ -63,6 +62,7 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class HeadDataParameter
     {
+        public string SpecMId { get; set; } // 要更新的 SPEC_M_ID
         public string PgtColorName { get; set; }
         public string RefDevNo { get; set; }
         public string MoldNo1 { get; set; }
@@ -74,7 +74,7 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class SpecItemUpdateParameter
     {
-        public string SpecMId { get; set; } // 只使用 SpecMId
+        public string SpecDId { get; set; }  // 唯一識別碼
         public int Sort { get; set; } // material_sort
         public string No { get; set; } // parts_no
         public string ActPartNo { get; set; } // act_part_no
@@ -95,5 +95,4 @@ namespace PDMApp.Parameters.PGTSPEC
         public string ColorComment { get; set; } // clr_comment
         public string Memo { get; set; } // memo
     }
-
 }
