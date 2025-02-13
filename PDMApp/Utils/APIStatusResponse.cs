@@ -82,24 +82,32 @@ namespace PDMApp.Utils
             string emptyCode = DefaultEmptyCode,
             string partialCode = DefaultPartialCode)
         {
-            int totalPages = data.Count;
-            int nonEmptyPages = data.Count(kv => HasNonEmptyCollection(kv.Value));
+            bool hasEmptyCollection = false;
+            bool allEmpty = true;
 
-            if (nonEmptyPages == 0)
+            foreach (var kv in data)
+            {
+                if (IsCollectionEmpty(kv.Value))
+                {
+                    hasEmptyCollection = true;
+                }
+                else
+                {
+                    allEmpty = false;
+                }
+            }
+            if (allEmpty)
             {
                 return GenerateApiResponse<IDictionary<string, object>>(emptyCode, DefaultEmptyMessage, new Dictionary<string, object>());
             }
-            else if (nonEmptyPages == totalPages)
-            {
-                return GenerateApiResponse<IDictionary<string, object>>(successCode, string.Empty, data);
-            }
-            else
+            if (hasEmptyCollection)
             {
                 return GenerateApiResponse<IDictionary<string, object>>(partialCode, "資料集缺少", data);
             }
+            return GenerateApiResponse<IDictionary<string, object>>(successCode, string.Empty, data);
         }
 
-        private static bool HasNonEmptyCollection(object value)
+        private static bool IsCollectionEmpty(object value)
         {
             if (value == null)
             {
@@ -107,29 +115,29 @@ namespace PDMApp.Utils
             }
 
             // 檢查是否為集合且有內容
-            if (value is IEnumerable<object> collection && collection.Any())
+            if (value is IEnumerable<object> collection)
             {
-                return true;
+                return !collection.Any();
             }
 
-            // 檢查是否為字典並遞迴檢查內部是否有非空集合
-            if (value is IDictionary<string, object> nestedDict)
+            // 檢查 Dictionary 是否為空 (適用於 {})
+            if (value is IDictionary<string, object> dict)
             {
-                return nestedDict.Values.Any(HasNonEmptyCollection);
+                return !dict.Any();
             }
 
-            // 檢查是否為 JArray 或 JObject (支援多層 JSON 結構)
+            // 檢查 JArray 或 JObject 是否為空
             if (value is JArray jArray)
             {
-                return jArray.Count > 0;
+                return jArray.Count == 0;
             }
             if (value is JObject jObject)
             {
-                return jObject.HasValues;
+                return !jObject.HasValues;
             }
 
-            // 其他非集合類型一律視為非空
-            return true;
+            // 其他非集合類型視為非空
+            return false;
         }
 
 

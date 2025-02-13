@@ -7,6 +7,6 @@ namespace PDMApp.Dtos.BasicProgram
 {
     public class RolesPageLoadInitialDto
     {
-        public IEnumerable<pdm_factoryDto>? DevFactoryNo { get; set; }
+        public IEnumerable<pdm_DropDownDto>? Value { get; set; }
     }
 }
