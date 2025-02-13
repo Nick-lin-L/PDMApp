@@ -19,7 +19,8 @@ namespace PDMApp.Utils.PGTSPEC
                     string.IsNullOrWhiteSpace(value.DevelopmentColor) ||
                     string.IsNullOrWhiteSpace(value.Stage) ||
                     string.IsNullOrWhiteSpace(value.DevFactoryNo) ||
-                    string.IsNullOrWhiteSpace(value.SpecSource))
+                    string.IsNullOrWhiteSpace(value.SpecSource) ||
+                    string.IsNullOrWhiteSpace(value.Brand))
                 {
                     return new BadRequestObjectResult(new { Message = "Missing required parameters." });
                 }
@@ -40,14 +41,17 @@ namespace PDMApp.Utils.PGTSPEC
                                              on ph.product_m_id equals pi.product_m_id
                                          join sh in _pcms_Pdm_TestContext.plm_spec_head
                                              on pi.product_d_id equals sh.product_d_id
+                                         join n in _pcms_Pdm_TestContext.pdm_namevalue_new
+                                             on ph.brand_no equals n.value_desc
                                          where ph.development_no == value.DevelopmentNo
                                                && pi.development_color_no == value.DevelopmentColor
-
+                                               && n.text == value.Brand // 根據品牌過濾
                                          select new
                                          {
                                              pi.product_d_id,
                                              sh.spec_m_id
                                          }).ToListAsync();
+
                 if (!productData.Any())
                 {
                     return new NotFoundObjectResult(new { Message = "No matching records found in plm_product_item or plm_spec_head." });
