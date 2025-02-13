@@ -69,7 +69,7 @@ namespace PDMApp.Utils.PGTSPEC
                     stage_code = stageCode,
                     ver = 0,
                     create_mode = value.SpecSource == "NEW" ? "B" : "A",
-                    create_date = DateTime.Now,  
+                    create_date = DateTime.Now,
                     create_user_id = "20211200037074", // 這裡應該改為 USER ID
                     create_user_nm = "鄭名硯", // 這裡應該改為 USER_NAME
                     remarks_prohibit = value.DevFactoryNo == "6400" ? "※所有材質的使用，均需符合\"ASICS 化學物質管理運用方針\"之規定。" : null
@@ -122,38 +122,54 @@ namespace PDMApp.Utils.PGTSPEC
                         return new NotFoundObjectResult(new { Message = "No matching records found in plm_spec_item." });
                     }
 
-                    var newSpecItems = specData.Select(si => new pcg_spec_item
+                    // 查詢 material_group 對應的 text 值
+                    var materialGroupData = await (from n in _pcms_Pdm_TestContext.pdm_namevalue_new
+                                                   where n.group_key == "material_group"
+                                                         && specData.Select(si => si.material_group).Contains(n.value_desc)
+                                                   select new
+                                                   {
+                                                       n.value_desc,
+                                                       n.text
+                                                   }).ToListAsync();
+
+                    var newSpecItems = specData.Select(si =>
                     {
-                        spec_d_id = Guid.NewGuid().ToString(),
-                        spec_m_id = newSpecHead.spec_m_id,
-                        material_sort = si.material_sort,
-                        material_group = si.material_group,
-                        parts_no = si.parts_no,
-                        material_new = si.material_new,
-                        parts = si.parts,
-                        detail = si.detail,
-                        process_mk = si.process_mk,
-                        material = si.material,
-                        mat_comment = si.mat_comment,
-                        standard = si.standard,
-                        agent = si.agent,
-                        supplier = si.supplier,
-                        quote_supplier = si.quote_supplier,
-                        hcha = si.hcha,
-                        sec = si.sec,
-                        material_color = si.material_color,
-                        clr_comment = si.clr_comment,
-                        add_date = si.add_date,
-                        update_date = si.update_date,
-                        mtrtype = si.mtrtype,
-                        mtrbase = si.mtrbase,
-                        processing = si.processing,
-                        effect = si.effect,
-                        releasepaper = si.releasepaper,
-                        basecolor = si.basecolor,
-                        act_part_no = si.act_part_no,
-                        part_mk = si.part_mk,
-                        recycle = si.recycle
+                        // 查找對應的 material_group text
+                        var materialGroupText = materialGroupData.FirstOrDefault(mg => mg.value_desc == si.material_group)?.text;
+
+                        return new pcg_spec_item
+                        {
+                            spec_d_id = Guid.NewGuid().ToString(),
+                            spec_m_id = newSpecHead.spec_m_id,
+                            material_sort = si.material_sort,
+                            material_group = materialGroupText ?? si.material_group, // 若找不到對應的 material_group，則使用原本的值
+                            parts_no = si.parts_no,
+                            material_new = si.material_new,
+                            parts = si.parts,
+                            detail = si.detail,
+                            process_mk = si.process_mk,
+                            material = si.material,
+                            mat_comment = si.mat_comment,
+                            standard = si.standard,
+                            agent = si.agent,
+                            supplier = si.supplier,
+                            quote_supplier = si.quote_supplier,
+                            hcha = si.hcha,
+                            sec = si.sec,
+                            material_color = si.material_color,
+                            clr_comment = si.clr_comment,
+                            add_date = si.add_date,
+                            update_date = si.update_date,
+                            mtrtype = si.mtrtype,
+                            mtrbase = si.mtrbase,
+                            processing = si.processing,
+                            effect = si.effect,
+                            releasepaper = si.releasepaper,
+                            basecolor = si.basecolor,
+                            act_part_no = si.act_part_no,
+                            part_mk = si.part_mk,
+                            recycle = si.recycle
+                        };
                     }).ToList();
 
                     _pcms_Pdm_TestContext.pcg_spec_item.AddRange(newSpecItems);
