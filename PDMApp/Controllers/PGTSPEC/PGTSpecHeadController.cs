@@ -66,7 +66,16 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var result = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(500, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
 
                 return StatusCode(200, new
                 {
@@ -91,7 +100,16 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var result = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(500, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
 
                 return StatusCode(200, new
                 {
@@ -103,12 +121,14 @@ namespace PDMApp.Controllers.PGTSPEC
             {
                 return StatusCode(500, new
                 {
-                    ErrorCode = "Server_ERROR",
+                    ErrorCode = "SERVER_ERROR",
                     Message = "ServerError",
                     Details = ex.Message
                 });
             }
         }
+
+
 
         // POST api/v1/PGTSpecHead/CheckoutSpec
         [HttpPost("CheckoutSpec")]
