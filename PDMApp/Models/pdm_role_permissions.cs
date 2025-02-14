@@ -7,21 +7,26 @@ namespace PDMApp.Models
 {
     public partial class pdm_role_permissions
     {
+        public pdm_role_permissions()
+        {
+            pdm_role_permission_details = new HashSet<pdm_role_permission_details>();
+        }
+
         public int role_permission_id { get; set; }
         public int? role_id { get; set; }
         public int? permission_id { get; set; }
         public string dev_factory_no { get; set; }
-        public bool? is_active { get; set; }
-        public bool? createp { get; set; }
-        public bool? readp { get; set; }
-        public bool? updatep { get; set; }
-        public bool? deletep { get; set; }
-        public bool? exportp { get; set; }
-        public bool? importp { get; set; }
-        public bool? permission1 { get; set; }
-        public bool? permission2 { get; set; }
-        public bool? permission3 { get; set; }
-        public bool? permission4 { get; set; }
+        public string is_active { get; set; }
+        public string createp { get; set; }
+        public string readp { get; set; }
+        public string updatep { get; set; }
+        public string deletep { get; set; }
+        public string exportp { get; set; }
+        public string importp { get; set; }
+        public string permission1 { get; set; }
+        public string permission2 { get; set; }
+        public string permission3 { get; set; }
+        public string permission4 { get; set; }
         public long? created_by { get; set; }
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
@@ -31,5 +36,6 @@ namespace PDMApp.Models
         public virtual pdm_permissions permission { get; set; }
         public virtual pdm_roles role { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
+        public virtual ICollection<pdm_role_permission_details> pdm_role_permission_details { get; set; }
     }
 }
