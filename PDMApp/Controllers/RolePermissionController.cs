@@ -42,11 +42,22 @@ namespace PDMApp.Controllers
             try
             {
                 // Factory 查詢
-                var query = BasicQueryHelper.QueryFactory(_pcms_Pdm_TestContext);
-                var factoryq = await query.Distinct().ToListAsync();
+                var queryF = BasicQueryHelper.QueryFactory(_pcms_Pdm_TestContext);
+                var factoryq = await queryF.Distinct().ToListAsync();
+
+                // permissions 查詢
+                var queryP = BasicQueryHelper.QueryPermissions(_pcms_Pdm_TestContext);
+                var filters = await queryP.Distinct().OrderBy(q => q.RolePermissionId).ToListAsync();
+
+                // details 查詢
+                var queryD = BasicQueryHelper.QueryPermissionDetails(_pcms_Pdm_TestContext);
+                var filtersD = await queryD.Distinct().OrderBy(q => q.RolePermissionDetailId).ToListAsync();
+
                 var dynamicData = new Dictionary<string, object>
                 {
-                    { "DevFactoryNo", factoryq }
+                    { "DevFactoryNo", factoryq },
+                    { "Permissions", filters },
+                    { "PermissionDetails", filtersD },
                 };
                 return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
             }
@@ -108,8 +119,6 @@ namespace PDMApp.Controllers
 
         // 2. 查詢權限列表
         [HttpPost("permissions")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
-        //public ActionResult<APIStatusResponse<IEnumerable<PermissionsWrapper>>> Permissions([FromBody] PermissionsParameter value)
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Permissions([FromBody] PermissionsParameter value)
         {
             try
