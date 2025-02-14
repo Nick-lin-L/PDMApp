@@ -14,6 +14,8 @@ namespace PDMApp.Models
             pdm_permission_logs = new HashSet<pdm_permission_logs>();
             pdm_permissionscreated_byNavigation = new HashSet<pdm_permissions>();
             pdm_permissionsupdated_byNavigation = new HashSet<pdm_permissions>();
+            pdm_role_permission_detailscreated_byNavigation = new HashSet<pdm_role_permission_details>();
+            pdm_role_permission_detailsupdated_byNavigation = new HashSet<pdm_role_permission_details>();
             pdm_role_permissionscreated_byNavigation = new HashSet<pdm_role_permissions>();
             pdm_role_permissionsupdated_byNavigation = new HashSet<pdm_role_permissions>();
             pdm_rolescreated_byNavigation = new HashSet<pdm_roles>();
@@ -30,8 +32,8 @@ namespace PDMApp.Models
         public string sso_acct { get; set; }
         public string email { get; set; }
         public string password_hash { get; set; }
-        public bool? is_sso { get; set; }
-        public bool? is_active { get; set; }
+        public string is_sso { get; set; }
+        public string is_active { get; set; }
         public DateTime? last_login { get; set; }
         public long? created_by { get; set; }
         public DateTime? created_at { get; set; }
@@ -43,6 +45,8 @@ namespace PDMApp.Models
         public virtual ICollection<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionscreated_byNavigation { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionsupdated_byNavigation { get; set; }
+        public virtual ICollection<pdm_role_permission_details> pdm_role_permission_detailscreated_byNavigation { get; set; }
+        public virtual ICollection<pdm_role_permission_details> pdm_role_permission_detailsupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_role_permissions> pdm_role_permissionscreated_byNavigation { get; set; }
         public virtual ICollection<pdm_role_permissions> pdm_role_permissionsupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_roles> pdm_rolescreated_byNavigation { get; set; }

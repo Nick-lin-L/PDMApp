@@ -20,6 +20,6 @@ namespace PDMApp.Dtos.BasicProgram
         [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? UpdatedAt { get; set; }
         public int? RoleLevel { get; set; }
-        public bool? IsActive { get; set; }
+        public string? IsActive { get; set; }
     }
 }

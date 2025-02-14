@@ -32,6 +32,7 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_permissions> pdm_permissions { get; set; }
         public virtual DbSet<pdm_product_head> pdm_product_head { get; set; }
         public virtual DbSet<pdm_product_item> pdm_product_item { get; set; }
+        public virtual DbSet<pdm_role_permission_details> pdm_role_permission_details { get; set; }
         public virtual DbSet<pdm_role_permissions> pdm_role_permissions { get; set; }
         public virtual DbSet<pdm_roles> pdm_roles { get; set; }
         public virtual DbSet<pdm_spec_head> pdm_spec_head { get; set; }
@@ -998,6 +999,67 @@ namespace PDMApp.Models
                 entity.Property(e => e.upper_sozai_code_name).HasMaxLength(128);
             });
 
+            modelBuilder.Entity<pdm_role_permission_details>(entity =>
+            {
+                entity.HasKey(e => e.role_permission_detail_id)
+                    .HasName("pdm_role_permission_details_pkey");
+
+                entity.ToTable("pdm_role_permission_details", "asics_pdm");
+
+                entity.Property(e => e.role_permission_detail_id)
+                    .HasDefaultValueSql("nextval('pdm_role_permission_details_role_permission_detail_id_seq'::regclass)")
+                    .HasComment("Table ID");
+
+                entity.Property(e => e.created_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("建立時間");
+
+                entity.Property(e => e.created_by).HasComment("建立者,關聯 pdm_users.user_id");
+
+                entity.Property(e => e.description).HasComment("權限詳細描述");
+
+                entity.Property(e => e.dev_factory_no)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment("開發中心代號");
+
+                entity.Property(e => e.is_active)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::character varying")
+                    .HasComment("是否啟用 (Y: 啟用, N: 停用)");
+
+                entity.Property(e => e.permission_key)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment("權限名稱");
+
+                entity.Property(e => e.role_permission_id).HasComment("關聯 pdm_role_permissions 表中的 role_permission_id");
+
+                entity.Property(e => e.updated_at)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasComment("更新時間");
+
+                entity.Property(e => e.updated_by).HasComment("最後更新者,關聯 pdm_users.user_id");
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.pdm_role_permission_detailscreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_role_permission_details_created_by_fkey");
+
+                entity.HasOne(d => d.role_permission)
+                    .WithMany(p => p.pdm_role_permission_details)
+                    .HasForeignKey(d => d.role_permission_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_role_permission_details_role_permission_id_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.pdm_role_permission_detailsupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("pdm_role_permission_details_updated_by_fkey");
+            });
+
             modelBuilder.Entity<pdm_role_permissions>(entity =>
             {
                 entity.HasKey(e => e.role_permission_id)
@@ -1009,33 +1071,55 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.Property(e => e.createp).HasDefaultValueSql("true");
+                entity.Property(e => e.createp)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.deletep).HasDefaultValueSql("true");
+                entity.Property(e => e.deletep)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
                 entity.Property(e => e.dev_factory_no)
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.exportp).HasDefaultValueSql("true");
+                entity.Property(e => e.exportp)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.importp).HasDefaultValueSql("true");
+                entity.Property(e => e.importp)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.is_active).HasDefaultValueSql("true");
+                entity.Property(e => e.is_active)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.permission1).HasDefaultValueSql("true");
+                entity.Property(e => e.permission1)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.permission2).HasDefaultValueSql("true");
+                entity.Property(e => e.permission2)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.permission3).HasDefaultValueSql("true");
+                entity.Property(e => e.permission3)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.permission4).HasDefaultValueSql("true");
+                entity.Property(e => e.permission4)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
-                entity.Property(e => e.readp).HasDefaultValueSql("true");
+                entity.Property(e => e.readp)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
                 entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.Property(e => e.updatep).HasDefaultValueSql("true");
+                entity.Property(e => e.updatep)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying");
 
                 entity.HasOne(d => d.created_byNavigation)
                     .WithMany(p => p.pdm_role_permissionscreated_byNavigation)
@@ -1083,7 +1167,10 @@ namespace PDMApp.Models
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.is_active).HasDefaultValueSql("true");
+                entity.Property(e => e.is_active)
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying")
+                    .HasComment("Y:N");
 
                 entity.Property(e => e.role_level).HasDefaultValueSql("3");
 
@@ -2106,11 +2193,13 @@ namespace PDMApp.Models
                     .HasComment("Email");
 
                 entity.Property(e => e.is_active)
-                    .HasDefaultValueSql("true")
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying")
                     .HasComment("是否生效");
 
                 entity.Property(e => e.is_sso)
-                    .HasDefaultValueSql("true")
+                    .HasColumnType("character varying")
+                    .HasDefaultValueSql("'Y'::character varying")
                     .HasComment("是否來自SSO建立帳號");
 
                 entity.Property(e => e.last_login).HasComment("上次登入時間");

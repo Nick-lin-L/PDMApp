@@ -1,4 +1,5 @@
-﻿using PDMApp.Utils.Converters;
+﻿using PDMApp.Models;
+using PDMApp.Utils.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,16 +25,27 @@ namespace PDMApp.Dtos.BasicProgram
         public int? RoleId { get; set; }
         //public int? PermissionId { get; set; }
         public string DevFactoryNo { get; set; }
-        public bool? IsActive { get; set; }
-        public bool? Createp { get; set; }
-        public bool? Readp { get; set; }
-        public bool? Updatep { get; set; }
-        public bool? Deletep { get; set; }
-        public bool? Exportp { get; set; }
-        public bool? Importp { get; set; }
-        public bool? Permission1 { get; set; }
-        public bool? Permission2 { get; set; }
-        public bool? Permission3 { get; set; }
-        public bool? Permission4 { get; set; }
+        public string? IsActive { get; set; }
+        public string? Createp { get; set; }
+        public string? Readp { get; set; }
+        public string? Updatep { get; set; }
+        public string? Deletep { get; set; }
+        public string? Exportp { get; set; }
+        public string? Importp { get; set; }
+        public string? Permission1 { get; set; }
+        public string? Permission2 { get; set; }
+        public string? Permission3 { get; set; }
+        public string? Permission4 { get; set; }
+        public Dictionary<string, string> PermissionDetails { get; set; } = new Dictionary<string, string>();
+    }
+
+    public class pdm_role_permission_detailsDto
+    {
+        public int RolePermissionDetailId { get; set; }  // 對應 pdm_role_permission_details 的主鍵
+        public int RolePermissionId { get; set; }  // 對應 pdm_role_permissions 的主鍵
+        public string? PermissionKeyD { get; set; }  // 權限細節名稱（如 TXT_import, PDF_import）
+        public string Description { get; set; }  // 權限細節描述
+        public string? IsActiveD { get; set; }  // 是否啟用
+        public string DevFactoryNoD { get; set; }  // 開發工廠編號
     }
 }

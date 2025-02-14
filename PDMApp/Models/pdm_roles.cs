@@ -23,7 +23,7 @@ namespace PDMApp.Models
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
         public int role_level { get; set; }
-        public bool? is_active { get; set; }
+        public string is_active { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
