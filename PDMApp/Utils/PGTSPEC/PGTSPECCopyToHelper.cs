@@ -16,7 +16,7 @@ namespace PDMApp.Utils.PGTSPEC
             try
             {
                 if (string.IsNullOrWhiteSpace(value.DevelopmentNo) ||
-                    string.IsNullOrWhiteSpace(value.DevelopmentColor) ||
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) ||
                     string.IsNullOrWhiteSpace(value.Stage) ||
                     string.IsNullOrWhiteSpace(value.DevFactoryNo))
                 {
@@ -40,7 +40,7 @@ namespace PDMApp.Utils.PGTSPEC
                                          join sh in _pcms_Pdm_TestContext.pcg_spec_head
                                              on pi.product_d_id equals sh.product_d_id
                                          where ph.development_no == value.DevelopmentNo
-                                               && pi.development_color_no == value.DevelopmentColor
+                                               && pi.development_color_no == value.DevelopmentColorNo
                                                && sh.spec_m_id == value.SpecMId // 透過 SpecMId 進一步篩選
                                          select new
                                          {
