@@ -109,40 +109,24 @@ namespace PDMApp.Controllers
         // 2. 查詢權限列表
         [HttpPost("permissions")]
         //public async Task<ActionResult<APIStatusResponse<IEnumerable<pdm_permissionsDto>>>> Permissions([FromBody] PermissionsParameter value)
-        public ActionResult<APIStatusResponse<IEnumerable<PermissionsWrapper>>> Permissions([FromBody] PermissionsParameter value)
+        //public ActionResult<APIStatusResponse<IEnumerable<PermissionsWrapper>>> Permissions([FromBody] PermissionsParameter value)
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Permissions([FromBody] PermissionsParameter value)
         {
             try
             {
+                // permissions 查詢
                 var query = BasicQueryHelper.QueryPermissions(_pcms_Pdm_TestContext);
-                var filters = new List<Expression<Func<pdm_permissionsDto, bool>>>();
+                var filters = await query.Distinct().OrderBy(q=>q.RolePermissionId).ToListAsync();
 
-                if (!string.IsNullOrWhiteSpace(value.PermissionId))
+                // details 查詢
+                var queryD = BasicQueryHelper.QueryPermissionDetails(_pcms_Pdm_TestContext);
+                var filtersD = await queryD.Distinct().OrderBy(q => q.RolePermissionDetailId).ToListAsync();
+                var dynamicData = new Dictionary<string, object>
                 {
-                    if (int.TryParse(value.PermissionId, out int permissionId))
-                    {
-                        filters.Add(ppe => ppe.PermissionId == permissionId);
-                    }
-                }
-                if (!string.IsNullOrWhiteSpace(value.PermissionName))
-                    filters.Add(ppe => ppe.PermissionName.Contains(value.PermissionName));
-                if (!string.IsNullOrWhiteSpace(value.Description))
-                    filters.Add(ppe => ppe.Description.Contains(value.Description));
-
-                foreach (var filter in filters)
-                {
-                    query = query.Where(filter);
-                }
-
-                var permissions = query.Distinct().OrderBy(ppe => ppe.PermissionId).ToList();
-                var wrapper = new List<PermissionsWrapper>
-                {
-                    new PermissionsWrapper
-                    {
-                        Permissions = permissions
-                    }
+                    { "Permissions", filters },
+                    { "PermissionDetails", filtersD },
                 };
-
-                return APIResponseHelper.HandleApiResponse(wrapper);
+                return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
             }
             catch (Exception ex)
             {

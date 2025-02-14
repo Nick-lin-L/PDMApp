@@ -36,15 +36,21 @@ namespace PDMApp.Dtos.BasicProgram
         public string? Permission2 { get; set; }
         public string? Permission3 { get; set; }
         public string? Permission4 { get; set; }
-        public Dictionary<string, string> PermissionDetails { get; set; } = new Dictionary<string, string>();
+        //public Dictionary<string, string> PermissionDetails { get; set; } = new Dictionary<string, string>();
     }
 
     public class pdm_role_permission_detailsDto
     {
+        // 以下為pdm_permissions資料
+        public int PermissionId { get; set; }  // 對應 pdm_permissions 的主鍵
+        public string PermissionName { get; set; }
+        public string Description { get; set; }
+
+        // 以下為pdm_role_permission_details資料
         public int RolePermissionDetailId { get; set; }  // 對應 pdm_role_permission_details 的主鍵
-        public int RolePermissionId { get; set; }  // 對應 pdm_role_permissions 的主鍵
-        public string? PermissionKeyD { get; set; }  // 權限細節名稱（如 TXT_import, PDF_import）
-        public string Description { get; set; }  // 權限細節描述
+        public int RoleId { get; set; }
+        public string? PermissionKey { get; set; }  // 權限細節名稱（如 TXT_import, PDF_import）
+        public string DescriptionD { get; set; }  // 權限細節描述
         public string? IsActiveD { get; set; }  // 是否啟用
         public string DevFactoryNoD { get; set; }  // 開發工廠編號
     }
