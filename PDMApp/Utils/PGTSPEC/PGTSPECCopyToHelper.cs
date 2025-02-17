@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
 using System;
@@ -11,16 +10,17 @@ namespace PDMApp.Utils.PGTSPEC
 {
     public class PGTSPECCopyToHelper
     {
-        public static async Task<IActionResult> CopyToSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, [FromBody] CopyToSpecParameter value)
+        public static async Task<(bool IsSuccess, string Message)> CopyToSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, CopyToSpecParameter value)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(value.DevelopmentNo) ||
                     string.IsNullOrWhiteSpace(value.DevelopmentColorNo) ||
                     string.IsNullOrWhiteSpace(value.Stage) ||
-                    string.IsNullOrWhiteSpace(value.DevFactoryNo))
+                    string.IsNullOrWhiteSpace(value.DevFactoryNo) ||
+                    string.IsNullOrWhiteSpace(value.SpecMId))
                 {
-                    return new BadRequestObjectResult(new { Message = "Missing required parameters." });
+                    return (false, "Missing required parameters.");
                 }
 
                 // 取得 stage_code
@@ -30,35 +30,38 @@ namespace PDMApp.Utils.PGTSPEC
 
                 if (string.IsNullOrEmpty(stageCode))
                 {
-                    return new BadRequestObjectResult(new { Message = "Invalid Stage provided." });
+                    return (false, "Invalid Stage provided.");
                 }
 
-                // 取得 PRODUCT_D_ID & 原始 SPEC_M_ID
-                var productData = await (from ph in _pcms_Pdm_TestContext.plm_product_head
-                                         join pi in _pcms_Pdm_TestContext.plm_product_item
-                                             on ph.product_m_id equals pi.product_m_id
-                                         join sh in _pcms_Pdm_TestContext.pcg_spec_head
-                                             on pi.product_d_id equals sh.product_d_id
-                                         where ph.development_no == value.DevelopmentNo
-                                               && pi.development_color_no == value.DevelopmentColorNo
-                                               && sh.spec_m_id == value.SpecMId // 透過 SpecMId 進一步篩選
-                                         select new
-                                         {
-                                             pi.product_d_id,
-                                             sh.spec_m_id
-                                         }).FirstOrDefaultAsync();
+                // 取得 PRODUCT_D_ID
+                var productDId = await (from ph in _pcms_Pdm_TestContext.plm_product_head
+                                        join pi in _pcms_Pdm_TestContext.plm_product_item
+                                            on ph.product_m_id equals pi.product_m_id
+                                        where ph.development_no == value.DevelopmentNo
+                                              && pi.development_color_no == value.DevelopmentColorNo
+                                        select pi.product_d_id).FirstOrDefaultAsync();
 
-
-                if (productData == null)
+                if (string.IsNullOrEmpty(productDId))
                 {
-                    return new NotFoundObjectResult(new { Message = "No matching records found in pcg_spec_head." });
+                    return (false, "No matching product_d_id found.");
                 }
 
+                // 取得符合條件的 SPEC_M_ID (僅依據 SpecMId 查詢)
+                var specMId = await (from sh in _pcms_Pdm_TestContext.pcg_spec_head
+                                     where sh.spec_m_id == value.SpecMId
+                                     select sh.spec_m_id).FirstOrDefaultAsync();
+
+                if (string.IsNullOrEmpty(specMId))
+                {
+                    return (false, "No matching spec_m_id found.");
+                }
+
+                // 產生新的 SPEC_M_ID
                 var newSpecMId = Guid.NewGuid().ToString();
                 var newSpecHead = new pcg_spec_head
                 {
                     spec_m_id = newSpecMId,
-                    product_d_id = productData.product_d_id,
+                    product_d_id = productDId,
                     stage_code = stageCode,
                     ver = 0,
                     create_mode = "C",
@@ -73,7 +76,7 @@ namespace PDMApp.Utils.PGTSPEC
 
                 // **複製原始 SPEC_M_ID 的 pcg_spec_item**
                 var specData = await (from si in _pcms_Pdm_TestContext.pcg_spec_item
-                                      where si.spec_m_id == productData.spec_m_id
+                                      where si.spec_m_id == specMId
                                       select si).ToListAsync();
 
                 var newSpecItems = specData.Select(si => new pcg_spec_item
@@ -115,21 +118,12 @@ namespace PDMApp.Utils.PGTSPEC
                 // 儲存變更
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
 
-                return new OkObjectResult(new { Message = "Copy success." });
+                return (true, "Copy success.");
             }
             catch (DbException ex)
             {
-                return new ObjectResult(new
-                {
-                    ErrorCode = "Server_ERROR",
-                    Message = "Database error occurred.",
-                    Details = ex.Message
-                })
-                {
-                    StatusCode = 500
-                };
+                return (false, $"Database error occurred: {ex.Message}");
             }
         }
-
     }
 }
