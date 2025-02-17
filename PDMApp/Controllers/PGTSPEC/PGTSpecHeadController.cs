@@ -60,123 +60,24 @@ namespace PDMApp.Controllers.PGTSPEC
             }
         }
 
-        //// POST api/v1/PGTSpecHead/BrandCombo
-        //[HttpPost("BrandCombo")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<BrandDto>>>> PostBrandCombo([FromBody] DevelopmentFactoryParameter value)
-        //{
-        //    try
-        //    {
-        //        var query = Utils.PGTSPEC.PGTSPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value);
-
-        //        return APIResponseHelper.HandleApiResponse(query);
-        //    }
-        //    catch (DbException ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            ErrorCode = "Server_ERROR",
-        //            Message = "ServerError",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
-        //// POST api/v1/PGTSpecHead/SpecSourceCombo
-        //[HttpPost("SpecSourceCombo")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<SpecSourceDto>>>> PostSpecSourceCombo([FromBody] DevelopmentFactoryParameter value)
-        //{
-        //    try
-        //    {
-        //        var query = Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecSource(_pcms_Pdm_TestContext, value);
-
-        //        return APIResponseHelper.HandleApiResponse(query);
-        //    }
-        //    catch (DbException ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            ErrorCode = "Server_ERROR",
-        //            Message = "ServerError",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
-        //// POST api/v1/PGTSpecHead/StageCombo
-        //[HttpPost("StageCombo")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<StageDto>>>> PostStageCombo([FromBody] DevelopmentFactoryParameter value)
-        //{
-        //    try
-        //    {
-        //        // 調用相應的查詢方法來獲取 Stage 數據
-        //        var query = Utils.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value);
-
-        //        // 處理 API 回應
-        //        return APIResponseHelper.HandleApiResponse(query);
-        //    }
-        //    catch (DbException ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            ErrorCode = "Server_ERROR",
-        //            Message = "ServerError",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
-
-        //// POST api/v1/PGTSpecHead/DevelopmentNoCombo
-        //[HttpPost("DevelopmentNoCombo")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<DevelopmentNoDto>>>> DevelopmentNoCombo()
-        //{
-        //    try
-        //    {
-        //        var query = Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
-
-        //        return APIResponseHelper.HandleApiResponse(query);
-        //    }
-        //    catch (DbException ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            ErrorCode = "Server_ERROR",
-        //            Message = "ServerError",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
-        //// POST api/v1/PGTSpecHead/DevelopmentColorNoCombo
-        //[HttpPost("DevelopmentColorNoCombo")]
-        //public async Task<ActionResult<APIStatusResponse<IEnumerable<DevelopmentColorNoDto>>>> DevelopmentColorNoCombo()
-        //{
-        //    try
-        //    {
-        //        var query = Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
-
-        //        return APIResponseHelper.HandleApiResponse(query);
-        //    }
-        //    catch (DbException ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            ErrorCode = "Server_ERROR",
-        //            Message = "ServerError",
-        //            Details = ex.Message
-        //        });
-        //    }
-        //}
-
         // POST api/v1/PGTSpecHead/InsertSpec
         [HttpPost("InsertSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> InsertSpec([FromBody] InsertSpecParameter value)
         {
             try
             {
-                var result = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value);
 
-                return StatusCode(500, new
+                if (!isSuccess)
+                {
+                    return StatusCode(500, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
                     Message = ""
@@ -199,9 +100,18 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var result = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value);
 
-                return StatusCode(500, new
+                if (!isSuccess)
+                {
+                    return StatusCode(500, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
                     Message = ""
@@ -211,12 +121,14 @@ namespace PDMApp.Controllers.PGTSPEC
             {
                 return StatusCode(500, new
                 {
-                    ErrorCode = "Server_ERROR",
+                    ErrorCode = "SERVER_ERROR",
                     Message = "ServerError",
                     Details = ex.Message
                 });
             }
         }
+
+
 
         // POST api/v1/PGTSpecHead/CheckoutSpec
         [HttpPost("CheckoutSpec")]
@@ -235,10 +147,10 @@ namespace PDMApp.Controllers.PGTSPEC
                     });
                 }
 
-                return Ok(new
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = message
+                    Message = ""
                 });
             }
             catch (DbException ex)
@@ -269,10 +181,10 @@ namespace PDMApp.Controllers.PGTSPEC
                     });
                 }
 
-                return Ok(new
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = message
+                    Message = ""
                 });
             }
             catch (DbException ex)
@@ -303,10 +215,10 @@ namespace PDMApp.Controllers.PGTSPEC
                     });
                 }
 
-                return Ok(new
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = message
+                    Message = ""
                 });
             }
             catch (DbException ex)
@@ -337,10 +249,10 @@ namespace PDMApp.Controllers.PGTSPEC
                     });
                 }
 
-                return Ok(new
+                return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = message
+                    Message = ""
                 });
             }
             catch (DbException ex)
@@ -353,8 +265,6 @@ namespace PDMApp.Controllers.PGTSPEC
                 });
             }
         }
-
-
 
         // POST api/v1/PGTSpecHead/ComboData
         [HttpPost("ComboData")]
