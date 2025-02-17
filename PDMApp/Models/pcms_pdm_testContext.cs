@@ -1028,12 +1028,14 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("'Y'::character varying")
                     .HasComment("是否啟用 (Y: 啟用, N: 停用)");
 
+                entity.Property(e => e.permission_id).HasComment("關聯 pdm_role_permissions 表中的 role_permission_id");
+
                 entity.Property(e => e.permission_key)
                     .IsRequired()
                     .HasMaxLength(50)
                     .HasComment("權限名稱");
 
-                entity.Property(e => e.role_permission_id).HasComment("關聯 pdm_role_permissions 表中的 role_permission_id");
+                entity.Property(e => e.role_id).HasComment("角色 ID");
 
                 entity.Property(e => e.updated_at)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -1047,11 +1049,17 @@ namespace PDMApp.Models
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("pdm_role_permission_details_created_by_fkey");
 
-                entity.HasOne(d => d.role_permission)
+                entity.HasOne(d => d.permission)
                     .WithMany(p => p.pdm_role_permission_details)
-                    .HasForeignKey(d => d.role_permission_id)
+                    .HasForeignKey(d => d.permission_id)
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("pdm_role_permission_details_role_permission_id_fkey");
+
+                entity.HasOne(d => d.role)
+                    .WithMany(p => p.pdm_role_permission_details)
+                    .HasForeignKey(d => d.role_id)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("pdm_role_permission_details_role_id_fkey");
 
                 entity.HasOne(d => d.updated_byNavigation)
                     .WithMany(p => p.pdm_role_permission_detailsupdated_byNavigation)
