@@ -135,35 +135,47 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="value">當使用者點擊畫面上的角色時會查詢該角色的權限有哪些。</param>
         /// <returns>回傳查詢後的角色+角色權限資料 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
-        [HttpPost("permissions")]
-        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Permissions([FromBody] PermissionsParameter value)
+        [HttpPost("role-permissions")]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePermissions([FromBody] PermissionsParameter value)
         {
             try
             {
                 // permissions 查詢
-                var result = await BasicQueryHelper.QueryPermissionsWithDetailsAsync(_pcms_Pdm_TestContext);
+                var result = await BasicQueryHelper.QueryPermissionsWithDetailsAsync(_pcms_Pdm_TestContext, value);
                 return APIResponseHelper.HandleDynamicMultiPageResponse(result);
             }
             catch (Exception ex)
             {
+                /*
                 return new ObjectResult(APIResponseHelper.HandleApiError<object>(
                     errorCode: "10001",
                     message: $"查詢過程中發生錯誤: {ex.Message}",
                     data: null
-                ));
+                )); 不確認型別的寫法，也可以但可能轉型會出現CS0029*/
+                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                    errorCode: "50001",
+                    message: $"權限更新過程中發生錯誤: {ex.Message}",
+                    data: null
+                );
             }
         }
 
         // 3. 新增或更新角色資料
         [HttpPost("upsert")]
-        public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
+        //public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         {
             using var transaction = await _pcms_Pdm_TestContext.Database.BeginTransactionAsync();
             try
             {
-                // 更新角色基本資訊
+                // 確保 Permissions 和 PermissionDetails 不為 null
+                request.Permissions ??= new List<PermissionRequest>();
+                request.PermissionDetails ??= new List<PermissionDetails>();
+
+                // **[1] 角色處理**
                 var role = await _pcms_Pdm_TestContext.pdm_roles
                     .FirstOrDefaultAsync(r => r.role_id == request.RoleId);
+
                 if (role == null)
                 {
                     // 新增角色
@@ -190,11 +202,14 @@ namespace PDMApp.Controllers
                     role.updated_at = DateTime.UtcNow;
                 }
 
-                // 更新 Permissions
+                // **確保 RoleId 正確**
+                int roleId = role.role_id;
+
+                // **[2] 更新 Permissions**
                 foreach (var perm in request.Permissions)
                 {
                     var existingPerm = await _pcms_Pdm_TestContext.pdm_role_permissions
-                        .FirstOrDefaultAsync(p => p.permission_id == perm.PermissionId && p.role_id == request.RoleId);
+                        .FirstOrDefaultAsync(p => p.permission_id == perm.PermissionId && p.role_id == roleId);
 
                     if (existingPerm != null)
                     {
@@ -202,6 +217,12 @@ namespace PDMApp.Controllers
                         existingPerm.is_active = perm.IsActive ?? existingPerm.is_active;
                         existingPerm.createp = perm.CreateP ?? existingPerm.createp;
                         existingPerm.readp = perm.ReadP ?? existingPerm.readp;
+                        existingPerm.updatep = perm.UpdateP ?? existingPerm.updatep;
+                        existingPerm.deletep = perm.DeleteP ?? existingPerm.deletep;
+                        existingPerm.exportp = perm.ExportP ?? existingPerm.exportp;
+                        existingPerm.importp = perm.ImportP ?? existingPerm.importp;
+                        existingPerm.dev_factory_no = perm.DevFactoryNo ?? request.DevFactoryNo;
+                        existingPerm.updated_by = request.UpdatedBy;
                         existingPerm.updated_at = DateTime.UtcNow;
                     }
                     else
@@ -209,11 +230,16 @@ namespace PDMApp.Controllers
                         // 新增權限
                         var newPerm = new pdm_role_permissions
                         {
-                            role_id = request.RoleId,
+                            role_id = roleId,
                             permission_id = perm.PermissionId,
                             is_active = perm.IsActive,
                             createp = perm.CreateP,
                             readp = perm.ReadP,
+                            updatep = perm.UpdateP,
+                            deletep = perm.DeleteP,
+                            exportp = perm.ExportP,
+                            importp = perm.ImportP,
+                            dev_factory_no = perm.DevFactoryNo,
                             created_by = request.UpdatedBy,
                             created_at = DateTime.UtcNow
                         };
@@ -221,16 +247,20 @@ namespace PDMApp.Controllers
                     }
                 }
 
-                // 更新 PermissionDetails
+                // **[3] 更新 PermissionDetails**
                 foreach (var detail in request.PermissionDetails)
                 {
                     var existingDetail = await _pcms_Pdm_TestContext.pdm_role_permission_details
-                        .FirstOrDefaultAsync(d => d.role_permission_detail_id == detail.RolePermissionDetailsId);
+                        .FirstOrDefaultAsync(d => d.permission_id == detail.PermissionId && d.role_id == roleId);
 
                     if (existingDetail != null)
                     {
                         // 更新詳細權限
                         existingDetail.is_active = detail.IsActiveD ?? existingDetail.is_active;
+                        existingDetail.dev_factory_no = detail.DevFactoryNoD ?? request.DevFactoryNo;
+                        existingDetail.permission_key = detail.PermissionKey ?? existingDetail.permission_key;
+                        existingDetail.description = detail.DescriptionD ?? existingDetail.description;
+                        existingDetail.updated_by = request.UpdatedBy;
                         existingDetail.updated_at = DateTime.UtcNow;
                     }
                     else
@@ -238,10 +268,12 @@ namespace PDMApp.Controllers
                         // 新增詳細權限
                         var newDetail = new pdm_role_permission_details
                         {
-                            role_id = request.RoleId,
+                            role_id = roleId,
                             permission_id = detail.PermissionId,
                             permission_key = detail.PermissionKey,
                             is_active = detail.IsActiveD,
+                            description = detail.DescriptionD,
+                            dev_factory_no = detail.DevFactoryNoD,
                             created_by = request.UpdatedBy,
                             created_at = DateTime.UtcNow
                         };
@@ -249,16 +281,29 @@ namespace PDMApp.Controllers
                     }
                 }
 
+                // **[4] 儲存 & 交易提交**
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
-                await transaction.CommitAsync();  // 交易提交
-                return Ok("Role and permissions updated successfully.");
+                await transaction.CommitAsync();
+                var resultData = new Dictionary<string, object>
+                {
+                    { "Role", new { role.role_id, role.role_name, role.description, role.dev_factory_no, role.is_active } },
+                    { "Permissions", request.Permissions },
+                    { "PermissionDetails", request.PermissionDetails }
+                };
+
+                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();  // 交易回滾
-                return StatusCode(500, $"Error: {ex.Message}");
+                await transaction.RollbackAsync();
+                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                    errorCode: "50001",
+                    message: $"權限更新過程中發生錯誤: {ex.Message}",
+                    data: null
+                );
             }
         }
+
 
 
 

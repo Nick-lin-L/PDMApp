@@ -71,12 +71,12 @@ namespace PDMApp.Dtos.BasicProgram
         public string DescriptionD { get; set; }  // 權限細節描述
         public string DevFactoryNoD { get; set; }  // 開發工廠編號
         public string? IsActiveD { get; set; }  // 是否啟用
-        public string? CreatedBy { get; set; }
-        [JsonConverter(typeof(DateTimeConverterHms))]
-        public DateTime? CreatedAt { get; set; }
-        public string? UpdatedBy { get; set; }
-        [JsonConverter(typeof(DateTimeConverterHms))]
-        public DateTime? UpdatedAt { get; set; }
+        //public string? CreatedBy { get; set; }
+        //[JsonConverter(typeof(DateTimeConverterHms))]
+        //public DateTime? CreatedAt { get; set; }
+        //public string? UpdatedBy { get; set; }
+        //[JsonConverter(typeof(DateTimeConverterHms))]
+        //public DateTime? UpdatedAt { get; set; }
     }
 
     public class pdm_role_permission_detailsInitDto

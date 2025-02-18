@@ -18,12 +18,17 @@
             <param name="value">傳入的參數物件，用於判斷是否需要過濾資料。</param>
             <returns>回傳查詢後的角色資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
         </member>
-        <member name="M:PDMApp.Controllers.RolePermissionController.Permissions(PDMApp.Parameters.Basic.PermissionsParameter)">
+        <member name="M:PDMApp.Controllers.RolePermissionController.RolePermissions(PDMApp.Parameters.Basic.PermissionsParameter)">
             <summary>
             查詢角色列表+權限列表
             </summary>
             <param name="value">當使用者點擊畫面上的角色時會查詢該角色的權限有哪些。</param>
             <returns>回傳查詢後的角色+角色權限資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
+        </member>
+        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.RoleId">
+            <summary>
+            角色 ID
+            </summary>
         </member>
         <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.PermissionId">
             <summary>
@@ -63,6 +68,11 @@
             </summary>
             <param name="_pcms_Pdm_TestContext"></param>
             <returns>廠別下拉、權限表、特殊權限表</returns>
+        </member>
+        <member name="M:PDMApp.Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(PDMApp.Models.pcms_pdm_testContext,PDMApp.Parameters.PGTSPEC.InsertSpecParameter)">
+            <summary>
+            插入 SPEC 資料，根據 SpecSource 決定是否插入 pcg_spec_item。
+            </summary>
         </member>
     </members>
 </doc>

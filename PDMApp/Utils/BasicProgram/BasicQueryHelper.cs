@@ -4,6 +4,7 @@ using PDMApp.Dtos.BasicProgram;
 using PDMApp.Dtos.Cbd;
 using PDMApp.Dtos.Spec;
 using PDMApp.Models;
+using PDMApp.Parameters.Basic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -170,7 +171,7 @@ namespace PDMApp.Utils.BasicProgram
         }
 
         // 查詢作業、作業權限權限
-        public static async Task<Dictionary<string, object>> QueryPermissionsWithDetailsAsync(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<Dictionary<string, object>> QueryPermissionsWithDetailsAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, PermissionsParameter parameters)
         {
             // 查詢 permissions
             var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
@@ -201,6 +202,24 @@ namespace PDMApp.Utils.BasicProgram
                                        Permission3 = Prp.permission3,
                                        Permission4 = Prp.permission4
                                    };
+            if (!string.IsNullOrWhiteSpace(parameters.RoleId))
+            {
+                int roleId = int.Parse(parameters.RoleId);
+                permissionsQuery = permissionsQuery.Where(p => p.RoleId == roleId);
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.PermissionId))
+            {
+                int permissionId = int.Parse(parameters.PermissionId);
+                permissionsQuery = permissionsQuery.Where(p => p.PermissionId == permissionId);
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.PermissionName))
+            {
+                permissionsQuery = permissionsQuery.Where(p => p.PermissionName.Contains(parameters.PermissionName));
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.DevFactoryNo))
+            {
+                permissionsQuery = permissionsQuery.Where(p => p.DevFactoryNo == parameters.DevFactoryNo);
+            }
 
             var permissions = await permissionsQuery.OrderBy(q => q.RolePermissionId).ToListAsync();
 
@@ -217,6 +236,20 @@ namespace PDMApp.Utils.BasicProgram
                                    DescriptionD = Prpd.description,
                                    IsActiveD = Prpd.is_active
                                };
+            if (!string.IsNullOrWhiteSpace(parameters.RoleId))
+            {
+                int roleId = int.Parse(parameters.RoleId);
+                detailsQuery = detailsQuery.Where(d => d.RoleId == roleId);
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.PermissionId))
+            {
+                int permissionId = int.Parse(parameters.PermissionId);
+                detailsQuery = detailsQuery.Where(d => d.PermissionId == permissionId);
+            }
+            if (!string.IsNullOrWhiteSpace(parameters.DevFactoryNo))
+            {
+                detailsQuery = detailsQuery.Where(d => d.DevFactoryNoD == parameters.DevFactoryNo);
+            }
 
             var permissionDetails = await detailsQuery.OrderBy(q => q.RolePermissionDetailId).ToListAsync();
 
