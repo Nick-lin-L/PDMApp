@@ -17,6 +17,8 @@ using Microsoft.Extensions.FileProviders;
 using System.IO;
 using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
+using System.Reflection;
+using PDMApp.Service;
 
 namespace PDMApp
 {
@@ -32,30 +34,31 @@ namespace PDMApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<pcms_pdm_testContext>(options => 
+            services.AddDbContext<pcms_pdm_testContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            /* ­ì¥Íswagger¤å¥ó°t¸m
+            /* ï¿½ï¿½ï¿½swaggerï¿½ï¿½ï¿½tï¿½m
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
 
-            // NSwag OpenAPI¤å¥ó°t¸m
+            // NSwag OpenAPIï¿½ï¿½ï¿½tï¿½m
             services.AddOpenApiDocument(config =>
             {
                 config.Title = "PDMApp";
                 config.Version = "v1";
-                config.Description = "PDMApp API ¤å¥ó (¦Û°Ê¥Í¦¨)";
+                config.Description = "PDMApp API ï¿½ï¿½ï¿½ (ï¿½Û°Ê¥Í¦ï¿½)";
             });
 
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // «ü©w«eºİ¨Ó·½
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ï¿½ï¿½ï¿½wï¿½eï¿½İ¨Ó·ï¿½
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials() // ¦pªG¦³ Cookie ©Î¾ÌÃÒ½Ğ¨D¡A³o¬O¥²»İªº
-                           .WithExposedHeaders("Message", "FileName"); // ¦pªG¤S¥[¤F·sHeads¡A³oÃäÁÙ­n¥[¤W«eºİ¤~¯à¬İ¨ì
+                           .AllowCredentials() // ï¿½pï¿½Gï¿½ï¿½ Cookie ï¿½Î¾ï¿½ï¿½Ò½Ğ¨Dï¿½Aï¿½oï¿½Oï¿½ï¿½ï¿½İªï¿½
+                           .WithExposedHeaders("Message", "FileName"); // ï¿½pï¿½Gï¿½Sï¿½[ï¿½Fï¿½sHeadsï¿½Aï¿½oï¿½ï¿½ï¿½Ù­nï¿½[ï¿½Wï¿½eï¿½İ¤~ï¿½ï¿½İ¨ï¿½
                 });
             });
+            AddScopedServices(services);
             //services.AddControllers();
             services.AddControllers()
             .AddJsonOptions(options =>
@@ -64,30 +67,52 @@ namespace PDMApp
             });
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true; // ? Åı API URL ÅÜ¦¨¤p¼g
+                options.LowercaseUrls = true; // ? ï¿½ï¿½ API URL ï¿½Ü¦ï¿½ï¿½pï¿½g
             });
         }
+        /// <summary>
+        /// è‡ªå‹•æƒæä¸¦æ³¨å…¥æ‰€æœ‰ç¹¼æ‰¿ IScopedService çš„é¡åˆ¥
+        /// </summary>
+        public void AddScopedServices(IServiceCollection services)
+        {
+            // è‡ªå‹•æƒæä¸¦è¨»å†Šæ‰€æœ‰ç¹¼æ‰¿ IScopedService çš„é¡åˆ¥
+            var assembly = Assembly.GetExecutingAssembly();
+            var serviceTypes = assembly.GetTypes()
+                .Where(t => t.IsClass &&
+                            !t.IsAbstract &&
+                            typeof(IScopedService).IsAssignableFrom(t)) // å–å¾—æ‰€æœ‰å¯¦ä½œ IScopedService çš„é¡åˆ¥
+                .Select(t => new
+                {
+                    Service = t.GetInterfaces().FirstOrDefault(i => typeof(IScopedService).IsAssignableFrom(i) && i != typeof(IScopedService)),
+                    Implementation = t
+                })
+                .Where(t => t.Service != null); //ç¢ºä¿æœ‰å°æ‡‰çš„ä»‹é¢
 
+            foreach (var type in serviceTypes)
+            {
+                services.AddScoped(type.Service, type.Implementation);
+            }
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             //if (env.IsDevelopment())
             //{
-                app.UseDeveloperExceptionPage();
-                app.UseOpenApi(); // OpenAPI ³W½d¤åÀÉ (swagger.json)
-                //app.UseSwagger(); ­ì¥Íswagger
-                app.UseSwaggerUi3(); // NSwag
-                //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
-            //}
+            app.UseDeveloperExceptionPage();
+            app.UseOpenApi(); // OpenAPI ï¿½Wï¿½dï¿½ï¿½ï¿½ï¿½ (swagger.json)
+                              //app.UseSwagger(); ï¿½ï¿½ï¿½swagger
+            app.UseSwaggerUi3(); // NSwag
+                                 //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
+                                 //}
 
             //app.UseHttpsRedirection();
             //app.UseStaticFiles();
             var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
 
-            // ¦pªG¸ê®Æ§¨¤£¦s¦b¡A«h¦Û°Ê«Ø¥ß
+            // ï¿½pï¿½Gï¿½ï¿½Æ§ï¿½ï¿½ï¿½ï¿½sï¿½bï¿½Aï¿½hï¿½Û°Ê«Ø¥ï¿½
             if (!Directory.Exists(exportFolder))
             {
-                Directory.CreateDirectory(exportFolder); // «Ø¥ß¸ê®Æ§¨
+                Directory.CreateDirectory(exportFolder); // ï¿½Ø¥ß¸ï¿½Æ§ï¿½
             }
 
             app.UseStaticFiles(new StaticFileOptions
