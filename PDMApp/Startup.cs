@@ -36,26 +36,26 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            /* ���swagger���t�m
-            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
+            // 原生swagger文件配置
+            //services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });
 
-            // NSwag OpenAPI���t�m
+            // NSwag OpenAPI文件配置
             services.AddOpenApiDocument(config =>
             {
                 config.Title = "PDMApp";
                 config.Version = "v1";
-                config.Description = "PDMApp API ��� (�۰ʥͦ�)";
+                config.Description = "PDMApp API 文件 (自動生成)";
             });
 
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ���w�e�ݨӷ�
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // 指定前端來源
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials() // �p�G�� Cookie �ξ��ҽШD�A�o�O���ݪ�
-                           .WithExposedHeaders("Message", "FileName"); // �p�G�S�[�F�sHeads�A�o���٭n�[�W�e�ݤ~��ݨ�
+                           .AllowCredentials() // 如果有 Cookie 或憑證請求，這是必需的
+                           .WithExposedHeaders("Message", "FileName"); // 如果又加了新Heads，這邊還要加上前端才能看到
                 });
             });
             AddScopedServices(services);
@@ -67,7 +67,7 @@ namespace PDMApp
             });
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true; // ? �� API URL �ܦ��p�g
+                options.LowercaseUrls = true; // 讓 API URL 變成小寫
             });
         }
         /// <summary>
@@ -99,8 +99,8 @@ namespace PDMApp
             //if (env.IsDevelopment())
             //{
             app.UseDeveloperExceptionPage();
-            app.UseOpenApi(); // OpenAPI �W�d���� (swagger.json)
-                              //app.UseSwagger(); ���swagger
+            app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
+                              //app.UseSwagger(); 原生swagger
             app.UseSwaggerUi3(); // NSwag
                                  //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
                                  //}
@@ -109,10 +109,10 @@ namespace PDMApp
             //app.UseStaticFiles();
             var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
 
-            // �p�G��Ƨ����s�b�A�h�۰ʫإ�
+            // 如果資料夾不存在，則自動建立
             if (!Directory.Exists(exportFolder))
             {
-                Directory.CreateDirectory(exportFolder); // �إ߸�Ƨ�
+                Directory.CreateDirectory(exportFolder); // 建立資料夾
             }
 
             app.UseStaticFiles(new StaticFileOptions
