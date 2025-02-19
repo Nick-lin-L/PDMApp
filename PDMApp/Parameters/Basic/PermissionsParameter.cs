@@ -11,6 +11,10 @@ namespace PDMApp.Parameters.Basic
 #nullable enable
         //[Required]
         /// <summary>
+        /// 角色 ID
+        /// </summary>
+        public string? RoleId { get; set; }
+        /// <summary>
         /// 權限 ID
         /// </summary>
         public string? PermissionId { get; set; }
