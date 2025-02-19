@@ -54,7 +54,7 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class PGTSpec5SheetsUpdateParameter
     {
-        public HeadDataParameter HeadData { get; set; } = new HeadDataParameter();
+        public List<HeadDataParameter> HeadData { get; set; } // 改為 List
         public List<SpecItemUpdateParameter> UpperData { get; set; } = new List<SpecItemUpdateParameter>();
         public List<SpecItemUpdateParameter> SoleData { get; set; } = new List<SpecItemUpdateParameter>();
         public List<SpecItemUpdateParameter> OtherData { get; set; } = new List<SpecItemUpdateParameter>();
@@ -74,7 +74,6 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class SpecItemUpdateParameter
     {
-        public string SpecDId { get; set; }  // 唯一識別碼
         public int Sort { get; set; } // material_sort
         public string No { get; set; } // parts_no
         public string ActPartNo { get; set; } // act_part_no

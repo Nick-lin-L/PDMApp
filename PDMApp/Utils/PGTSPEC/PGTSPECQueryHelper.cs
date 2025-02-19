@@ -251,5 +251,99 @@ namespace PDMApp.Utils.PGTSPEC
                 UpdateUser = q.UpdateUser
             });
         }
+
+        public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_pdm_testContext)
+        {
+            return (from ph in _pcms_pdm_testContext.plm_product_head
+                    join pi in _pcms_pdm_testContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                    join pn in _pcms_pdm_testContext.pdm_namevalue_new on ph.stage equals pn.text
+                    join psh in _pcms_pdm_testContext.pcg_spec_head on pi.product_d_id equals psh.product_d_id
+                    where pn.group_key == "stage"
+                    select new SpecBasicDTO
+                    {
+                        SpecMId = psh.spec_m_id,
+                        DevNo = ph.development_no,
+                        ItemNo = ph.item_trading_code,            // ITEM NO
+                        ModelName = ph.working_name,              // MODEL NAME
+                        Factory = ph.assigned_agents,             // FACTORY
+                        Season = ph.item_initial_season,          // SEASON
+                        SampleSize = ph.default_size,             // SAMPLE SIZE
+                        SizeRun = ph.size_run,                    // SIZE RUN
+                        SizeRange = ph.size_range,                // SIZE RANGE
+                        Stage = pn.text,                          // STAGE（使用 pn.text 取得描述）
+                        ColorWay = pi.colorway,                   // COLOR WAY
+                        ColorCode = pi.color_code,                // COLOR CODE
+                        DevColorNo = pi.development_color_no,     // DEVELOPMENT COLOR NO
+                        MainColor = pi.main_color,                // MAIN COLOR
+                        SubColor = pi.sub_color,                  // SUB COLOR
+                        ItemMode = ph.item_mode,                  // ITEM MODE
+                        SubItemMode = ph.item_mode_sub_type,      // SUB ITEM MODE
+                        Gender = ph.gender,                       // GENDER
+                        Width = ph.width,                         // WIDTH
+                        Last1 = ph.last1,                         // LAST1
+                        Last2 = ph.last2,                         // LAST2
+                        Last3 = ph.last3,                         // LAST3
+                        SizeMap = ph.sizemap,                     // SIZE MAP
+                        Lasting = ph.lasting,                     // LASTING
+                        HeelHeight = ph.heel_height,              // HEEL HEIGHT
+                        ProductType = ph.product_line_type,       // PRODUCT TYPE
+                        Category = ph.category1,                  // CATEGORY
+                        ProductionLeadTime = ph.production_lead_time // PRODUCT LEAD TIME
+                    });
+        }
+
+        public static IQueryable<SpecUpperDTO> GetSpecUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return from si in _pcms_Pdm_TestContext.pcg_spec_item
+                   select new SpecUpperDTO
+                   {
+                       SpecMId = si.spec_m_id,
+                       SpecDId = si.spec_d_id,
+                       Sort = si.material_sort,
+                       No = si.parts_no,
+                       ActPartNo = si.act_part_no,
+                       Type = si.material_new,
+                       Parts = si.parts,
+                       Detail = si.detail,
+                       ProcessMk = si.process_mk,
+                       MaterialNo = "", // MATERIAL NO 需要透過 MATERIAL 關聯 PDM_MATERIAL 取得
+                       Material = si.material,
+                       Recycle = si.recycle,
+                       MaterialComment = si.mat_comment,
+                       Standard = si.standard,
+                       Agent = si.agent,
+                       Supplier = si.supplier,
+                       QuoteSupplier = si.quote_supplier,
+                       Hcha = si.hcha, // HC/HA
+                       Sec = si.sec,
+                       Colors = si.material_color,
+                       ColorComment = si.clr_comment,
+                       Memo = si.memo,
+                       MatGroup = si.material_group
+                   };
+        }
+
+
+        public static IQueryable<SpecHeadDto> GetSpecHeadResponse(pcms_pdm_testContext context)
+        {
+            var query = from sh in context.pcg_spec_head
+                        select new SpecHeadDto
+                        {
+                            SpecMId = sh.spec_m_id,
+                            PgtColorName = sh.pgt_color_name,
+                            RefDevNo = sh.ref_dev_no,
+                            MailTo = "", // TBD 欄位，先給空值
+                            MailCc = "", // TBD 欄位，先給空值
+                            MoldNo1 = sh.mold_no1,
+                            MoldNo2 = sh.mold_no2,
+                            MoldNo3 = sh.mold_no3,
+                            RemarksSpec = sh.remarks_spec,
+                            RemarksProhibit = sh.remarks_prohibit
+                        };
+
+            return query;
+        }
+
+
     }
 }
