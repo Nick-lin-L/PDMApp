@@ -15,8 +15,11 @@ using Npgsql;
 using Npgsql.TypeHandlers.NetworkHandlers;
 using PDMApp.Extensions;
 using PDMApp.Models;
+using PDMApp.Parameters.PLM.CBD;
 using PDMApp.Utils;
-using static PDMApp.Dtos.PLM.CBD.CbdQueryDto;
+using PDMApp.Dtos.PLM.CBD;
+using PDMApp.Parameters.PGTSPEC;
+using PDMApp.Service;
 
 namespace PDMApp.Controllers.PLM.CBD
 {
@@ -26,10 +29,12 @@ namespace PDMApp.Controllers.PLM.CBD
     {
         private readonly ILogger<CbdQueryController> _logger;
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
-        public CbdQueryController(pcms_pdm_testContext pcms_Pdm_testContext, ILogger<CbdQueryController> logger)
+        private readonly IComboService _icomboService;
+        public CbdQueryController(pcms_pdm_testContext pcms_Pdm_testContext, ILogger<CbdQueryController> logger, IComboService icomboService)
         {
             _logger = logger;
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
+            _icomboService = icomboService;
         }
         [HttpGet]
         public async Task<ActionResult<APIStatusResponse<object>>> Development_nos()
@@ -42,7 +47,7 @@ namespace PDMApp.Controllers.PLM.CBD
                                                                              Select(x => x.development_no).
                                                                              Distinct().
                                                                              ToArrayAsync();
-                response.Message = "OK";
+                response.ErrorCode = "OK";
                 return response;
             }
             catch (Exception e)
@@ -85,7 +90,8 @@ namespace PDMApp.Controllers.PLM.CBD
                                                                              Select(x => new { key = x.development_color_no, displayvalue = @$"{x.development_color_no}[{x.color_code}]" }).
                                                                              Distinct().
                                                                              ToArrayAsync();
-                response.Message = "OK";
+                response.Message = "";
+                response.ErrorCode = "OK";
                 return response;
             }
             catch (Exception e)
@@ -128,7 +134,8 @@ namespace PDMApp.Controllers.PLM.CBD
                                                                              Select(x => new { key = x.value_desc, displayvalue = @$"{x.value_desc}[{x.text}]" }).
                                                                              Distinct().
                                                                              ToArrayAsync();
-                response.Message = "OK";
+                response.Message = "";
+                response.ErrorCode = "OK";
                 return response;
             }
             catch (Exception e)
@@ -169,7 +176,7 @@ namespace PDMApp.Controllers.PLM.CBD
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.PLM.CBD.CbdQueryDto.QueryDto>>>> Query(Parameters.PLM.CBD.CbdQueryParameter parameter)
+        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.PLM.CBD.CbdQueryDto.QueryDto>>>> Query(Parameters.PLM.CBD.CbdQueryParameter.CbdQuery parameter)
         {
             var response = new APIStatusResponse<Utils.PagedResult<object>>();
             try
@@ -255,16 +262,6 @@ namespace PDMApp.Controllers.PLM.CBD
         [HttpGet("{Data_m_id}")]
         public async Task<ActionResult<APIStatusResponse<object>>> CbdData(string Data_m_id)
         {
-            // string stage_no = this.dgvHeadData.CurrentRow.Cells["STAGE"].Value.ToString();
-            // string product_m_id = this.dgvHeadData.CurrentRow.Cells["PRODUCT_M_ID"].Value.ToString();
-            // string product_d_id = this.dgvHeadData.CurrentRow.Cells["PRODUCT_D_ID"].Value.ToString();
-            // if (stage_no.Length == 0)
-            //     return;
-            // string spec_m_id = AnalysisBL.Get_Spec_m_Id(product_d_id, stage_no);
-            // if (spec_m_id.Length == 0)
-            // {
-            //     MessageBox.Show("not found spec data");
-            // }
             var response = new APIStatusResponse<object>();
             try
             {
@@ -337,19 +334,6 @@ namespace PDMApp.Controllers.PLM.CBD
                 var product_d_id = query.pi.product_d_id;
                 var stage = query.ch.stage;
 
-                // _logger.LogInformation(product_m_id);
-                // _logger.LogInformation(product_d_id);
-                // _logger.LogInformation(stage);
-                // var specData = await (from ph in _pcms_Pdm_TestContext.pdm_spec_head
-                //                       join pi in _pcms_Pdm_TestContext.pdm_spec_item
-                //                       on ph.spec_m_id equals pi.spec_m_id
-                //                       where ph.product_d_id == product_d_id && ph.stage == stage
-                //                       select new
-                //                       {
-                //                           ph = ph,
-                //                           pi = pi,
-                //                       }).FirstOrDefaultAsync();
-
                 var basic = new Dtos.PLM.CBD.CbdQueryDto.BasicDto();
                 basic.SetValues(query.ch.GetPropertiesWithValues());
                 basic.SetValues(query.pi.GetPropertiesWithValues());
@@ -386,47 +370,37 @@ namespace PDMApp.Controllers.PLM.CBD
             }
             return response;
         }
-        [HttpGet()]
-        public async Task<ActionResult<APIStatusResponse<object>>> Initial()
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Initial(DevelopmentFactoryParameter? value)
         {
             var response = new APIStatusResponse<object>();
             try
             {
-                var dev_no = await _pcms_Pdm_TestContext.plm_product_head.Where(x => !string.IsNullOrWhiteSpace(x.development_no)).
-                                                                             Select(x => new { Id = x.development_no, Value = x.development_no, Text = x.development_no }).
-                                                                             Distinct().
-                                                                             ToListAsync();
-                var development_color_no = await _pcms_Pdm_TestContext.plm_product_item.Where(x => !string.IsNullOrWhiteSpace(x.development_color_no)).
-                                                                             Select(x => new { Id = x.development_color_no, Value = x.color_code, Text = @$"{x.development_color_no}[{x.color_code}]" }).
-                                                                             Distinct().
-                                                                             ToListAsync();
-                var stage = await _pcms_Pdm_TestContext.pdm_namevalue.Where(x => x.group_key == "stage").
-                                                                             Select(x => new { Id = x.value_desc, Value = x.text, Text = @$"{x.value_desc}[{x.text}]" }).
-                                                                             Distinct().
-                                                                             ToListAsync();
 
-                var dynamicData = new Dictionary<string, object>
-                {
-                    { "Development_Color_no", development_color_no.OrderBy(x=>x.Id) },
-                    { "Stage", stage.OrderBy(x=>x.Id) },
-                    { "Development_No", dev_no }
-                };
+                var resultData = new Dictionary<string, object>();
 
-                response.Data = dynamicData;
-                response.Message = "OK";
-                return response;
+                // 依序執行查詢，確保每次只有一個查詢在執行
+                resultData["BrandCombo"] = new string[] { "ASICS" };
+                resultData["StageCombo"] = await _icomboService.Stage();
+                resultData["DevelopmentNoCombo"] = await _icomboService.DevelopmentNo("ASICS");
+                resultData["DevelopmentColorNoCombo"] = await _icomboService.ColorNo();
+
+                // 封裝結果並回傳
+                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
             catch (Exception e)
             {
-                var Data = new Dictionary<string, object>();
-                response.ErrorCode = "20001";
-                response.Message = e.Message;
-                return response;
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = e.Message
+                });
             }
         }
 
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> Import(CbdExcel value)
+        public async Task<ActionResult<APIStatusResponse<object>>> Import(CbdQueryParameter.CbdExcel value)
         {
             var response = new APIStatusResponse<object>();
             var Data = new Dictionary<string, object>();
@@ -511,6 +485,7 @@ namespace PDMApp.Controllers.PLM.CBD
 
                 _pcms_Pdm_TestContext.plm_cbd_head.Add(_plm_cbd_head);
                 int i = 1;
+                plm_cbd_item previou = null;
                 foreach (var _upper in value.Data.Upper)
                 {
                     var item = new plm_cbd_item();
@@ -519,11 +494,19 @@ namespace PDMApp.Controllers.PLM.CBD
                     item.data_d_id = Guid.NewGuid().ToString();
                     item.data_id = item.data_d_id;
                     item.partclass = "A";
+                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
+                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
+                    {
+                        item.act_parts = previou.act_parts;
+                        item.act_no = previou.act_no;
+                    }
                     item.seqno = i;
                     i++;
+                    previou = item;
                     _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
                 }
                 i = 1;
+                previou = null;
                 foreach (var sole in value.Data.Sole)
                 {
                     var item = new plm_cbd_item();
@@ -532,11 +515,19 @@ namespace PDMApp.Controllers.PLM.CBD
                     item.data_d_id = Guid.NewGuid().ToString();
                     item.data_id = item.data_d_id;
                     item.partclass = "B";
+                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
+                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
+                    {
+                        item.act_parts = previou.act_parts;
+                        item.act_no = previou.act_no;
+                    }
                     item.seqno = i;
                     i++;
+                    previou = item;
                     _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
                 }
                 i = 1;
+                previou = null;
                 foreach (var other in value.Data.Other)
                 {
                     var item = new plm_cbd_item();
@@ -545,8 +536,15 @@ namespace PDMApp.Controllers.PLM.CBD
                     item.data_d_id = Guid.NewGuid().ToString();
                     item.data_id = item.data_d_id;
                     item.partclass = "C";
+                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
+                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
+                    {
+                        item.act_parts = previou.act_parts;
+                        item.act_no = previou.act_no;
+                    }
                     item.seqno = i;
                     i++;
+                    previou = item;
                     _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
                 }
                 foreach (var mold in value.Data.MoldCharge)
@@ -558,7 +556,8 @@ namespace PDMApp.Controllers.PLM.CBD
                     _pcms_Pdm_TestContext.plm_cbd_moldcharge.Add(item);
                 }
                 int row = _pcms_Pdm_TestContext.SaveChanges();
-                response.Message = "OK";
+                response.Message = "";
+                response.ErrorCode = "OK";
                 response.Data = Data;
                 Data.Add("data_m_id", _plm_cbd_head.data_m_id);
                 Data.Add("row", row);
