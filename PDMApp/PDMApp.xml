@@ -55,6 +55,16 @@
             頁碼
             </summary>
         </member>
+        <member name="T:PDMApp.Service.PLM.CBD.ICbdQueryService">
+            <summary>
+            PLM CBD 查詢相關服務
+            </summary>
+        </member>
+        <member name="M:PDMApp.Startup.AddScopedServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            自動掃描並注入所有繼承 IScopedService 的類別
+            </summary>
+        </member>
         <member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryFactory(PDMApp.Models.pcms_pdm_testContext)">
             <summary>
             廠別下拉，只要是下拉都預設使用pdm_DropDownDto

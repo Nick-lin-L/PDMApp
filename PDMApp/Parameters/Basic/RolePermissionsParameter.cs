@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using PDMApp.Utils.Converters;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -8,7 +10,8 @@ namespace PDMApp.Parameters.Basic
 {
     public class RolePermissionsParameter
     {
-        public int RoleId { get; set; } // 角色 ID（新增時為 null）
+        //[JsonConverter(typeof(IntConverterStr))]
+        public string? RoleId { get; set; } // 角色 ID（新增時為 null）
         public string? RoleName { get; set; } // 角色名稱
         public string? Description { get; set; } // 角色描述
         public string? DevFactoryNo { get; set; } // 開發工廠編號
@@ -20,7 +23,7 @@ namespace PDMApp.Parameters.Basic
 
     public class PermissionRequest
     {
-        public int PermissionId { get; set; } // 權限 ID
+        public int? PermissionId { get; set; } // 權限 ID
         public string IsActive { get; set; } // 是否啟用
         public string CreateP { get; set; } // 新增權限
         public string ReadP { get; set; } // 讀取權限
