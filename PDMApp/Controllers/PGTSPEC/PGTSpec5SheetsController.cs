@@ -54,6 +54,7 @@ namespace PDMApp.Controllers.SPEC
                     .ThenBy(si => int.TryParse(si.ActPartNo, out int num) ? num : 0)
                     .ThenBy(si => string.IsNullOrEmpty(si.No) ? 1 : 0)  // parts_no 有值的排前
                     .ThenBy(si => si.No) // 按 parts_no 排序
+                    .ThenBy(si => si.Sort) // 加入 material_sort 排序
                     .ToList();
 
                 // 根據 MatGroup 分組
@@ -83,8 +84,6 @@ namespace PDMApp.Controllers.SPEC
                 });
             }
         }
-
-
 
         // POST api/v1/PGTSpec5Sheets/UpdateSpec
         [HttpPost("UpdateSpec")]

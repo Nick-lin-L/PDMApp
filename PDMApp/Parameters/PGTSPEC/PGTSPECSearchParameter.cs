@@ -74,7 +74,7 @@ namespace PDMApp.Parameters.PGTSPEC
 
     public class SpecItemUpdateParameter
     {
-        public int Sort { get; set; } // material_sort
+        public decimal Sort { get; set; } // material_sort
         public string No { get; set; } // parts_no
         public string ActPartNo { get; set; } // act_part_no
         public string Type { get; set; } // material_new

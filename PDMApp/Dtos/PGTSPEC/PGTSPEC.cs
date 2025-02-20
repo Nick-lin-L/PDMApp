@@ -109,7 +109,7 @@ namespace Dtos.PGTSPEC
         public string? SpecMId { get; set; }
         [JsonIgnore]
         public string? SpecDId { get; set; }
-        public int? Sort { get; set; } // MATERIAL_SORT
+        public decimal? Sort { get; set; } // MATERIAL_SORT
         public string? No { get; set; } // PART_NO
         public string? ActPartNo { get; set; } // ACT_PART_NO
         public string? Type { get; set; } // MATERIAL_NEW
