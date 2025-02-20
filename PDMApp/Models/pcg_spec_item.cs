@@ -9,7 +9,7 @@ namespace PDMApp.Models
     {
         public string spec_d_id { get; set; }
         public string spec_m_id { get; set; }
-        public int? material_sort { get; set; }
+        public decimal? material_sort { get; set; }
         public string material_group { get; set; }
         public string parts_no { get; set; }
         public string material_new { get; set; }
