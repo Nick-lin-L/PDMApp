@@ -382,6 +382,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.material_new).HasMaxLength(10);
 
+                entity.Property(e => e.material_sort).HasPrecision(10, 2);
+
                 entity.Property(e => e.memo).HasMaxLength(400);
 
                 entity.Property(e => e.mtrbase).HasMaxLength(200);
