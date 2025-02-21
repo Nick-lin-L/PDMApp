@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Service;
 
+
 namespace PDMApp
 {
     public class Startup
@@ -45,6 +46,7 @@ namespace PDMApp
                 config.Title = "PDMApp";
                 config.Version = "v1";
                 config.Description = "PDMApp API 文件 (自動生成)";
+
             });
 
             services.AddCors(options =>
@@ -64,6 +66,9 @@ namespace PDMApp
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.WriteIndented = true; // 可選，讓 JSON 格式更易讀
+
             });
             services.Configure<RouteOptions>(options =>
             {

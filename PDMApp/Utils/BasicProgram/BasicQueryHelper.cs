@@ -81,7 +81,7 @@ namespace PDMApp.Utils.BasicProgram
                         PermissionId = Pp.permission_id,
 
                         //以下為pdm_role_permissions資料
-                        RolePermissionDetailId = Prpd.role_permission_detail_id,
+                        //RolePermissionDetailId = Prpd.role_permission_detail_id,
                         RoleId = Prpd.role_id,
                         DevFactoryNoD = Prpd.dev_factory_no,
                         PermissionKey = Prpd.permission_key,
@@ -150,16 +150,18 @@ namespace PDMApp.Utils.BasicProgram
                                join Pp in _pcms_Pdm_TestContext.pdm_permissions on Prpd.permission_id equals Pp.permission_id
                                select new pdm_role_permission_detailsInitDto
                                {
-                                   RolePermissionDetailId = Prpd.role_permission_detail_id,
+                                   //RolePermissionDetailId = Prpd.role_permission_detail_id,
                                    //RoleId = Prpd.role_id,
                                    PermissionId = Prpd.permission_id,
+                                   PermissionName = Pp.permission_name,
+                                   Description = Pp.description,
                                    //DevFactoryNoD = Prpd.dev_factory_no,
                                    PermissionKey = Prpd.permission_key,
                                    DescriptionD = Prpd.description,
                                    IsActiveD = Prpd.is_active
                                };
 
-            var permissionDetails = await detailsQuery.OrderBy(q => q.RolePermissionDetailId).ToListAsync();
+            var permissionDetails = await detailsQuery.Distinct().OrderBy(q => q.PermissionId).ToListAsync();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
@@ -228,7 +230,7 @@ namespace PDMApp.Utils.BasicProgram
                                join Pp in _pcms_Pdm_TestContext.pdm_permissions on Prpd.permission_id equals Pp.permission_id
                                select new pdm_role_permission_detailsDto
                                {
-                                   RolePermissionDetailId = Prpd.role_permission_detail_id,
+                                   //RolePermissionDetailId = Prpd.role_permission_detail_id,
                                    RoleId = Prpd.role_id,
                                    PermissionId = Prpd.permission_id,
                                    DevFactoryNoD = Prpd.dev_factory_no,
@@ -251,7 +253,7 @@ namespace PDMApp.Utils.BasicProgram
                 detailsQuery = detailsQuery.Where(d => d.DevFactoryNoD == parameters.DevFactoryNo);
             }
 
-            var permissionDetails = await detailsQuery.OrderBy(q => q.RolePermissionDetailId).ToListAsync();
+            var permissionDetails = await detailsQuery.OrderBy(q => q.PermissionId).ToListAsync();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
