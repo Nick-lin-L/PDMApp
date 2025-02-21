@@ -55,7 +55,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\FactorySPEC\" />
-    <Folder Include="NewFolder\" />
     <Folder Include="Utils\Cbd\" />
     <Folder Include="Utils\Plm\" />
   </ItemGroup>

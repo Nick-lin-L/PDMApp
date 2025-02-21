@@ -17,6 +17,10 @@ using Microsoft.Extensions.FileProviders;
 using System.IO;
 using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
+using System.Reflection;
+using PDMApp.Service;
+using PDMApp.Repositories.Basic;
+using PDMApp.Service.Basic;
 
 namespace PDMApp
 {
@@ -34,26 +38,28 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options => 
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            /* ≠Ï•Õswagger§Â•Û∞t∏m
-            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
+            services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+            services.AddScoped<IRolePermissionService, RolePermissionService>();
+            // ≠Ï•Õswagger§Â•Û∞t∏m
+            //services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });
 
-            // NSwag OpenAPI§Â•Û∞t∏m
+            // NSwag OpenAPI?á‰ª∂?çÁΩÆ
             services.AddOpenApiDocument(config =>
             {
                 config.Title = "PDMApp";
                 config.Version = "v1";
-                config.Description = "PDMApp API §Â•Û (¶€∞ •Õ¶®)";
+                config.Description = "PDMApp API ?á‰ª∂ (?™Â??üÊ?)";
             });
 
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ´¸©w´e∫›®”∑Ω
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ?áÂ??çÁ´Ø‰æÜÊ?
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials() // ¶p™G¶≥ Cookie ©ŒæÃ√“Ω–®D°A≥o¨O•≤ª›™∫
-                           .WithExposedHeaders("Message", "FileName"); // ¶p™G§S•[§F∑sHeads°A≥o√‰¡Ÿ≠n•[§W´e∫›§~Ø‡¨›®Ï
+                           .AllowCredentials() // Â¶ÇÊ???Cookie ?ñÊ?Ë≠âË?Ê±ÇÔ??ôÊòØÂøÖÈ???
+                           .WithExposedHeaders("Message", "FileName"); // Â¶ÇÊ??àÂ?‰∫ÜÊñ∞HeadsÔºåÈÄôÈ??ÑË??†‰??çÁ´Ø?çËÉΩ?ãÂà∞
                 });
             });
             //services.AddControllers();
@@ -61,10 +67,12 @@ namespace PDMApp
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                options.JsonSerializerOptions.WriteIndented = true; // ?ØÈÅ∏ÔºåË? JSON ?ºÂ??¥Ê?ËÆÄ
             });
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true; // ? ≈˝ API URL ≈‹¶®§pºg
+                options.LowercaseUrls = true; // ? ËÆ?API URL ËÆäÊ?Â∞èÂØ´
             });
         }
 
@@ -74,8 +82,8 @@ namespace PDMApp
             //if (env.IsDevelopment())
             //{
                 app.UseDeveloperExceptionPage();
-                app.UseOpenApi(); // OpenAPI ≥WΩd§Â¿… (swagger.json)
-                //app.UseSwagger(); ≠Ï•Õswagger
+                app.UseOpenApi(); // OpenAPI Ë¶èÁ??áÊ? (swagger.json)
+                //app.UseSwagger(); ?üÁ?swagger
                 app.UseSwaggerUi3(); // NSwag
                 //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
             //}
@@ -84,10 +92,10 @@ namespace PDMApp
             //app.UseStaticFiles();
             var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
 
-            // ¶p™G∏ÍÆ∆ß®§£¶s¶b°A´h¶€∞ ´ÿ•ﬂ
+            // Â¶ÇÊ?Ë≥áÊ?Â§æ‰?Â≠òÂú®ÔºåÂ??™Â?Âª∫Á?
             if (!Directory.Exists(exportFolder))
             {
-                Directory.CreateDirectory(exportFolder); // ´ÿ•ﬂ∏ÍÆ∆ß®
+                Directory.CreateDirectory(exportFolder); // Âª∫Á?Ë≥áÊ?Â§?
             }
 
             app.UseStaticFiles(new StaticFileOptions
