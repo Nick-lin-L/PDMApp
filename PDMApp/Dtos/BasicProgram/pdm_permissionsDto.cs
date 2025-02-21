@@ -81,9 +81,10 @@ namespace PDMApp.Dtos.BasicProgram
 
     public class pdm_role_permission_detailsInitDto
     {
-        public int RolePermissionDetailId { get; set; }  // 對應 pdm_role_permission_details 的主鍵
+        //public int RolePermissionDetailId { get; set; }  // 對應 pdm_role_permission_details 的主鍵
         public int PermissionId { get; set; }  // 對應 pdm_permissions 的主鍵
-
+        public string PermissionName { get; set; }    // pdm_permissions作業名稱
+        public string Description { get; set; }      // pdm_permissions作業描述
         public string? PermissionKey { get; set; }  // 權限細節名稱（如 TXT_import, PDF_import）
         public string DescriptionD { get; set; }  // 權限細節描述
         public string? IsActiveD { get; set; }  // 是否啟用
