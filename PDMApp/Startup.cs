@@ -22,6 +22,7 @@ using PDMApp.Service;
 using PDMApp.Repositories.Basic;
 using PDMApp.Service.Basic;
 
+
 namespace PDMApp
 {
     public class Startup
@@ -38,28 +39,29 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options => 
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
-            services.AddScoped<IRolePermissionService, RolePermissionService>();
-            // ≠Ï•Õswagger§Â•Û∞t∏m
-            //services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });
+            /* ≠Ï•Õswagger§Â•Û∞t∏m
+            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
+            //services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+            //services.AddScoped<IRolePermissionService, RolePermissionService>();
 
-            // NSwag OpenAPI?á‰ª∂?çÁΩÆ
+            // NSwag OpenAPI§Â•Û∞t∏m
             services.AddOpenApiDocument(config =>
             {
                 config.Title = "PDMApp";
                 config.Version = "v1";
-                config.Description = "PDMApp API ?á‰ª∂ (?™Â??üÊ?)";
+                config.Description = "PDMApp API §Â•Û (¶€∞ •Õ¶®)";
+
             });
 
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ?áÂ??çÁ´Ø‰æÜÊ?
+                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // ´¸©w´e∫›®”∑Ω
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials() // Â¶ÇÊ???Cookie ?ñÊ?Ë≠âË?Ê±ÇÔ??ôÊòØÂøÖÈ???
-                           .WithExposedHeaders("Message", "FileName"); // Â¶ÇÊ??àÂ?‰∫ÜÊñ∞HeadsÔºåÈÄôÈ??ÑË??†‰??çÁ´Ø?çËÉΩ?ãÂà∞
+                           .AllowCredentials() // ¶p™G¶≥ Cookie ©ŒæÃ√“Ω–®D°A≥o¨O•≤ª›™∫
+                           .WithExposedHeaders("Message", "FileName"); // ¶p™G§S•[§F∑sHeads°A≥o√‰¡Ÿ≠n•[§W´e∫›§~Ø‡¨›®Ï
                 });
             });
             //services.AddControllers();
@@ -67,12 +69,13 @@ namespace PDMApp
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
-                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-                options.JsonSerializerOptions.WriteIndented = true; // ?ØÈÅ∏ÔºåË? JSON ?ºÂ??¥Ê?ËÆÄ
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.WriteIndented = true; // •iøÔ°A≈˝ JSON ÆÊ¶°ßÛ©ˆ≈™
+
             });
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true; // ? ËÆ?API URL ËÆäÊ?Â∞èÂØ´
+                options.LowercaseUrls = true; // ≈˝ API URL ≈‹¶®§pºg
             });
         }
 
@@ -82,8 +85,8 @@ namespace PDMApp
             //if (env.IsDevelopment())
             //{
                 app.UseDeveloperExceptionPage();
-                app.UseOpenApi(); // OpenAPI Ë¶èÁ??áÊ? (swagger.json)
-                //app.UseSwagger(); ?üÁ?swagger
+                app.UseOpenApi(); // OpenAPI ≥WΩd§Â¿… (swagger.json)
+                //app.UseSwagger(); ≠Ï•Õswagger
                 app.UseSwaggerUi3(); // NSwag
                 //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
             //}
@@ -92,10 +95,10 @@ namespace PDMApp
             //app.UseStaticFiles();
             var exportFolder = Path.Combine(env.ContentRootPath, "ExportedFiles");
 
-            // Â¶ÇÊ?Ë≥áÊ?Â§æ‰?Â≠òÂú®ÔºåÂ??™Â?Âª∫Á?
+            // ¶p™G∏ÍÆ∆ß®§£¶s¶b°A´h¶€∞ ´ÿ•ﬂ
             if (!Directory.Exists(exportFolder))
             {
-                Directory.CreateDirectory(exportFolder); // Âª∫Á?Ë≥áÊ?Â§?
+                Directory.CreateDirectory(exportFolder); // ´ÿ•ﬂ∏ÍÆ∆ß®
             }
 
             app.UseStaticFiles(new StaticFileOptions
