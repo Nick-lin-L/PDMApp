@@ -19,6 +19,7 @@ using PDMApp.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using PDMApp.Configurations;
+using Microsoft.AspNetCore.Http;
 
 namespace PDMApp
 {
@@ -72,9 +73,9 @@ namespace PDMApp
                 options.SaveTokens = true;           // 保存 Token
                 options.Scope.Add("openid");         // 預設範圍
                 options.Scope.Add("profile");
-                options.CallbackPath = "/signin-oidc"; // 驗證回調路徑 (與設定一致)
-                                                       //options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; // 登出重定向
-                options.SignedOutRedirectUri = "http://localhost:44378/signout-callback-oidc";
+                options.CallbackPath = new PathString("/signin-oidc"); // 驗證回調路徑 (與設定一致)options.CallbackPath = "/signin-oidc";
+                                                                       //options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; // 登出重定向
+                options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc";
             });
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
 
