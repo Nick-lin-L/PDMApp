@@ -42,6 +42,8 @@ namespace Utils.FactorySpec.SheetGenerators
             var colorNo = firstItem.GetType().GetProperty("ColorNo")?.GetValue(firstItem, null)?.ToString() ?? ""; // 正式色號
             var colorNameChn = firstItem.GetType().GetProperty("ColorNameChn")?.GetValue(firstItem, null)?.ToString() ?? ""; // 配色中文名稱
             var factoryMoldNo1 = firstItem.GetType().GetProperty("FactoryMoldNo1")?.GetValue(firstItem, null)?.ToString() ?? ""; // 底模代號
+            var factoryMoldNo2 = firstItem.GetType().GetProperty("FactoryMoldNo2")?.GetValue(firstItem, null)?.ToString() ?? ""; // 底模代號
+            var factoryMoldNo3 = firstItem.GetType().GetProperty("FactoryMoldNo3")?.GetValue(firstItem, null)?.ToString() ?? ""; // 底模代號
             var lastNo1 = firstItem.GetType().GetProperty("LastNo1")?.GetValue(firstItem, null)?.ToString() ?? ""; // 楦頭代號
             var createUser = firstItem.GetType().GetProperty("CreateUser")?.GetValue(firstItem, null)?.ToString() ?? ""; // 製表者
             var itemNameEng = firstItem.GetType().GetProperty("ItemNameEng")?.GetValue(firstItem, null)?.ToString() ?? "";
@@ -222,7 +224,15 @@ namespace Utils.FactorySpec.SheetGenerators
             worksheet.Cell(startRow, 4).Style.Font.FontSize = 10;
             worksheet.Range(startRow, 4, endRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             worksheet.Range(startRow, 4, endRow, 5).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            worksheet.Cell(row, 8).Value = factoryMoldNo2; // FactoryMoldNo2
+            worksheet.Cell(row, 8).Style.Font.FontSize = 10;
+            worksheet.Cell(row, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             row++;
+
+            // 第七列
+            worksheet.Cell(row, 8).Value = factoryMoldNo3; // FactoryMoldNo3
+            worksheet.Cell(row, 8).Style.Font.FontSize = 10;
+            worksheet.Cell(row, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             row++;
 
             // 第八列: D8:E8 合併並放 "後高:+{HeelHeight}+mm"

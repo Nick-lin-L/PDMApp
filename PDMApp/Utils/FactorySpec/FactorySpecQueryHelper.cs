@@ -198,6 +198,8 @@ namespace PDMApp.Utils.FactorySpec
                         ColorNameChn = shf.color_name_chn,
                         ColorEng = pi.color_name_eng,
                         FactoryMoldNo1 = shf.mold_no1,
+                        FactoryMoldNo2 = shf.mold_no2,
+                        FactoryMoldNo3 = shf.mold_no3,
                         LastNo1 = ph.last_no1,
                         CreateUser = shf.create_user,
                         Type = sif.newmaterial == "*" ? "△" : sif.newmaterial, // 轉換邏輯
@@ -238,6 +240,8 @@ namespace PDMApp.Utils.FactorySpec
                         ColorNameChn = shf.color_name_chn,
                         ColorEng = pi.color_name_eng,
                         FactoryMoldNo1 = shf.mold_no1,
+                        FactoryMoldNo2 = shf.mold_no2,
+                        FactoryMoldNo3 = shf.mold_no3,
                         LastNo1 = ph.last_no1,
                         CreateUser = shf.create_user,
                         Seq = st.seqno,
