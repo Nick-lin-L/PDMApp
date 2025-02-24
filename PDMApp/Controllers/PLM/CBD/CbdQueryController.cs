@@ -29,12 +29,17 @@ namespace PDMApp.Controllers.PLM.CBD
     {
         private readonly ILogger<CbdQueryController> _logger;
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
-        private readonly IComboService _icomboService;
-        public CbdQueryController(pcms_pdm_testContext pcms_Pdm_testContext, ILogger<CbdQueryController> logger, IComboService icomboService)
+        private readonly Service.IComboService _icomboService;
+        private readonly Service.PLM.CBD.ICbdQueryService _icbdqueryService;
+        public CbdQueryController(pcms_pdm_testContext pcms_Pdm_testContext,
+                                  ILogger<CbdQueryController> logger,
+                                  Service.IComboService icomboService,
+                                  Service.PLM.CBD.ICbdQueryService icbdqueryService)
         {
             _logger = logger;
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
             _icomboService = icomboService;
+            _icbdqueryService = icbdqueryService;
         }
         [HttpGet]
         public async Task<ActionResult<APIStatusResponse<object>>> Development_nos()
@@ -259,108 +264,13 @@ namespace PDMApp.Controllers.PLM.CBD
             }
         }
 
-        [HttpGet("{Data_m_id}")]
-        public async Task<ActionResult<APIStatusResponse<object>>> CbdData(string Data_m_id)
+        [HttpGet("{DataMId}")]
+        public async Task<ActionResult<APIStatusResponse<object>>> CbdData(string DataMId)
         {
             var response = new APIStatusResponse<object>();
             try
             {
-                var item = (from x in _pcms_Pdm_TestContext.plm_cbd_item
-                            where x.data_m_id == Data_m_id
-                            select new Dtos.PLM.CBD.CbdQueryDto.CbdItemDto
-                            {
-                                Data_m_id = x.data_m_id,
-                                Data_d_id = x.data_d_id,
-                                Data_id = x.data_id,
-                                Seqno = x.seqno,
-                                No = x.no,
-                                Newmaterial = x.newmaterial,
-                                Parts = x.parts,
-                                Detail = x.detail,
-                                Materialno = x.materialno,
-                                Process_mk = x.process_mk,
-                                Material = x.material,
-                                Recycle = x.recycle,
-                                Mtrcomment = x.mtrcomment,
-                                Cbdcomment = x.cbdcomment,
-                                Standard = x.standard,
-                                Supplier = x.supplier,
-                                Agent = x.agent,
-                                Quotesupplier = x.quotesupplier,
-                                Colors = x.colors,
-                                Clrcomment = x.clrcomment,
-                                Moldno = x.moldno,
-                                Hcha = x.hcha,
-                                Sec = x.sec,
-                                Width = x.width,
-                                Usage1 = x.usage1,
-                                Usage2 = x.usage2,
-                                Basicprice = x.basicprice,
-                                Unitprice = x.unitprice,
-                                Mtrloss = x.mtrloss,
-                                Freight = x.freight,
-                                Cost = x.cost,
-                                Memo = x.memo,
-                                Change_mk = x.change_mk,
-                                Partclass = x.partclass,
-                                Act_no = x.act_no,
-                                Act_parts = x.act_parts,
-                                Factory_mold_no = x.factory_mold_no,
-                                Group_Mk = x.group_mk
-                            }
-                            ).AsQueryable();
-                var moldcharge = _pcms_Pdm_TestContext.plm_cbd_moldcharge.Where(x => x.data_m_id == Data_m_id).ToList();
-                var upper = item.Where(z => z.Partclass == "A").OrderBy(x => x.Seqno).ToList();
-                var sole = item.Where(z => z.Partclass == "B").OrderBy(x => x.Seqno).ToList();
-                var other = item.Where(z => z.Partclass == "C").OrderBy(x => x.Seqno).ToList();
-                var query = await (from ph in _pcms_Pdm_TestContext.plm_product_head
-                                   join pi in _pcms_Pdm_TestContext.plm_product_item
-                                   on ph.product_m_id equals pi.product_m_id
-                                   join ch in _pcms_Pdm_TestContext.plm_cbd_head
-                                   on pi.product_d_id equals ch.product_d_id
-                                   where ch.data_m_id == Data_m_id
-                                   orderby ph.development_no ascending, ch.ver ascending
-                                   select new
-                                   {
-                                       ph = ph,
-                                       pi = pi,
-                                       ch = ch
-                                   }).FirstOrDefaultAsync();
-                if (query == null)
-                {
-                    throw new Exception("Data not found");
-                }
-                var product_m_id = query.ph.product_m_id;
-                var product_d_id = query.pi.product_d_id;
-                var stage = query.ch.stage;
-
-                var basic = new Dtos.PLM.CBD.CbdQueryDto.BasicDto();
-                basic.SetValues(query.ch.GetPropertiesWithValues());
-                basic.SetValues(query.pi.GetPropertiesWithValues());
-                basic.SetValues(query.ph.GetPropertiesWithValues());
-
-                var expense = new Dtos.PLM.CBD.CbdQueryDto.ExpenseDto();
-                expense.SetValues(query.ph.GetPropertiesWithValues());
-                expense.SetValues(query.ph.GetPropertiesWithValues());
-                expense.SetValues(query.ch.GetPropertiesWithValues());
-
-                foreach (var molditem in moldcharge)
-                {
-                    var tmp = new Dtos.PLM.CBD.CbdQueryDto.MoldDto();
-                    tmp.SetValues(molditem.GetPropertiesWithValues());
-                    expense.mold.Add(tmp);
-                }
-                var dynamicData = new Dictionary<string, object>
-                {
-                    { "BasicData", basic },
-                    { "UpperData", upper },
-                    { "SoleData", sole },
-                    { "OtherData", other },
-                    { "ExpenseData", expense }
-                };
-
-                response.Data = dynamicData;
-
+                response.Data = await _icbdqueryService.GetCbdDataByID(DataMId);
             }
             catch (Exception e)
             {
@@ -379,8 +289,9 @@ namespace PDMApp.Controllers.PLM.CBD
 
                 var resultData = new Dictionary<string, object>();
 
-                // 依序執行查詢，確保每次只有一個查詢在執行
-                resultData["BrandCombo"] = new string[] { "ASICS" };
+                // 依序執行查詢，確保每次只有一個查詢在執行 { Text: "ASICS" Value:"ASICS" }
+
+                resultData["BrandCombo"] = new List<object> { new { Text = "ASICS", Value = "ASICS" } };
                 resultData["StageCombo"] = await _icomboService.Stage();
                 resultData["DevelopmentNoCombo"] = await _icomboService.DevelopmentNo("ASICS");
                 resultData["DevelopmentColorNoCombo"] = await _icomboService.ColorNo();
@@ -403,182 +314,26 @@ namespace PDMApp.Controllers.PLM.CBD
         public async Task<ActionResult<APIStatusResponse<object>>> Import(CbdQueryParameter.CbdExcel value)
         {
             var response = new APIStatusResponse<object>();
-            var Data = new Dictionary<string, object>();
             try
             {
-                if (String.IsNullOrWhiteSpace(value?.DevNo))
-                {
-                    throw new Exception("開發代號不可為空");
-                }
-                if (String.IsNullOrWhiteSpace(value?.DevColorName))
-                {
-                    throw new Exception("開發色號不可為空");
-                }
-                if (String.IsNullOrWhiteSpace(value?.Stage))
-                {
-                    throw new Exception("開發階段不可為空");
-                }
-                if (!String.Equals(value?.DevNo, value?.Data?.Header?.Bom))
-                {
-                    throw new Exception("開發代號與匯入不一致");
-                }
-                if (!String.Equals(value?.DevColorName, value?.Data?.Header?.Colors))
-                {
-                    throw new Exception("開發色號與匯入不一致");
-
-                }
-                if (!String.Equals(value?.Stage, value?.Data?.Header?.Stage))
-                {
-                    throw new Exception("開發階段與匯入不一致");
-                }
-                if (value.Data == null || value.Data.Header == null || value.Data.Upper == null ||
-                    value.Data.Sole == null || value.Data.Other == null || value.Data.MoldCharge == null)
-                {
-                    throw new Exception("資料有誤，請檢查");
-                }
-                else if (value.Data.Upper.Count == 0 || value.Data.Sole.Count == 0 || value.Data.Other.Count == 0 || value.Data.MoldCharge.Count == 0)
-                {
-                    throw new Exception("資料有誤，請檢查");
-                }
-                var ver = await _pcms_Pdm_TestContext.plm_cbd_head.Where(x => x.bom.Equals(value.DevNo) &&
-                                                                              x.colors.Equals(value.DevColorName) &&
-                                                                              x.stage.Equals(value.Stage)).
-                                                                    Select(x => x.ver).MaxAsync();
-                ver = (ver ?? -1) + 1;
-                string data_m_id;
-                var query = from head in _pcms_Pdm_TestContext.plm_product_head
-                            join item in _pcms_Pdm_TestContext.plm_product_item
-                            on head.product_m_id equals item.product_m_id
-                            where head.development_no == value.DevNo && item.development_color_no == value.DevColorName
-                            select item.product_d_id;
-                string product_d_id = await query.FirstOrDefaultAsync<string>();
-                using (var Command = _pcms_Pdm_TestContext.Database.GetDbConnection().CreateCommand())
-                {
-                    try
-                    {
-                        Command.CommandText = "SELECT gen_random_uuid()";
-                        if (Command.Connection.State != ConnectionState.Open)
-                            Command.Connection.Open();
-
-                        var result = await Command.ExecuteScalarAsync();
-                        data_m_id = result.ToString();
-                        Console.WriteLine(data_m_id);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new Exception(@$"{e.Message}");
-                    }
-                }
-
-                plm_cbd_head _plm_cbd_head = new plm_cbd_head();
-                _plm_cbd_head.SetValues(value.Data.Header.GetPropertiesWithValues());
-                _plm_cbd_head.data_m_id = data_m_id;
-                _plm_cbd_head.checkoutmk = "N";
-                _plm_cbd_head.speclockmk = "N";
-                _plm_cbd_head.cbdlockmk = "N";
-                _plm_cbd_head.create_user = "TEST";
-                _plm_cbd_head.create_date = DateTime.Now;
-                _plm_cbd_head.update_user = "TEST";
-                _plm_cbd_head.update_date = DateTime.Now;
-                _plm_cbd_head.product_d_id = product_d_id;
-                _plm_cbd_head.ver = ver;
-
-                _pcms_Pdm_TestContext.plm_cbd_head.Add(_plm_cbd_head);
-                int i = 1;
-                plm_cbd_item previou = null;
-                foreach (var _upper in value.Data.Upper)
-                {
-                    var item = new plm_cbd_item();
-                    item.SetValues(_upper.GetPropertiesWithValues());
-                    item.data_m_id = data_m_id;
-                    item.data_d_id = Guid.NewGuid().ToString();
-                    item.data_id = item.data_d_id;
-                    item.partclass = "A";
-                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
-                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
-                    {
-                        item.act_parts = previou.act_parts;
-                        item.act_no = previou.act_no;
-                    }
-                    item.seqno = i;
-                    i++;
-                    previou = item;
-                    _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
-                }
-                i = 1;
-                previou = null;
-                foreach (var sole in value.Data.Sole)
-                {
-                    var item = new plm_cbd_item();
-                    item.SetValues(sole.GetPropertiesWithValues());
-                    item.data_m_id = data_m_id;
-                    item.data_d_id = Guid.NewGuid().ToString();
-                    item.data_id = item.data_d_id;
-                    item.partclass = "B";
-                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
-                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
-                    {
-                        item.act_parts = previou.act_parts;
-                        item.act_no = previou.act_no;
-                    }
-                    item.seqno = i;
-                    i++;
-                    previou = item;
-                    _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
-                }
-                i = 1;
-                previou = null;
-                foreach (var other in value.Data.Other)
-                {
-                    var item = new plm_cbd_item();
-                    item.SetValues(other.GetPropertiesWithValues());
-                    item.data_m_id = data_m_id;
-                    item.data_d_id = Guid.NewGuid().ToString();
-                    item.data_id = item.data_d_id;
-                    item.partclass = "C";
-                    item.group_mk = string.IsNullOrWhiteSpace(item.no) ? "N" : "Y";
-                    if (string.IsNullOrWhiteSpace(item.no) && previou != null)
-                    {
-                        item.act_parts = previou.act_parts;
-                        item.act_no = previou.act_no;
-                    }
-                    item.seqno = i;
-                    i++;
-                    previou = item;
-                    _pcms_Pdm_TestContext.plm_cbd_item.Add(item);
-                }
-                foreach (var mold in value.Data.MoldCharge)
-                {
-                    var item = new plm_cbd_moldcharge();
-                    item.SetValues(mold.GetPropertiesWithValues());
-                    item.data_m_id = data_m_id;
-                    item.data_d_id = Guid.NewGuid().ToString();
-                    _pcms_Pdm_TestContext.plm_cbd_moldcharge.Add(item);
-                }
-                int row = _pcms_Pdm_TestContext.SaveChanges();
+                response.Data = await _icbdqueryService.ExcelImport(value);
                 response.Message = "";
                 response.ErrorCode = "OK";
-                response.Data = Data;
-                Data.Add("data_m_id", _plm_cbd_head.data_m_id);
-                Data.Add("row", row);
+                // response.Data = Data;
+
             }
             catch (DbUpdateException ex)
             {
                 if (ex.InnerException is PostgresException postgresEx)
                 {
-                    // Console.WriteLine("SqlState", postgresEx.SqlState);
-                    // Console.WriteLine("MessageText", postgresEx.MessageText);
-                    // Console.WriteLine("Detail", postgresEx.Detail);
-                    // Console.WriteLine("TableName", postgresEx.TableName);
-                    // Console.WriteLine("ColumnName", postgresEx.ColumnName);
-                    Data.Add("SqlState", postgresEx.SqlState);
-                    Data.Add("MessageText", postgresEx.MessageText);
-                    Data.Add("Detail", postgresEx.Detail);
-                    Data.Add("TableName", postgresEx.TableName);
-                    Data.Add("Column", postgresEx.ColumnName);
+                    // Data.Add("SqlState", postgresEx.SqlState);
+                    // Data.Add("MessageText", postgresEx.MessageText);
+                    // Data.Add("Detail", postgresEx.Detail);
+                    // Data.Add("TableName", postgresEx.TableName);
+                    // Data.Add("Column", postgresEx.ColumnName);
                     response.ErrorCode = "20001";
                     response.Message = ex.Message;
-                    response.Data = Data;
+                    // response.Data = Data;
                 }
                 else
                 {
@@ -598,9 +353,5 @@ namespace PDMApp.Controllers.PLM.CBD
             return Ok(response);
         }
 
-
-
     }
-
-
 }
