@@ -201,6 +201,8 @@ namespace PDMApp.Utils.FactorySpec
                         FactoryMoldNo2 = shf.mold_no2,
                         FactoryMoldNo3 = shf.mold_no3,
                         LastNo1 = ph.last_no1,
+                        LastNo2 = ph.last_no2,
+                        LastNo3 = ph.last_no3,
                         CreateUser = shf.create_user,
                         Type = sif.newmaterial == "*" ? "△" : sif.newmaterial, // 轉換邏輯
                         Parts = sif.parts, 
@@ -243,6 +245,8 @@ namespace PDMApp.Utils.FactorySpec
                         FactoryMoldNo2 = shf.mold_no2,
                         FactoryMoldNo3 = shf.mold_no3,
                         LastNo1 = ph.last_no1,
+                        LastNo2 = ph.last_no2,
+                        LastNo3 = ph.last_no3,
                         CreateUser = shf.create_user,
                         Seq = st.seqno,
                         Size = st.the_size,
