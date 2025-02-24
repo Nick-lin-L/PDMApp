@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using PDMApp.Models;
 
@@ -12,13 +13,14 @@ namespace PDMApp.Parameters.PLM.CBD
     {
         public class CbdQuery
         {
-            public string? development_no { set; get; }
-            public string? working_name { set; get; }
-            public string? stage { set; get; }
-            public string? colorway { set; get; }
-            public string? colors { set; get; }
-            public string? itemtrading_code { set; get; }
-            public string? color_code { set; get; }
+            [JsonPropertyName("DevelopmentNo")] public string? development_no { set; get; }
+            [JsonPropertyName("WorkingName")] public string? working_name { set; get; }
+            [JsonPropertyName("Stage")] public string? stage { set; get; }
+            [JsonPropertyName("Colorway")] public string? colorway { set; get; }
+            [JsonPropertyName("Colors")] public string? colors { set; get; }
+            [JsonPropertyName("ItemTradingCode")] public string? itemtrading_code { set; get; }
+            [JsonPropertyName("ColorCode")] public string? color_code { set; get; }
+            [JsonPropertyName("BrandNo")] public string? BrandNo { set; get; }
             public PaginationParameter Pagination { get; set; } = new PaginationParameter();
         }
 
@@ -51,17 +53,17 @@ namespace PDMApp.Parameters.PLM.CBD
         public class HeaderData
         {
             public string? Stage { get; set; }
-            public string? Itemmode_Subtype { get; set; }
+            [JsonPropertyName("ItemModeSubType")] public string? Itemmode_Subtype { get; set; }
             public string? Currency { get; set; }
-            public DateTime? Cbd_Update_Date { get; set; }
-            public string? Size_Run { get; set; }
-            public decimal? Targetprice { get; set; }
-            public decimal? Finalprice { get; set; }
-            public string? Sample_Size { get; set; }
+            [JsonPropertyName("CbdUpdateDate")] public DateTime? Cbd_Update_Date { get; set; }
+            [JsonPropertyName("SizeRun")] public string? Size_Run { get; set; }
+            [JsonPropertyName("TargetPrice")] public decimal? Targetprice { get; set; }
+            [JsonPropertyName("FinalPrice")] public decimal? Finalprice { get; set; }
+            [JsonPropertyName("SampleSize")] public string? Sample_Size { get; set; }
             public string? Forecast { get; set; }
             public decimal? Subtotal { get; set; }
-            public string? Lasting_Heelheight { get; set; }
-            public string? Working_Name { get; set; }
+            [JsonPropertyName("LastingHeelheight")] public string? Lasting_Heelheight { get; set; }
+            [JsonPropertyName("WorkingName")] public string? Working_Name { get; set; }
             public decimal? Exsubtotal { get; set; }
             public decimal? Totalcost { get; set; }
             public string? Bom { get; set; }

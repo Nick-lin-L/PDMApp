@@ -1,88 +1,88 @@
 <?xml version="1.0"?>
 <doc>
-    <assembly>
-        <name>PDMApp</name>
-    </assembly>
-    <members>
-        <member name="M:PDMApp.Controllers.RolePermissionController.RolePageInitial(PDMApp.Parameters.Basic.PermissionsParameter)">
-            <summary>
-            Roles頁面初始化傳入的參數
-            </summary>
-            <param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
-            <returns>回傳一個包含初始數據的 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
-        </member>
-        <member name="M:PDMApp.Controllers.RolePermissionController.Roles(PDMApp.Parameters.Basic.RolesParameter)">
-            <summary>
-            查詢角色列表
-            </summary>
-            <param name="value">傳入的參數物件，用於判斷是否需要過濾資料。</param>
-            <returns>回傳查詢後的角色資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
-        </member>
-        <member name="M:PDMApp.Controllers.RolePermissionController.RolePermissions(PDMApp.Parameters.Basic.PermissionsParameter)">
-            <summary>
-            查詢角色列表+權限列表
-            </summary>
-            <param name="value">當使用者點擊畫面上的角色時會查詢該角色的權限有哪些。</param>
-            <returns>回傳查詢後的角色+角色權限資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.RoleId">
-            <summary>
-            角色 ID
-            </summary>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.PermissionId">
-            <summary>
-            權限 ID
-            </summary>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.PermissionName">
-            <summary>
-            權限 名稱
-            </summary>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.Description">
-            <summary>
-            權限作業描述
-            </summary>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.DevFactoryNo">
-            <summary>
-            開發中心代號
-            </summary>
-        </member>
-        <member name="P:PDMApp.Parameters.Basic.PermissionsParameter.Pagination">
-            <summary>
-            頁碼
-            </summary>
-        </member>
-        <member name="T:PDMApp.Service.PLM.CBD.ICbdQueryService">
-            <summary>
-            PLM CBD 查詢相關服務
-            </summary>
-        </member>
-        <member name="M:PDMApp.Startup.AddScopedServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
-            <summary>
-            自動掃描並注入所有繼承 IScopedService 的類別
-            </summary>
-        </member>
-        <member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryFactory(PDMApp.Models.pcms_pdm_testContext)">
-            <summary>
-            廠別下拉，只要是下拉都預設使用pdm_DropDownDto
-            </summary>
-            <param name="_pcms_Pdm_TestContext"></param>
-            <returns></returns>
-        </member>
-        <member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryInitial(PDMApp.Models.pcms_pdm_testContext)">
-            <summary>
-            New Initial，一次查詢所有資料後回傳
-            </summary>
-            <param name="_pcms_Pdm_TestContext"></param>
-            <returns>廠別下拉、權限表、特殊權限表</returns>
-        </member>
-        <member name="M:PDMApp.Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(PDMApp.Models.pcms_pdm_testContext,PDMApp.Parameters.PGTSPEC.InsertSpecParameter)">
-            <summary>
-            插入 SPEC 資料，根據 SpecSource 決定是否插入 pcg_spec_item。
-            </summary>
-        </member>
-    </members>
+	<assembly>
+		<name>PDMApp</name>
+	</assembly>
+	<members>
+		<member name="M:PDMApp.Controllers.RolePermissionController.RolePageInitial(PDMApp.Parameters.Basic.PermissionsParameter)">
+			<summary>
+				Roles頁面初始化傳入的參數
+			</summary>
+			<param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
+			<returns>回傳一個包含初始數據的 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
+		</member>
+		<member name="M:PDMApp.Controllers.RolePermissionController.Roles(PDMApp.Parameters.Basic.RolesParameter)">
+			<summary>
+				查詢角色列表
+			</summary>
+			<param name="value">傳入的參數物件，用於判斷是否需要過濾資料。</param>
+			<returns>回傳查詢後的角色資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
+		</member>
+		<member name="M:PDMApp.Controllers.RolePermissionController.RolePermissions(PDMApp.Parameters.Basic.PermissionsParameter)">
+			<summary>
+				查詢角色列表+權限列表
+			</summary>
+			<param name="value">當使用者點擊畫面上的角色時會查詢該角色的權限有哪些。</param>
+			<returns>回傳查詢後的角色+角色權限資料 <see cref="T:PDMApp.Utils.APIStatusResponse`1"/> 格式。</returns>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.RoleId">
+			<summary>
+				角色 ID
+			</summary>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.PermissionId">
+			<summary>
+				權限 ID
+			</summary>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.PermissionName">
+			<summary>
+				權限 名稱
+			</summary>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.Description">
+			<summary>
+				權限作業描述
+			</summary>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.DevFactoryNo">
+			<summary>
+				開發中心代號
+			</summary>
+		</member>
+		<member name="P:PDMApp.Parameters.Basic.PermissionsParameter.Pagination">
+			<summary>
+				頁碼
+			</summary>
+		</member>
+		<member name="T:PDMApp.Service.PLM.CBD.ICbdQueryService">
+			<summary>
+				PLM CBD 查詢相關服務
+			</summary>
+		</member>
+		<member name="M:PDMApp.Startup.AddScopedServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+			<summary>
+				自動掃描並注入所有繼承 IScopedService 的類別
+			</summary>
+		</member>
+		<member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryFactory(PDMApp.Models.pcms_pdm_testContext)">
+			<summary>
+				廠別下拉，只要是下拉都預設使用pdm_DropDownDto
+			</summary>
+			<param name="_pcms_Pdm_TestContext"></param>
+			<returns></returns>
+		</member>
+		<member name="M:PDMApp.Utils.BasicProgram.BasicQueryHelper.QueryInitial(PDMApp.Models.pcms_pdm_testContext)">
+			<summary>
+				New Initial，一次查詢所有資料後回傳
+			</summary>
+			<param name="_pcms_Pdm_TestContext"></param>
+			<returns>廠別下拉、權限表、特殊權限表</returns>
+		</member>
+		<member name="M:PDMApp.Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(PDMApp.Models.pcms_pdm_testContext,PDMApp.Parameters.PGTSPEC.InsertSpecParameter)">
+			<summary>
+				插入 SPEC 資料，根據 SpecSource 決定是否插入 pcg_spec_item。
+			</summary>
+		</member>
+	</members>
 </doc>
