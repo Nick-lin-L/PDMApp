@@ -331,6 +331,14 @@ namespace PDMApp.Controllers
                             created_at = DateTime.UtcNow
                         };
                         _pcms_Pdm_TestContext.pdm_roles.Add(role);
+                        if (string.IsNullOrWhiteSpace(request.RoleName) || string.IsNullOrWhiteSpace(request.DevFactoryNo))
+                        {
+                            return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                errorCode: "40001",
+                                message: "The role name and development factory code must not be empty.",
+                                data: null
+                            );
+                        }
                         await _pcms_Pdm_TestContext.SaveChangesAsync();
                     }
                     else
@@ -363,7 +371,11 @@ namespace PDMApp.Controllers
                             existingPerm.deletep = perm.DeleteP ?? existingPerm.deletep;
                             existingPerm.exportp = perm.ExportP ?? existingPerm.exportp;
                             existingPerm.importp = perm.ImportP ?? existingPerm.importp;
-                            existingPerm.dev_factory_no = perm.DevFactoryNo ?? request.DevFactoryNo;
+                            existingPerm.permission1 = perm.Permission1 ?? existingPerm.permission1;
+                            existingPerm.permission2 = perm.Permission2 ?? existingPerm.permission2;
+                            existingPerm.permission3 = perm.Permission3 ?? existingPerm.permission3;
+                            existingPerm.permission4 = perm.Permission4 ?? existingPerm.permission4;
+                            existingPerm.dev_factory_no = request.DevFactoryNo;
                             existingPerm.updated_by = request.UpdatedBy;
                             existingPerm.updated_at = DateTime.UtcNow;
                         }
@@ -381,10 +393,22 @@ namespace PDMApp.Controllers
                                 deletep = perm.DeleteP,
                                 exportp = perm.ExportP,
                                 importp = perm.ImportP,
-                                dev_factory_no = perm.DevFactoryNo,
+                                permission1 = perm.Permission1,
+                                permission2 = perm.Permission2,
+                                permission3 = perm.Permission3,
+                                permission4 = perm.Permission4,
+                                dev_factory_no = request.DevFactoryNo,
                                 created_by = request.UpdatedBy,
                                 created_at = DateTime.UtcNow
                             };
+                            if (!newPerm.permission_id.HasValue || roleIdt == 0)
+                            {
+                                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                    errorCode: "40001",
+                                    message: "The P.permission_id or RoleID must not be empty.",
+                                    data: null
+                                );
+                            }
                             _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
                         }
                     }
@@ -399,7 +423,7 @@ namespace PDMApp.Controllers
                         {
                             // 更新詳細權限
                             existingDetail.is_active = detail.IsActiveD ?? existingDetail.is_active;
-                            existingDetail.dev_factory_no = detail.DevFactoryNoD ?? request.DevFactoryNo;
+                            existingDetail.dev_factory_no = request.DevFactoryNo;
                             existingDetail.permission_key = detail.PermissionKey ?? existingDetail.permission_key;
                             existingDetail.description = detail.DescriptionD ?? existingDetail.description;
                             existingDetail.updated_by = request.UpdatedBy;
@@ -415,10 +439,18 @@ namespace PDMApp.Controllers
                                 permission_key = detail.PermissionKey,
                                 is_active = detail.IsActiveD,
                                 description = detail.DescriptionD,
-                                dev_factory_no = detail.DevFactoryNoD,
+                                dev_factory_no = request.DevFactoryNo,
                                 created_by = request.UpdatedBy,
                                 created_at = DateTime.UtcNow
-                            };
+                            };/*
+                            if (newDetail.permission_id == 0)
+                            {
+                                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                    errorCode: "40001",
+                                    message: "The D.permission_id must not be empty.",
+                                    data: null
+                                );
+                            }*/
                             _pcms_Pdm_TestContext.pdm_role_permission_details.Add(newDetail);
                         }
                     }
