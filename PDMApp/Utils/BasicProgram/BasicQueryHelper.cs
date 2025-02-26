@@ -18,8 +18,6 @@ namespace PDMApp.Utils.BasicProgram
         public static IQueryable<pdm_rolesDto> QueryRoles (pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from pr in _pcms_Pdm_TestContext.pdm_roles
-                    join pur in _pcms_Pdm_TestContext.pdm_user_roles on pr.role_id equals pur.role_id
-                    join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id
                     select new pdm_rolesDto
                     {
                         RoleId = pr.role_id,
@@ -27,9 +25,9 @@ namespace PDMApp.Utils.BasicProgram
                         Description = pr.description,
                         DevFactoryNo = pr.dev_factory_no,
                         CreatedAt = pr.created_at,
-                        CreatedBy = pu.username,
+                        CreatedBy = "",
                         UpdatedAt = pr.updated_at,
-                        UpdatedBy = pu.username,
+                        UpdatedBy = "",
                         IsActive = pr.is_active
                     });
 
