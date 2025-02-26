@@ -417,7 +417,11 @@ namespace PDMApp.Controllers
                     foreach (var detail in request.PermissionDetails)
                     {
                         var existingDetail = await _pcms_Pdm_TestContext.pdm_role_permission_details
-                            .FirstOrDefaultAsync(d => d.permission_id == detail.PermissionId && d.role_id == roleId);
+                            //.FirstOrDefaultAsync(d => d.permission_id == detail.PermissionId && d.role_id == roleId);
+                            .FirstOrDefaultAsync(d => d.role_id == roleId &&
+                              d.permission_id == detail.PermissionId &&
+                              d.permission_key == detail.PermissionKey &&
+                              d.dev_factory_no == request.DevFactoryNo);
 
                         if (existingDetail != null)
                         {

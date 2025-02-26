@@ -185,7 +185,7 @@ namespace PDMApp.Utils.BasicProgram
                     PermissionKey = g.Key.PermissionKey,
                     DescriptionD = g.First().DescriptionD,
                     IsActiveD = g.Any(x => x.IsActiveD == "Y") ? "Y" : "N"
-                }).ToList();
+                }).OrderBy(g=>g.PermissionId).ToList();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
