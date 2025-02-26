@@ -15,7 +15,7 @@ namespace PDMApp.Utils.BasicProgram
     public static class BasicQueryHelper
     {
 
-        public static IQueryable<pdm_rolesDto> QueryRoles (pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static IQueryable<pdm_rolesDto> QueryRoles(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from pr in _pcms_Pdm_TestContext.pdm_roles
                     select new pdm_rolesDto
@@ -112,12 +112,12 @@ namespace PDMApp.Utils.BasicProgram
         {
             // 廠別下拉
             var factoryQuery = from Pf in _pcms_Pdm_TestContext.pdm_factory
-                    select new pdm_DropDownDto
-                    {
-                        Id = Pf.factory_id,
-                        Value = Pf.dev_factory_no,
-                        Text = Pf.dev_factory_no
-                    };
+                               select new pdm_DropDownDto
+                               {
+                                   Id = Pf.factory_id,
+                                   Value = Pf.dev_factory_no,
+                                   Text = Pf.dev_factory_no
+                               };
             // 查詢權限清單
             var permissionsRaw = await (
                 from Pp in _pcms_Pdm_TestContext.pdm_permissions
@@ -185,7 +185,7 @@ namespace PDMApp.Utils.BasicProgram
                     PermissionKey = g.Key.PermissionKey,
                     DescriptionD = g.First().DescriptionD,
                     IsActiveD = g.Any(x => x.IsActiveD == "Y") ? "Y" : "N"
-                }).OrderBy(g=>g.PermissionId).ToList();
+                }).OrderBy(g => g.PermissionId).ToList();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
@@ -196,23 +196,25 @@ namespace PDMApp.Utils.BasicProgram
             };
         }
 
-        // 查詢作業、作業權限權限
+        // 查詢角色、作業、作業權限權限
         public static async Task<Dictionary<string, object>> QueryPermissionsWithDetailsAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, PermissionsParameter parameters)
         {
             // 查詢 permissions
             var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
                                    join Prp in _pcms_Pdm_TestContext.pdm_role_permissions on Pp.permission_id equals Prp.permission_id
-                                   join Pur in _pcms_Pdm_TestContext.pdm_user_roles on Prp.role_id equals Pur.role_id
-                                   join Pu in _pcms_Pdm_TestContext.pdm_users on Pur.user_id equals Pu.user_id
+                                   join pur in _pcms_Pdm_TestContext.pdm_user_roles on Prp.role_id equals pur.role_id into purJoin
+                                   from pur in purJoin.DefaultIfEmpty() // 將 pdm_user_roles 改為 left join
+                                   join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id into puJoin
+                                   from pu in puJoin.DefaultIfEmpty()   // pdm_users left join
                                    select new pdm_permissionsDto
                                    {
                                        PermissionId = Pp.permission_id,
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
                                        CreatedAt = Pp.created_at,
-                                       CreatedBy = Pu.username,
+                                       CreatedBy = pu != null ? pu.username : string.Empty,
                                        UpdatedAt = Pp.updated_at,
-                                       UpdatedBy = Pu.username,
+                                       UpdatedBy = pu != null ? pu.username : string.Empty,
                                        RolePermissionId = Prp.role_permission_id,
                                        RoleId = Prp.role_id,
                                        DevFactoryNo = Prp.dev_factory_no,
@@ -247,7 +249,7 @@ namespace PDMApp.Utils.BasicProgram
                 permissionsQuery = permissionsQuery.Where(p => p.DevFactoryNo == parameters.DevFactoryNo);
             }
 
-            var permissions = await permissionsQuery.OrderBy(q => q.RolePermissionId).ToListAsync();
+            var permissions = await permissionsQuery.OrderBy(q => q.PermissionId).ToListAsync();
 
             // 查詢 details
             var detailsQuery = from Prpd in _pcms_Pdm_TestContext.pdm_role_permission_details
