@@ -39,7 +39,29 @@ namespace PDMApp.Controllers
         }
 
         /// <summary>
-        /// 登入回調，兌換 Token 並返回用戶資料
+        /// 取得目前登入的用戶資訊 (含Token) 
+        /// </summary>
+        [HttpGet("me")]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            var accessToken = await HttpContext.GetTokenAsync("access_token");
+            var idToken = await HttpContext.GetTokenAsync("id_token");
+
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return Unauthorized(new { error = "No valid token found" });
+            }
+
+            return Ok(new
+            {
+                User = HttpContext.User.Identity.Name,
+                AccessToken = accessToken,
+                IdToken = idToken
+            });
+        }
+
+        /// <summary>
+        /// 登入資料回拋，交換Token、並返回用戶資料
         /// </summary>
         [HttpGet("callback")]
         public async Task<IActionResult> Callback()
