@@ -73,9 +73,8 @@ namespace PDMApp
                 options.SaveTokens = true;           // 保存 Token
                 options.Scope.Add("openid");         // 預設範圍
                 options.Scope.Add("profile");
-                options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)options.CallbackPath = "/signin-oidc";
-                                                                       //options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; // 登出重定向
-                options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc";
+                options.CallbackPath = "/signin-oidc";//options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)
+                options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; //options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc"; // 登出重定向 
             });
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
 
