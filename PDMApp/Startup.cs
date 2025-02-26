@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
@@ -19,8 +19,6 @@ using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Service;
-using PDMApp.Repositories.Basic;
-using PDMApp.Service.Basic;
 
 
 namespace PDMApp
@@ -37,12 +35,10 @@ namespace PDMApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<pcms_pdm_testContext>(options => 
+            services.AddDbContext<pcms_pdm_testContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
-            /* 原生swagger文件配置
-            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });   */
-            //services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
-            //services.AddScoped<IRolePermissionService, RolePermissionService>();
+            // 原生swagger文件配置
+            //services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });
 
             // NSwag OpenAPI文件配置
             services.AddOpenApiDocument(config =>
@@ -64,6 +60,7 @@ namespace PDMApp
                            .WithExposedHeaders("Message", "FileName"); // 如果又加了新Heads，這邊還要加上前端才能看到
                 });
             });
+            AddScopedServices(services);
             //services.AddControllers();
             services.AddControllers()
             .AddJsonOptions(options =>
@@ -78,18 +75,40 @@ namespace PDMApp
                 options.LowercaseUrls = true; // 讓 API URL 變成小寫
             });
         }
+        /// <summary>
+        /// 自動掃描並注入所有繼承 IScopedService 的類別
+        /// </summary>
+        public void AddScopedServices(IServiceCollection services)
+        {
+            // 自動掃描並註冊所有繼承 IScopedService 的類別
+            var assembly = Assembly.GetExecutingAssembly();
+            var serviceTypes = assembly.GetTypes()
+                .Where(t => t.IsClass &&
+                            !t.IsAbstract &&
+                            typeof(IScopedService).IsAssignableFrom(t)) // 取得所有實作 IScopedService 的類別
+                .Select(t => new
+                {
+                    Service = t.GetInterfaces().FirstOrDefault(i => typeof(IScopedService).IsAssignableFrom(i) && i != typeof(IScopedService)),
+                    Implementation = t
+                })
+                .Where(t => t.Service != null); //確保有對應的介面
 
+            foreach (var type in serviceTypes)
+            {
+                services.AddScoped(type.Service, type.Implementation);
+            }
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             //if (env.IsDevelopment())
             //{
-                app.UseDeveloperExceptionPage();
-                app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
-                //app.UseSwagger(); 原生swagger
-                app.UseSwaggerUi3(); // NSwag
-                //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
-            //}
+            app.UseDeveloperExceptionPage();
+            app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
+                              //app.UseSwagger(); 原生swagger
+            app.UseSwaggerUi3(); // NSwag
+                                 //app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PDMApp v1"));
+                                 //}
 
             //app.UseHttpsRedirection();
             //app.UseStaticFiles();
