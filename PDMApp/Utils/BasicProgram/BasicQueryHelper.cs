@@ -206,9 +206,11 @@ namespace PDMApp.Utils.BasicProgram
         {
             //查詢 roles
             var rolesQuery = QueryRoles(_pcms_Pdm_TestContext);
-            if (!string.IsNullOrWhiteSpace(parameters.RoleId) && int.TryParse(parameters.RoleId, out int roleIdFilter))
+            //if (!string.IsNullOrWhiteSpace(parameters.RoleId) && int.TryParse(parameters.RoleId, out int roleIdFilter)) string轉int判斷
+            if (parameters.RoleId.HasValue)
             {
-                rolesQuery = rolesQuery.Where(r => r.RoleId == roleIdFilter);
+                //rolesQuery = rolesQuery.Where(r => r.RoleId == roleIdFilter);
+                rolesQuery = rolesQuery.Where(r => r.RoleId == parameters.RoleId.Value);
             }
             var roles = await rolesQuery.ToListAsync();
 
@@ -243,15 +245,15 @@ namespace PDMApp.Utils.BasicProgram
                                        Permission3 = Prp.permission3,
                                        Permission4 = Prp.permission4
                                    };
-            if (!string.IsNullOrWhiteSpace(parameters.RoleId))
+            if (parameters.RoleId.HasValue)
             {
-                int roleId = int.Parse(parameters.RoleId);
-                permissionsQuery = permissionsQuery.Where(p => p.RoleId == roleId);
+                //int roleId = int.Parse(parameters.RoleId);
+                permissionsQuery = permissionsQuery.Where(p => p.RoleId == parameters.RoleId.Value);
             }
-            if (!string.IsNullOrWhiteSpace(parameters.PermissionId))
+            if (parameters.PermissionId.HasValue)
             {
-                int permissionId = int.Parse(parameters.PermissionId);
-                permissionsQuery = permissionsQuery.Where(p => p.PermissionId == permissionId);
+                //int permissionId = int.Parse(parameters.PermissionId);
+                permissionsQuery = permissionsQuery.Where(p => p.PermissionId == parameters.PermissionId.Value);
             }
             if (!string.IsNullOrWhiteSpace(parameters.PermissionName))
             {
@@ -277,15 +279,13 @@ namespace PDMApp.Utils.BasicProgram
                                    DescriptionD = Prpd.description,
                                    IsActiveD = Prpd.is_active
                                };
-            if (!string.IsNullOrWhiteSpace(parameters.RoleId))
+            if (parameters.RoleId.HasValue)
             {
-                int roleId = int.Parse(parameters.RoleId);
-                detailsQuery = detailsQuery.Where(d => d.RoleId == roleId);
+                detailsQuery = detailsQuery.Where(d => d.RoleId == parameters.RoleId.Value);
             }
-            if (!string.IsNullOrWhiteSpace(parameters.PermissionId))
+            if (parameters.PermissionId.HasValue)
             {
-                int permissionId = int.Parse(parameters.PermissionId);
-                detailsQuery = detailsQuery.Where(d => d.PermissionId == permissionId);
+                detailsQuery = detailsQuery.Where(d => d.PermissionId == parameters.PermissionId.Value);
             }
             if (!string.IsNullOrWhiteSpace(parameters.DevFactoryNo))
             {

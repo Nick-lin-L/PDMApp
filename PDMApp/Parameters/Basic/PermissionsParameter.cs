@@ -13,11 +13,11 @@ namespace PDMApp.Parameters.Basic
         /// <summary>
         /// 角色 ID
         /// </summary>
-        public string? RoleId { get; set; }
+        public int? RoleId { get; set; }
         /// <summary>
         /// 權限 ID
         /// </summary>
-        public string? PermissionId { get; set; }
+        public int? PermissionId { get; set; }
         /// <summary>
         /// 權限 名稱
         /// </summary>
