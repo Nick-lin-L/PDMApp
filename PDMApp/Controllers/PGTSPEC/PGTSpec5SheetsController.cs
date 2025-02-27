@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Utils.PGTSPEC;
+using System.Data.Common;
 
 namespace PDMApp.Controllers.SPEC
 {
@@ -69,10 +70,13 @@ namespace PDMApp.Controllers.SPEC
                     { "HeadData", resultData.HeadData },
                     { "UpperData", resultData.UpperData },
                     { "SoleData", resultData.SoleData },
-                    { "OtherData", resultData.OtherData }
+                    { "OtherData", resultData.OtherData },
+                    { "ErrorCode", "OK" }, 
+                    { "Message", "查詢成功" }, // 可加上訊息
                 };
 
-                return Utils.APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
+                return StatusCode(200, dynamicData);
+
             }
             catch (Exception ex)
             {
@@ -120,6 +124,51 @@ namespace PDMApp.Controllers.SPEC
                     Details = ex.Message
                 });
             }
+        }
+
+        // POST api/v1/PGTSpec5Sheets/Export
+        [HttpPost("Export")]
+        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                // ItemSheet 查詢
+                var itemSheetData = Utils.PGTSPEC.PGTSPECQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
+                    .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
+                    .ToList(); // 執行查詢，轉為 List
+
+                string devNo = itemSheetData.FirstOrDefault()?.DevNo;
+                string itemNo = itemSheetData.FirstOrDefault()?.ItemNo;
+                string colorNo = itemSheetData.FirstOrDefault()?.DevelopmentColorNo;
+
+                // 生成檔案名稱
+                string fileName = $"PCC.{devNo}({itemNo})_{colorNo}_量產中文.xlsx";
+
+                // 使用 PGTSPECExportHelper 匯出資料
+                var fileContent = PGTSPECExportHelper.ExportToExcel(itemSheetData);
+
+                string base64File = Convert.ToBase64String(fileContent); // 轉 Base64
+
+                var response = new Dtos.ExportFileResponseDto
+                {
+                    FileName = fileName,
+                    FileContent = base64File
+                };
+
+                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+            }
+            catch (DbException ex)
+            {
+                return new ObjectResult(Utils.APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"匯出過程中發生錯誤: {ex.Message}",
+                    data: null
+                ));
+            }
+
         }
     }
 }
