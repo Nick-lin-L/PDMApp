@@ -8,6 +8,7 @@ using PDMApp.Parameters.Basic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace PDMApp.Utils.BasicProgram
@@ -18,6 +19,10 @@ namespace PDMApp.Utils.BasicProgram
         public static IQueryable<pdm_rolesDto> QueryRoles(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from pr in _pcms_Pdm_TestContext.pdm_roles
+                    join pur in _pcms_Pdm_TestContext.pdm_user_roles on pr.role_id equals pur.role_id into purJoin
+                    from pur in purJoin.DefaultIfEmpty() // 將 pdm_user_roles 改為 left join
+                    join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id into puJoin
+                    from pu in puJoin.DefaultIfEmpty()   // pdm_users left join
                     select new pdm_rolesDto
                     {
                         RoleId = pr.role_id,
@@ -25,9 +30,9 @@ namespace PDMApp.Utils.BasicProgram
                         Description = pr.description,
                         DevFactoryNo = pr.dev_factory_no,
                         CreatedAt = pr.created_at,
-                        CreatedBy = "",
+                        CreatedBy = pu != null ? pu.username : string.Empty,
                         UpdatedAt = pr.updated_at,
-                        UpdatedBy = "",
+                        UpdatedBy = pu != null ? pu.username : string.Empty,
                         IsActive = pr.is_active
                     });
 
@@ -199,6 +204,14 @@ namespace PDMApp.Utils.BasicProgram
         // 查詢角色、作業、作業權限權限
         public static async Task<Dictionary<string, object>> QueryPermissionsWithDetailsAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, PermissionsParameter parameters)
         {
+            //查詢 roles
+            var rolesQuery = QueryRoles(_pcms_Pdm_TestContext);
+            if (!string.IsNullOrWhiteSpace(parameters.RoleId) && int.TryParse(parameters.RoleId, out int roleIdFilter))
+            {
+                rolesQuery = rolesQuery.Where(r => r.RoleId == roleIdFilter);
+            }
+            var roles = await rolesQuery.ToListAsync();
+
             // 查詢 permissions
             var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
                                    join Prp in _pcms_Pdm_TestContext.pdm_role_permissions on Pp.permission_id equals Prp.permission_id
@@ -284,6 +297,7 @@ namespace PDMApp.Utils.BasicProgram
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
             {
+                { "Roles", roles },
                 { "Permissions", permissions },
                 { "PermissionDetails", permissionDetails }
             };
