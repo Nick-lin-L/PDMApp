@@ -297,7 +297,7 @@ namespace PDMApp.Utils.BasicProgram
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
             {
-                { "Roles", roles },
+                { "Roles", roles.FirstOrDefault() }, //object  { "Roles", roles }, //這段是array
                 { "Permissions", permissions },
                 { "PermissionDetails", permissionDetails }
             };
