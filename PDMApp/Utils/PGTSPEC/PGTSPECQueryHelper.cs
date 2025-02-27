@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -342,6 +343,64 @@ namespace PDMApp.Utils.PGTSPEC
                         };
 
             return query;
+        }
+
+        public static IQueryable<ItemSheetDTO> GetItemSheetResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            return (from ph in _pcms_Pdm_TestContext.plm_product_head
+                    join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                    join shf in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals shf.product_d_id
+                    join sif in _pcms_Pdm_TestContext.pcg_spec_item on shf.spec_m_id equals sif.spec_m_id
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.stage equals pn.text
+                    where pn.group_key == "stage"
+
+                    let mailTo = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "01"
+                                  select h.signflow_cn).FirstOrDefault()
+                    let mailCC = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
+                                  join h in _pcms_Pdm_TestContext.pdm_history_denamic_signflow on f.id equals h.id.ToString()
+                                  where f.spec_m_id == shf.spec_m_id && f.sub_bill_class == "02"
+                                  select h.signflow_cn).FirstOrDefault()
+                    select new ItemSheetDTO
+                    {
+                        SpecMId = shf.spec_m_id,
+                        MailTo = mailTo,  // 預設為 null，根據需求填入
+                        MailCC = mailCC,  // 預設為 null，根據需求填入
+                        Stage = pn.text, // 使用 Join 的 stage 對應的 text 值
+                        ActNo = sif.act_part_no,
+                        CreateTime = DateTime.Now.ToString("yyyy/MM/dd"),
+                        DevNo = ph.development_no,
+                        RefDevNo = shf.ref_dev_no,
+                        ItemNameEng = ph.article_description,
+                        ItemNo = ph.item_trading_code,
+                        ColorNo = pi.color_code,
+                        DevelopmentColorNo = pi.development_color_no,
+                        SampleSize = ph.default_size,
+                        HeelHeight = ph.heel_height,
+                        ColorNameChn = shf.pgt_color_name,
+                        ColorEng = pi.colorway,
+                        FactoryMoldNo1 = shf.mold_no1,
+                        FactoryMoldNo2 = shf.mold_no2,
+                        FactoryMoldNo3 = shf.mold_no3,
+                        LastNo1 = ph.last1,
+                        LastNo2 = ph.last2,
+                        LastNo3 = ph.last3,
+                        CreateUser = shf.create_user_nm,
+                        Type = sif.material_new == "*" ? "△" : sif.material_new, // 轉換邏輯
+                        Parts = $"{sif.parts} {sif.detail}".Trim(), // 串接 sif.parts 和 sif.detail
+                        No = sif.parts_no,
+                        Material = !string.IsNullOrWhiteSpace(sif.process_mk)? $"{sif.process_mk} {(string.IsNullOrWhiteSpace(sif.material) ? sif.mat_comment : sif.material)}": (sif.material ?? sif.mat_comment), // 如果 Material 為 null，就使用 mat_comment
+                        SubMaterial = sif.mat_comment,
+                        Colors = !string.IsNullOrWhiteSpace(sif.clr_comment)? $"{sif.material_color} {sif.clr_comment}".Trim(): sif.material_color,
+                        Standard = sif.standard,
+                        Hcha = sif.hcha,
+                        Sec = sif.sec,
+                        Supplier = !string.IsNullOrWhiteSpace(sif.agent) && !string.IsNullOrWhiteSpace(sif.supplier)? $"{sif.agent} / {sif.supplier}": (!string.IsNullOrWhiteSpace(sif.agent) ? sif.agent : sif.supplier),
+                        Seqno = sif.material_sort,
+                        PartClass = sif.material_group,
+                        RemarksProhibit = shf.remarks_prohibit
+                    });
         }
 
 
