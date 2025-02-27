@@ -274,6 +274,7 @@ namespace PDMApp.Utils.BasicProgram
                                    //RolePermissionDetailId = Prpd.role_permission_detail_id,
                                    RoleId = Prpd.role_id,
                                    PermissionId = Prpd.permission_id,
+                                   Description = Pp.description,
                                    DevFactoryNoD = Prpd.dev_factory_no,
                                    PermissionKey = Prpd.permission_key,
                                    DescriptionD = Prpd.description,
