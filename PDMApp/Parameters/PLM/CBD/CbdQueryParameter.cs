@@ -47,7 +47,7 @@ namespace PDMApp.Parameters.PLM.CBD
             [Required]
             public List<cbd_item>? Other { get; set; }
             [Required]
-            public List<plm_cbd_moldcharge>? MoldCharge { get; set; }
+            public List<moldcharge>? MoldCharge { get; set; }
         }
 
         public class HeaderData

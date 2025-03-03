@@ -31,8 +31,10 @@ namespace PDMApp.Parameters.Basic
         public string DeleteP { get; set; } // 刪除權限
         public string ExportP { get; set; } // 匯出權限
         public string ImportP { get; set; } // 匯入權限
-        public string DevFactoryNo { get; set; } // 開發工廠編號
-
+        public string Permission1 { get; set; } // 預備權限1
+        public string Permission2 { get; set; } // 預備權限2
+        public string Permission3 { get; set; } // 預備權限3
+        public string Permission4 { get; set; } // 預備權限4
     }
 
     public class PermissionDetails
@@ -42,6 +44,5 @@ namespace PDMApp.Parameters.Basic
         public string PermissionKey { get; set; } // 權限名稱
         public string DescriptionD { get; set; } // 權限Detail描述 ID
         public string IsActiveD { get; set; } // 是否啟用
-        public string DevFactoryNoD { get; set; } // 開發工廠編號
     }
 }
