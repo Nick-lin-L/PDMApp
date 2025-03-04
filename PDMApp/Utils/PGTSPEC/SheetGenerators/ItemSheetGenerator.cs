@@ -1,10 +1,10 @@
 ﻿using ClosedXML.Excel;
-using Dtos.FactorySpec;
+using Dtos.PGTSPEC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Utils.FactorySpec.SheetGenerators
+namespace Utils.PGTSPEC.SheetGenerators
 {
     public class ItemSheetGenerator<T>
     {
@@ -286,7 +286,7 @@ namespace Utils.FactorySpec.SheetGenerators
             worksheet.Cell(row, 3).Value = "NO.";        // No
             worksheet.Range(row, 4, row, 8).Merge();     // 合併儲存格
             worksheet.Cell(row, 4).Value = "材質說明";  // Material
-            worksheet.Cell(row, 9).Value = "A";          // Colors
+            worksheet.Cell(row, 9).Value = "600";          // Colors
             worksheet.Cell(row, 10).Value = "規格";      // Standard
             worksheet.Cell(row, 11).Value = "hc/ha";     // Hcha
             worksheet.Cell(row, 12).Value = "sec";       // Sec
@@ -328,7 +328,7 @@ namespace Utils.FactorySpec.SheetGenerators
                     worksheet.Cell(row, 3).Value = "NO.";        // No
                     worksheet.Range(row, 4, row, 8).Merge();     // 合併儲存格
                     worksheet.Cell(row, 4).Value = "材質說明";  // Material
-                    worksheet.Cell(row, 9).Value = "A";          // Colors
+                    worksheet.Cell(row, 9).Value = "600";          // Colors
                     worksheet.Cell(row, 10).Value = "規格";      // Standard
                     worksheet.Cell(row, 11).Value = "hc/ha";     // Hcha
                     worksheet.Cell(row, 12).Value = "sec";       // Sec
