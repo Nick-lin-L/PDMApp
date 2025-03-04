@@ -19,6 +19,7 @@ using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Service;
+using PDMApp.Middleware;
 
 
 namespace PDMApp
@@ -62,13 +63,31 @@ namespace PDMApp
             });
             AddScopedServices(services);
             //services.AddControllers();
-            services.AddControllers()
+            services.AddControllers().ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    // 收集錯誤信息
+                    var errors = context.ModelState
+                        .Where(e => e.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+
+                    // 將錯誤信息存儲在 HttpContext.Items 中
+                    context.HttpContext.Items["ModelValidationErrors"] = errors;
+
+                    // 返回空結果，讓中間件處理響應
+                    return new EmptyResult();
+                };
+            })
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
-                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-                options.JsonSerializerOptions.WriteIndented = true; // 可選，讓 JSON 格式更易讀
-
+                options.JsonSerializerOptions.Converters.Add(new Utils.Converters.DecimalJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Utils.Converters.StringJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Utils.Converters.IntJsonConverter());
             });
             services.Configure<RouteOptions>(options =>
             {
@@ -101,6 +120,8 @@ namespace PDMApp
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseValidationExceptionHandler();
+
             //if (env.IsDevelopment())
             //{
             app.UseDeveloperExceptionPage();
