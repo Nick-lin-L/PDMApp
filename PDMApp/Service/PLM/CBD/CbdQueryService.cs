@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Math;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PDMApp.Dtos.BasicProgram;
@@ -30,11 +32,14 @@ namespace PDMApp.Service.PLM.CBD
         {
             try
             {
-                if (String.IsNullOrWhiteSpace(value?.DevNo))
+                var stageList = await GetStages(value.DevFactoryNo);
+                var stage = stageList.Where(x => string.Equals(x.text, value.Stage, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+
+                if (String.IsNullOrWhiteSpace(value?.DevelopmentNo))
                 {
                     throw new Exception("開發代號不可為空");
                 }
-                if (String.IsNullOrWhiteSpace(value?.DevColorName))
+                if (String.IsNullOrWhiteSpace(value?.DevelopmentColorNo))
                 {
                     throw new Exception("開發色號不可為空");
                 }
@@ -42,16 +47,15 @@ namespace PDMApp.Service.PLM.CBD
                 {
                     throw new Exception("開發階段不可為空");
                 }
-                if (!String.Equals(value?.DevNo, value?.Data?.Header?.Bom))
+                if (!String.Equals(value?.DevelopmentNo, value?.Data?.Header?.Bom))
                 {
                     throw new Exception("開發代號與匯入不一致");
                 }
-                if (!String.Equals(value?.DevColorName, value?.Data?.Header?.Colors))
+                if (!String.Equals(value?.DevelopmentColorNo, value?.Data?.Header?.Colors))
                 {
                     throw new Exception("開發色號與匯入不一致");
-
                 }
-                if (!String.Equals(value?.Stage, value?.Data?.Header?.Stage))
+                if (!String.Equals(value?.Stage, value?.Data?.Header?.Stage, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new Exception("開發階段與匯入不一致");
                 }
@@ -64,18 +68,28 @@ namespace PDMApp.Service.PLM.CBD
                 {
                     throw new Exception("資料有誤，請檢查");
                 }
-                var ver = await _context.plm_cbd_head.Where(x => x.bom.Equals(value.DevNo) &&
-                                                                              x.colors.Equals(value.DevColorName) &&
-                                                                              x.stage.Equals(value.Stage)).
-                                                                    Select(x => x.ver).MaxAsync();
+                _logger.LogInformation("Get ver start");
+                _logger.LogInformation(value.DevelopmentNo);
+                _logger.LogInformation(value.DevelopmentColorNo);
+                _logger.LogInformation(stage.value_desc);
+                var max = from pi in _context.plm_product_item
+                          join ch in _context.plm_cbd_head
+                          on pi.product_d_id equals ch.product_d_id
+                          where ch.bom == value.DevelopmentNo && pi.development_color_no == value.DevelopmentColorNo && ch.stage == stage.value_desc
+                          select ch.ver;
+                var ver = max.Max();
                 ver = (ver ?? -1) + 1;
+                _logger.LogInformation("Get ver end");
+                _logger.LogInformation("Get data_m_id start");
                 string data_m_id;
                 var query = from head in _context.plm_product_head
                             join item in _context.plm_product_item
                             on head.product_m_id equals item.product_m_id
-                            where head.development_no == value.DevNo && item.development_color_no == value.DevColorName
+                            where head.development_no == value.DevelopmentNo && item.development_color_no == value.DevelopmentColorNo
                             select item.product_d_id;
                 string product_d_id = await query.FirstOrDefaultAsync<string>();
+
+                _logger.LogInformation("Get data_m_id end");
                 using (var Command = _context.Database.GetDbConnection().CreateCommand())
                 {
                     try
@@ -100,6 +114,7 @@ namespace PDMApp.Service.PLM.CBD
                 _plm_cbd_head.checkoutmk = "N";
                 _plm_cbd_head.speclockmk = "N";
                 _plm_cbd_head.cbdlockmk = "N";
+                _plm_cbd_head.stage = stage.value_desc;
                 _plm_cbd_head.create_user = "TEST";
                 _plm_cbd_head.create_date = DateTime.Now;
                 _plm_cbd_head.update_user = "TEST";
@@ -181,7 +196,7 @@ namespace PDMApp.Service.PLM.CBD
                 }
                 int row = _context.SaveChanges();
                 var data = new Dictionary<string, object>();
-                data["udpate_row"] = row;
+                data["UdpateRow"] = row;
                 data["DataMID"] = data_m_id;
                 return data;
             }
@@ -462,6 +477,23 @@ namespace PDMApp.Service.PLM.CBD
                 Console.WriteLine(e.Message);
                 throw;
             }
+        }
+
+        public async Task<List<pdm_namevalue_new>> GetStages([Optional] string fact_no, [Optional] string text)
+        {
+
+            var query = _context.pdm_namevalue_new.AsQueryable().Where(x => x.group_key == "stage");
+            if (!string.IsNullOrEmpty(fact_no))
+            {
+                query = query.Where(n => n.fact_no == fact_no);
+            }
+            if (!string.IsNullOrEmpty(text))
+            {
+                query = query.Where(n => n.text.Equals(text));
+            }
+            var data = await query.ToListAsync();
+            return data;
+
         }
     }
 }

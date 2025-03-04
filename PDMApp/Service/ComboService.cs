@@ -108,7 +108,7 @@ namespace PDMApp.Service
                 var data = query.Select(x => new
                 {
                     Text = x.text,
-                    Value = x.value_desc
+                    Value = x.text
                 });
                 return await data.OrderBy(x => x.Value).ToListAsync();
             }

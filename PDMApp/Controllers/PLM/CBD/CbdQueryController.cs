@@ -200,11 +200,11 @@ namespace PDMApp.Controllers.PLM.CBD
                                 Itemtrading_code = ph.item_trading_code,
                                 Development_no = ph.development_no,
                                 Development_color_no = pi.development_color_no,
-                                Stage = ch.stage,
-                                Stage_display = (from nv in _pcms_Pdm_TestContext.pdm_namevalue
-                                                 where nv.group_key == "stage" && nv.value_desc == ch.stage
-                                                 orderby nv.value_desc
-                                                 select nv.text
+                                // Stage = ch.stage,
+                                Stage = (from nv in _pcms_Pdm_TestContext.pdm_namevalue
+                                         where nv.group_key == "stage" && nv.value_desc == ch.stage
+                                         orderby nv.value_desc
+                                         select nv.text
                                          ).FirstOrDefault(),
                                 Working_name = ph.working_name,
                                 Color_code = pi.color_code,
