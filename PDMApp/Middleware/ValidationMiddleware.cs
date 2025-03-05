@@ -42,7 +42,7 @@ namespace PDMApp.Middleware
 
         private async Task HandleValidationErrorsAsync(HttpContext context)
         {
-            var modelStateErrors = context.Items["ModelValidationErrors"] as Dictionary<string, string[]>;
+            var modelStateErrors = context.Items["ModelValidationErrors"] as Dictionary<string, string>;
 
             var errors = new Dictionary<string, string[]>();
 
@@ -52,10 +52,11 @@ namespace PDMApp.Middleware
             };
             context.Response.StatusCode = StatusCodes.Status200OK;
             context.Response.ContentType = "application/json";
+            var data = modelStateErrors.Values;
             await context.Response.WriteAsJsonAsync(new
             {
                 ErrorCode = "Error",
-                Message = "請填寫所有必填項目",
+                Message = string.Join(";", modelStateErrors.Values),
                 Data = modelStateErrors
             }, options);
         }
