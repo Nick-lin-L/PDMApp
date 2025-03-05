@@ -62,7 +62,15 @@ namespace PDMApp
             {
                 options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-            })
+            }/*
+                .AddCookie(options =>
+                {
+                    options.Cookie.HttpOnly = true; // 防止客戶端腳本訪問
+                    options.ExpireTimeSpan = TimeSpan.FromHours(2); // Cookie 過期時間
+                    options.SlidingExpiration = true; // 每次請求重置過期時間
+                }
+            */
+            )
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
             {
@@ -75,6 +83,17 @@ namespace PDMApp
                 options.Scope.Add("profile");
                 options.CallbackPath = "/signin-oidc";//options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)
                 options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; //options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc"; // 登出重定向 
+                /*
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true, // 驗證頒發者
+                    ValidateAudience = true, // 驗證受眾
+                    ValidateLifetime = true, // 驗證 Token 是否過期
+                    ClockSkew = TimeSpan.FromMinutes(10), // 允許的時間偏差
+                    ValidIssuer = Configuration["Authentication:PCG:Authority"],
+                    ValidAudience = Configuration["Authentication:PCG:ClientId"]
+                };
+                */
             });
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
 

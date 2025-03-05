@@ -11,6 +11,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Bartata.NET.WebForm;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace PDMApp.Controllers
 {
@@ -31,14 +37,21 @@ namespace PDMApp.Controllers
         [HttpGet("login")]
         public IActionResult Login()
         {
+            //*
             var authProperties = new AuthenticationProperties
             {
                 //RedirectUri = _config.RedirectUri
                 RedirectUri = Url.Action("Callback", "Auth", null, Request.Scheme) // 動態設定 Callback
             };
-
             // 傳回登入 URL，供前端重定向
             return Challenge(authProperties, OpenIdConnectDefaults.AuthenticationScheme);
+            /*/
+            var redirectUri = Url.Action("Callback", "Auth", null, Request.Scheme);
+            var loginUrl = $"{_config.Authority}/protocol/openid-connect/auth?client_id={_config.ClientId}&redirect_uri={redirectUri}&response_type=code&scope=openid profile email";
+
+            return Ok(new { loginUrl });
+            //*/
+
         }
 
 
@@ -46,18 +59,36 @@ namespace PDMApp.Controllers
         /// 取得目前登入的用戶資訊 (含Token) 
         /// </summary>
         [HttpGet("me")]
-        public IActionResult GetUserInfo()
+        public async Task<IActionResult> GetUserInfo()
         {
             if (User.Identity.IsAuthenticated)
             {
-                return Ok(new
-                {
-                    Username = User.Identity.Name,
-                    Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    Roles = User.Claims.Where(c => c.Type == "role").Select(c => c.Value)
-                });
+                return Unauthorized(new { error = "User not authenticated" });
             }
-            return Unauthorized(new { error = "User not authenticated" });
+
+            // 從當前 HttpContext 取得 `access_token`
+            var accessToken = await HttpContext.GetTokenAsync("access_token");
+
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return Unauthorized(new { error = "Access Token not found" });
+            }
+
+            // 1?? 呼叫 IAM 的 `userinfo` API
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
+            var response = await httpClient.GetAsync(userInfoEndpoint);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return BadRequest(new { error = "Failed to fetch user info", details = responseBody });
+            }
+
+            // 解析 userinfo API 的回應，回傳給前端
+            return Ok(new { message = "User Info Retrieved", data = responseBody });
         }
 
         [HttpGet("me-info")]
@@ -83,47 +114,44 @@ namespace PDMApp.Controllers
         /// </summary>
         [HttpGet("callback")]
         //public async Task<IActionResult> Callback()
-        public async Task<IActionResult> Callback([FromQuery] string state)
+        public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
         {
-            //var uuid = Request.Query["uid"];    
-            var code = Request.Query["code"];
-            var State = Request.Query["state"];
             var accessToken = await HttpContext.GetTokenAsync("access_token");
             var idToken = await HttpContext.GetTokenAsync("id_token");
-            //var 
 
             if (string.IsNullOrEmpty(accessToken))
             {
-                return BadRequest(new { error = "Authorization accessToken is missing" });
+                return BadRequest(new { error = "Access Token not found" });
             }
+            //return Ok(new { message = "Login successful", accessToken, idToken });
 
-            //var tokenEndpoint = $"{_config.Authority}/protocol/openid-connect/token";
-            var userinfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
-
-            //https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo 使用者帳戶資訊API
-            var clientId = _config.ClientId;
-            var clientSecret = _config.ClientSecret;
-            var redirectUri = _config.RedirectUri;
-
+            // **呼叫 SSO `userinfo` API 取得使用者資訊**
             using var httpClient = new HttpClient();
-            var requestBody = new FormUrlEncodedContent(new Dictionary<string, string>
-                            {
-                                { "grant_type", "authorization_code" },
-                                { "client_id", clientId },
-                                { "client_secret", clientSecret },
-                                //{ "code", code },
-                                { "redirect_uri", redirectUri }
-                            });
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await httpClient.PostAsync(userinfoEndpoint, requestBody);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var userInfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
+            var response = await httpClient.GetAsync(userInfoEndpoint);
+            var userInfoJson = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                return BadRequest(new { error = "Failed to exchange code for access token", details = responseContent });
+                return BadRequest(new { error = "Failed to fetch user info", details = userInfoJson });
             }
 
-            return Ok(new { message = "Login successful", tokens = responseContent });
+            //var userInfo = JsonSerializer.Deserialize<Dictionary<string, object>>(userInfoJson);
+            //解析 userinfo
+            var userInfo = JsonSerializer.Deserialize<UserInfo>(userInfoJson);
+
+            //產生後端 JWT Token
+            var userToken = GenerateJwtToken(userInfo);
+
+            //回傳給前端
+            return Ok(new
+            {
+                message = "Login successful",
+                token = userToken,
+                userInfo
+            });
         }
 
         /// <summary>
@@ -142,7 +170,43 @@ namespace PDMApp.Controllers
 
 
 
-        
+        // UserInfo 類別
+        public class UserInfo
+        {
+            public string pccuid { get; set; }
+            public string sub { get; set; }
+            public string uid { get; set; }
+            public string employee_type { get; set; }
+            public bool email_verified { get; set; }
+            public string family_name { get; set; }
+            public string email { get; set; }
+            
+        }
+
+        // 產生JWT Token
+        private static string GenerateJwtToken(UserInfo user)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TZfdvTadlOOVA7YKZ0ngKkT0rOm9AJqD"));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim("pccuid", user.pccuid),
+                new Claim(JwtRegisteredClaimNames.Sub, user.sub),
+                new Claim(JwtRegisteredClaimNames.Email, user.email),
+                new Claim("email_verified", user.email_verified.ToString()) // 轉成 string
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: "your-api",
+                audience: "your-client",
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 
 }
