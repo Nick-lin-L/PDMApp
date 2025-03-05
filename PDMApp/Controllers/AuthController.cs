@@ -43,20 +43,39 @@ namespace PDMApp.Controllers
 
 
         /// <summary>
-        /// 登入資料回拋，交換Token、並返回用戶資料 OIDC
+        /// 取得目前登入的用戶資訊 (含Token) 
         /// </summary>
-        /*
-        [HttpGet("signin-oidc")]
-        public IActionResult SigninOidc()
+        [HttpGet("me")]
+        public IActionResult GetUserInfo()
         {
-            var authProperties = new AuthenticationProperties
+            if (User.Identity.IsAuthenticated)
             {
-                RedirectUri = _config.RedirectUri
-            };
+                return Ok(new
+                {
+                    Username = User.Identity.Name,
+                    Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                    Roles = User.Claims.Where(c => c.Type == "role").Select(c => c.Value)
+                });
+            }
+            return Unauthorized(new { error = "User not authenticated" });
+        }
 
-            // 傳回登入 URL，供前端重定向
-            return Challenge(authProperties, OpenIdConnectDefaults.AuthenticationScheme);
-        }*/
+        [HttpGet("me-info")]
+        public IActionResult GetUserInfo2()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                return Ok(new
+                {
+                    Username = User.Identity.Name,
+                    Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                    AccessToken = HttpContext.GetTokenAsync("access_token").Result,
+                    IdToken = HttpContext.GetTokenAsync("id_token").Result
+                });
+            }
+            return Unauthorized(new { error = "User not authenticated" });
+        }
+
 
 
         /// <summary>
@@ -66,18 +85,21 @@ namespace PDMApp.Controllers
         //public async Task<IActionResult> Callback()
         public async Task<IActionResult> Callback([FromQuery] string state)
         {
-            var uuid = Request.Query["uid"];    
+            //var uuid = Request.Query["uid"];    
             var code = Request.Query["code"];
             var State = Request.Query["state"];
             var accessToken = await HttpContext.GetTokenAsync("access_token");
             var idToken = await HttpContext.GetTokenAsync("id_token");
+            //var 
 
             if (string.IsNullOrEmpty(accessToken))
             {
                 return BadRequest(new { error = "Authorization accessToken is missing" });
             }
 
-            var tokenEndpoint = $"{_config.Authority}/protocol/openid-connect/token";
+            //var tokenEndpoint = $"{_config.Authority}/protocol/openid-connect/token";
+            var userinfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
+
             //https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo 使用者帳戶資訊API
             var clientId = _config.ClientId;
             var clientSecret = _config.ClientSecret;
@@ -89,11 +111,11 @@ namespace PDMApp.Controllers
                                 { "grant_type", "authorization_code" },
                                 { "client_id", clientId },
                                 { "client_secret", clientSecret },
-                                { "code", code },
+                                //{ "code", code },
                                 { "redirect_uri", redirectUri }
                             });
 
-            var response = await httpClient.PostAsync(tokenEndpoint, requestBody);
+            var response = await httpClient.PostAsync(userinfoEndpoint, requestBody);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -117,6 +139,10 @@ namespace PDMApp.Controllers
 
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
         }
+
+
+
+        
     }
 
 }
