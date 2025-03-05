@@ -49,14 +49,7 @@ namespace PDMApp
                 config.Description = "PDMApp API 文件 (自動生成)";
 
             });
-            services.AddMiniProfiler(options =>
-            {
-                options.RouteBasePath = "/profiler";
-                options.EnableDebugMode = true; // 显示完整 SQL 参数
-                options.TrackConnectionOpenClose = true;
-                options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
-                // options.Storage = new oidcDemo.Model.PostgreSqlStorage(connectionString, "miniprofiler", "miniprofiler_timings", "miniprofiler_client_timings");
-            }).AddEntityFramework();
+
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
@@ -79,7 +72,7 @@ namespace PDMApp
                         .Where(e => e.Value.Errors.Count > 0)
                         .ToDictionary(
                             kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
                         );
 
                     // 將錯誤信息存儲在 HttpContext.Items 中
@@ -155,7 +148,7 @@ namespace PDMApp
             });
 
             app.UseRouting();
-            app.UseMiniProfiler();
+
             app.UseCors("AllowSpecificOrigin");
 
             app.UseAuthorization();

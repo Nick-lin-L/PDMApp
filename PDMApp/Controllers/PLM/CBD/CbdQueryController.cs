@@ -20,8 +20,6 @@ using PDMApp.Utils;
 using PDMApp.Dtos.PLM.CBD;
 using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Service;
-using System.Globalization;
-using PDMApp.Parameters.PLM.CBD;
 
 namespace PDMApp.Controllers.PLM.CBD
 {
@@ -216,9 +214,9 @@ namespace PDMApp.Controllers.PLM.CBD
                                 Vssver = ch.vssver,
                                 Ver = ch.ver,
                                 Cbd_update_user = ch.cbd_update_user,
-                                Cbd_update_date = ch.cbd_update_date == null ? "" : ch.update_date.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                                Cbd_update_date = ch.cbd_update_date == null ? "" : ch.update_date.ToString(),
                                 Update_user = ch.update_user,
-                                Update_date = ch.update_date == null ? "" : ch.update_date.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                                Update_date = ch.update_date == null ? "" : ch.update_date.ToString(),
                             };
                 if (!string.IsNullOrEmpty(parameter.color_code))
                 {
@@ -266,15 +264,13 @@ namespace PDMApp.Controllers.PLM.CBD
             }
         }
 
-        [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> CbdData([FromBody] CbdQueryParameter.QueryData parameter)
+        [HttpGet("{DataMId}")]
+        public async Task<ActionResult<APIStatusResponse<object>>> CbdData(string DataMId)
         {
             var response = new APIStatusResponse<object>();
             try
             {
-
-                response.Data = await _icbdqueryService.GetCbdDataByID(parameter.DataMId);
-                response.ErrorCode = "OK";
+                response.Data = await _icbdqueryService.GetCbdDataByID(DataMId);
             }
             catch (Exception e)
             {
