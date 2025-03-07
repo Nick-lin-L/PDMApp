@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace PDMApp.Parameters.Spec
+namespace PDMApp.Parameters.ALink
 {
     public class SpecSearchParameter
     {
         //接收user查詢的參數
-        #nullable enable
+#nullable enable
         public string? SpecMId { get; set; }
         public string? Factory { get; set; }
         public string? EntryMode { get; set; }

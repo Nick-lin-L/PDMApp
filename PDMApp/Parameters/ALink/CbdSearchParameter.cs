@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Parameters.Cbd
+namespace PDMApp.Parameters.ALink
 {
     public class CbdSearchParameter
     {
         //接收user查詢的參數
-        #nullable enable
+#nullable enable
         public string? SpecMId { get; set; }
         public string? Factory { get; set; }
         public string? EntryMode { get; set; }
