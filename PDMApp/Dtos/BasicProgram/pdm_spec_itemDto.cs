@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Dtos.Spec
+namespace PDMApp.Dtos.BasicProgram
 {
     public class pdm_spec_itemDto
     {
-        #nullable enable
+#nullable enable
         public string? SpecMId { get; set; }
         public string? ActNo { get; set; }
         public int? SeqNo { get; set; }

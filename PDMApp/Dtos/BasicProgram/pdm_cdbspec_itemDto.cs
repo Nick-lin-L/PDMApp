@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Dtos.Cbd
+namespace PDMApp.Dtos.BasicProgram
 {
     public class pdm_cdbspec_itemDto
     {
 
         //原始table也是pdm_spec_item，但因Dto欄位數量不同故重新命名
-        #nullable enable
+#nullable enable
         [Required]
         public string? SpecMId { get; set; }
         public string? ActNo { get; set; }
