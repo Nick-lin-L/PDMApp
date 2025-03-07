@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PDMApp.Dtos;
-using PDMApp.Dtos.Cbd;
+using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.ALink;
 using PDMApp.Utils;

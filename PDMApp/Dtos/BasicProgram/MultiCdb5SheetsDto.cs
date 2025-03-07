@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Dtos.Cbd
+namespace PDMApp.Dtos.BasicProgram
 {
     public class MultiCdb5SheetsDto
     {
@@ -52,11 +52,11 @@ namespace PDMApp.Dtos.Cbd
 
     public class CbdExpenseDTO
     {
-        #nullable enable
+#nullable enable
         public string? SpecMId { get; set; }
         public decimal? TargetPrice { get; set; }
         public int? Forecast { get; set; }
-        public string? Currency{ get; set; }
+        public string? Currency { get; set; }
 
         public decimal? Final { get; set; }
         public decimal? Pht { get; set; }
