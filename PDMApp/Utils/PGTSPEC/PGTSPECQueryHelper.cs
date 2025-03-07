@@ -263,7 +263,7 @@ namespace PDMApp.Utils.PGTSPEC
                     select new SpecBasicDTO
                     {
                         SpecMId = psh.spec_m_id,
-                        DevNo = ph.development_no,
+                        DevelopmentNo = ph.development_no,
                         ItemNo = ph.item_trading_code,            // ITEM NO
                         ModelName = ph.working_name,              // MODEL NAME
                         Factory = ph.assigned_agents,             // FACTORY
@@ -274,7 +274,7 @@ namespace PDMApp.Utils.PGTSPEC
                         Stage = pn.text,                          // STAGE（使用 pn.text 取得描述）
                         ColorWay = pi.colorway,                   // COLOR WAY
                         ColorCode = pi.color_code,                // COLOR CODE
-                        DevColorNo = pi.development_color_no,     // DEVELOPMENT COLOR NO
+                        DevelopmentColorNo = pi.development_color_no,     // DEVELOPMENT COLOR NO
                         MainColor = pi.main_color,                // MAIN COLOR
                         SubColor = pi.sub_color,                  // SUB COLOR
                         ItemMode = ph.item_mode,                  // ITEM MODE
