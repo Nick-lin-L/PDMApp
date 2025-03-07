@@ -52,7 +52,7 @@ namespace PDMApp.Controllers.SPEC
                 // 排序邏輯：先按 material_group，再按 act_part_no 數值排序，最後按 parts_no 判斷 null 先後
                 var sortedUpperData = allUpperData
                     .OrderBy(si => si.MatGroup)
-                    .ThenBy(si => int.TryParse(si.ActPartNo, out int num) ? num : 0)
+                    .ThenBy(si => int.TryParse(si.ActPartNo, out int num) ? num : int.MaxValue)
                     .ThenBy(si => string.IsNullOrEmpty(si.No) ? 1 : 0)  // parts_no 有值的排前
                     .ThenBy(si => si.No) // 按 parts_no 排序
                     .ThenBy(si => si.Sort) // 加入 material_sort 排序

@@ -57,7 +57,7 @@ namespace Dtos.PGTSPEC
     public class SpecBasicDTO
     {
         public string SpecMId { get; set; }
-        public string DevNo { get; set; }
+        public string DevelopmentNo { get; set; }
         public string ItemNo { get; set; }
         public string ModelName { get; set; }
         public string Factory { get; set; }
@@ -68,7 +68,7 @@ namespace Dtos.PGTSPEC
         public string Stage { get; set; }
         public string ColorWay { get; set; }
         public string ColorCode { get; set; }
-        public string DevColorNo { get; set; }
+        public string DevelopmentColorNo { get; set; }
         public string MainColor { get; set; }
         public string SubColor { get; set; }
         public string ItemMode { get; set; }
@@ -116,7 +116,6 @@ namespace Dtos.PGTSPEC
         public string? Parts { get; set; } // PARTS
         public string? Detail { get; set; } // DETAIL
         public string? ProcessMk { get; set; } // PROCESS_MK
-        [JsonIgnore]
         public string? MaterialNo { get; set; } // SERP_MATERIAL_NO (需關聯 MATERIAL 取得)
         public string? Material { get; set; } // MATERIAL
         public string? Recycle { get; set; } // RECYCLE
