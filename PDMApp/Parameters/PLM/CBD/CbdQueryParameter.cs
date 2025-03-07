@@ -14,7 +14,10 @@ namespace PDMApp.Parameters.PLM.CBD
     //[ModelBinder(BinderType = typeof(FlexibleDtoModelBinder))]
     public class CbdQueryParameter
     {
-
+        public class QueryData
+        {
+            [Required] public string DataMId { get; set; }
+        }
         public class CbdQuery
         {
             [JsonPropertyName("DevelopmentNo")] public string? development_no { set; get; }
