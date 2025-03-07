@@ -4,11 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Parameters.Spec
+namespace PDMApp.Parameters.ALink
 {
     public class SpecMIdParameter
     {
-        #nullable enable
+#nullable enable
         [Required]
         public string? SpecMId { get; set; }
 

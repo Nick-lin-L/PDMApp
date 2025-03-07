@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PDMApp.Dtos.Spec;
 using PDMApp.Models;
-using PDMApp.Parameters.Cbd;
+using PDMApp.Parameters.ALink;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace PDMApp.Controllers.CBD
+namespace PDMApp.Controllers.ALink
 {
     [Route("api/v1/[controller]")]
     [ApiController]
