@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using PDMApp.Configurations;
 using Microsoft.AspNetCore.Http;
+using PDMApp.Service;
 
 namespace PDMApp
 {
@@ -37,6 +38,7 @@ namespace PDMApp
         {
             services.AddDbContext<pcms_pdm_testContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
+            services.AddScoped<PdmUsersRepository>(); // µù¥U UserRepository
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" });
