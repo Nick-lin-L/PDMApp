@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
 using PDMApp.Dtos.BasicProgram;
-using PDMApp.Dtos.Cbd;
-using PDMApp.Dtos.Spec;
 using PDMApp.Models;
 using PDMApp.Parameters.Basic;
 using System;
