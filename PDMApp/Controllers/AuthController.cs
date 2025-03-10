@@ -88,7 +88,7 @@ namespace PDMApp.Controllers
             var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
             var response = await httpClient.GetAsync(userInfoEndpoint);
             var responseBody = await response.Content.ReadAsStringAsync();
-
+            //var userInfo = JsonSerializer.Deserialize<UserInfo>(userInfoJson);
             if (!response.IsSuccessStatusCode)
             {
                 return BadRequest(new { error = "Failed to fetch user info", details = responseBody });
@@ -107,8 +107,9 @@ namespace PDMApp.Controllers
                 {
                     Username = User.Identity.Name,
                     Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    AccessToken = HttpContext.GetTokenAsync("access_token").Result,
-                    IdToken = HttpContext.GetTokenAsync("id_token").Result
+                    //AccessToken = HttpContext.GetTokenAsync("access_token").Result,
+                    //IdToken = HttpContext.GetTokenAsync("id_token").Result,
+                    PdmToken = HttpContext.GetTokenAsync("PDMToken").Result
                 });
             }
             return Unauthorized(new { error = "User not authenticated" });
@@ -162,7 +163,8 @@ namespace PDMApp.Controllers
                     username = userInfo.family_name,
                     sso_acct = userInfo.uid.ToUpper(),
                     email = userInfo.email,
-                    password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼
+                    password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
+                    keycloak_iam_sub = userInfo.sub,
                     last_login = DateTime.UtcNow,
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
