@@ -182,13 +182,32 @@ namespace PDMApp.Controllers
             var userToken = GenerateJwtToken(userInfo);
 
             //回傳給前端
+            /*
             return Ok(new
             {
                 message = "Login successful",
                 PDMtoken = userToken,
                 userInfo
-            });
+            });*/
+            //return Redirect("/api/auth/close-window");轉址導向別的API
+            // 回傳 HTML 給前端，並執行 window.close()
+            return Content($@"
+                                <!DOCTYPE html>
+                                <html lang='zh'>
+                                <head>
+                                    <meta charset='UTF-8'>
+                                </head>
+                                <body>
+                                    <script>
+                                        alert('登入成功，請手動關閉此視窗');
+                                        window.close();
+                                    </script>
+                                </body>
+                                </html>
+                                ", "text/html", System.Text.Encoding.UTF8);
+            
         }
+
 
         /// <summary>
         /// 登出，讓前端登出並清除登入狀態
