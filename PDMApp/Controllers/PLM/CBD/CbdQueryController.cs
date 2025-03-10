@@ -20,6 +20,8 @@ using PDMApp.Utils;
 using PDMApp.Dtos.PLM.CBD;
 using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Service;
+using System.Globalization;
+using PDMApp.Parameters.PLM.CBD;
 
 namespace PDMApp.Controllers.PLM.CBD
 {
@@ -200,11 +202,11 @@ namespace PDMApp.Controllers.PLM.CBD
                                 Itemtrading_code = ph.item_trading_code,
                                 Development_no = ph.development_no,
                                 Development_color_no = pi.development_color_no,
-                                Stage = ch.stage,
-                                Stage_display = (from nv in _pcms_Pdm_TestContext.pdm_namevalue
-                                                 where nv.group_key == "stage" && nv.value_desc == ch.stage
-                                                 orderby nv.value_desc
-                                                 select nv.text
+                                // Stage = ch.stage,
+                                Stage = (from nv in _pcms_Pdm_TestContext.pdm_namevalue
+                                         where nv.group_key == "stage" && nv.value_desc == ch.stage
+                                         orderby nv.value_desc
+                                         select nv.text
                                          ).FirstOrDefault(),
                                 Working_name = ph.working_name,
                                 Color_code = pi.color_code,
@@ -214,9 +216,9 @@ namespace PDMApp.Controllers.PLM.CBD
                                 Vssver = ch.vssver,
                                 Ver = ch.ver,
                                 Cbd_update_user = ch.cbd_update_user,
-                                Cbd_update_date = ch.cbd_update_date == null ? "" : ch.update_date.ToString(),
+                                Cbd_update_date = ch.cbd_update_date == null ? "" : ch.update_date.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                                 Update_user = ch.update_user,
-                                Update_date = ch.update_date == null ? "" : ch.update_date.ToString(),
+                                Update_date = ch.update_date == null ? "" : ch.update_date.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             };
                 if (!string.IsNullOrEmpty(parameter.color_code))
                 {
@@ -264,13 +266,15 @@ namespace PDMApp.Controllers.PLM.CBD
             }
         }
 
-        [HttpGet("{DataMId}")]
-        public async Task<ActionResult<APIStatusResponse<object>>> CbdData(string DataMId)
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<object>>> CbdData([FromBody] CbdQueryParameter.QueryData parameter)
         {
             var response = new APIStatusResponse<object>();
             try
             {
-                response.Data = await _icbdqueryService.GetCbdDataByID(DataMId);
+
+                response.Data = await _icbdqueryService.GetCbdDataByID(parameter.DataMId);
+                response.ErrorCode = "OK";
             }
             catch (Exception e)
             {

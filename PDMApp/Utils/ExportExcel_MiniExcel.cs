@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using PDMApp.Dtos.Spec;
+using PDMApp.Dtos.BasicProgram;
 
 namespace PDMApp.Utils
 {

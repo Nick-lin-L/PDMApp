@@ -3,8 +3,8 @@ using NPOI.XSSF.Streaming;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using PDMApp.Dtos.Spec;
 using NPOI.XSSF.UserModel;
+using PDMApp.Dtos.BasicProgram;
 
 namespace PDMApp.Utils
 {

@@ -1,57 +1,54 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PDMApp.Dtos.Cbd;
+using PDMApp.Dtos;
 using PDMApp.Models;
-using PDMApp.Parameters.Spec;
+using PDMApp.Parameters.ALink;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace PDMApp.Controllers.CBD
+namespace PDMApp.Controllers.ALink
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class Cbd5SheetsController : ControllerBase
+    public class Spec5SheetsController : ControllerBase
     {
-
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
 
-        public Cbd5SheetsController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public Spec5SheetsController(pcms_pdm_testContext pcms_Pdm_testContext)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
 
-
-
-
-        // GET: api/<Cbd5SheetsController>
+        // GET: api/<GetSpec5SheetRequestController>
         [HttpGet]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
         }
 
-        // GET api/<Cbd5SheetsController>/5
+        // GET api/<GetSpec5SheetRequestController>/5
         [HttpGet("{id}")]
         public string Get(int id)
         {
             return "value";
         }
 
-        // POST api/<Cbd5SheetsController>
+        // POST api/<GetSpec5SheetRequestController>
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] SpecMIdParameter value)
         {
             try
             {
                 // 創建 MultiPageResultDTO
-                var resultData = new MultiCdb5SheetsDto();
+                var resultData = new MultiPageResultDTO();
 
                 // BasicData 查詢
                 var basic_query = QueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
@@ -60,18 +57,17 @@ namespace PDMApp.Controllers.CBD
                 resultData.BasicData = resultBasic;
 
                 // Upper, Sole, Other 查詢
-                var upper_query = QueryHelper.CbdUpperResponse(_pcms_Pdm_TestContext)
+                var upper_query = QueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
                     .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
                 var allUpperData = await upper_query.ToListAsync();
                 resultData.UpperData = allUpperData.Where(si => si.PartClass == "A").ToList();
                 resultData.SoleData = allUpperData.Where(si => si.PartClass == "B").ToList();
                 resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
 
-                // ExpenseData 查詢
-                var expense_query = QueryHelper.CbdExpenseResponse(_pcms_Pdm_TestContext)
+                // StandardData 查詢
+                var standard_query = QueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext)
                     .Where(st => string.IsNullOrWhiteSpace(value.SpecMId) || st.SpecMId.Equals(value.SpecMId));
-
-                resultData.ExpenseData = await expense_query.Distinct().ToListAsync();
+                resultData.StandardData = await standard_query.Distinct().ToListAsync();
 
                 // 手動轉換為字典
                 var dynamicData = new Dictionary<string, object>
@@ -80,7 +76,7 @@ namespace PDMApp.Controllers.CBD
                     { "UpperData", resultData.UpperData },
                     { "SoleData", resultData.SoleData },
                     { "OtherData", resultData.OtherData },
-                    { "ExpenseData", resultData.ExpenseData }
+                    { "StandardData", resultData.StandardData }
                 };
 
                 return APIResponseHelper.HandleDynamicMultiPageResponse(dynamicData);
@@ -97,13 +93,15 @@ namespace PDMApp.Controllers.CBD
             }
         }
 
-        // PUT api/<Cbd5SheetsController>/5
+
+
+        // PUT api/<GetSpec5SheetRequestController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<Cbd5SheetsController>/5
+        // DELETE api/<GetSpec5SheetRequestController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

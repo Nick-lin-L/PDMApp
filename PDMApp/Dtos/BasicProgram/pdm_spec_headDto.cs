@@ -1,15 +1,14 @@
-﻿using PDMApp.Dtos.Spec;
-using PDMApp.Models;
+﻿using PDMApp.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Dtos.Spec
+namespace PDMApp.Dtos.BasicProgram
 {
     public class pdm_spec_headDto
     {
-        #nullable enable
+#nullable enable
         public string? SpecMId { get; set; }
         public string? Factory { get; set; }
         public string? Shfactory { get; set; }
@@ -36,7 +35,7 @@ namespace PDMApp.Dtos.Spec
         public string? ProductMId { get; set; }
         public string? HeelHeight { get; set; }
         public string? ProductDId { get; set; }
-        
+
         //以下是表頭用不到，但查詢條件需要的欄位
         public string? LastNo1 { get; set; }
         public string? LastNo2 { get; set; }
@@ -45,7 +44,7 @@ namespace PDMApp.Dtos.Spec
         public string? PartNo { get; set; }
         public string? MatColor { get; set; }
         public string? Material { get; set; }
-        public string? Submaterial{ get; set; }
+        public string? Submaterial { get; set; }
         public string? Supplier { get; set; }
         public string? Width { get; set; }
 
