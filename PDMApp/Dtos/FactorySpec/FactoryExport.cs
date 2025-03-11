@@ -23,7 +23,11 @@ namespace Dtos.FactorySpec
         public string? ColorNameChn { get; set; }
         public string? ColorEng { get; set; }
         public string? FactoryMoldNo1 { get; set; }
+        public string? FactoryMoldNo2 { get; set; }
+        public string? FactoryMoldNo3 { get; set; }
         public string? LastNo1 { get; set; }
+        public string? LastNo2 { get; set; }
+        public string? LastNo3 { get; set; }
         public string? CreateUser { get; set; }
         public string? Type { get; set; }      //Newmaterial
         public string? Parts { get; set; }
@@ -55,8 +59,12 @@ namespace Dtos.FactorySpec
         public int? Seq { get; internal set; }
         public string ColorEng { get; internal set; }
         public string FactoryMoldNo1 { get; internal set; }
+        public string? FactoryMoldNo2 { get; set; }
+        public string? FactoryMoldNo3 { get; set; }
         public string CreateUser { get; internal set; }
         public string LastNo1 { get; internal set; }
+        public string? LastNo2 { get; set; }
+        public string? LastNo3 { get; set; }
         public string ShoeLaceLength { get; internal set; }
         public string Size { get; internal set; }
         public string ShoeBox { get; internal set; }

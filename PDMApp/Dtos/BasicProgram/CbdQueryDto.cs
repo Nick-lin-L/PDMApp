@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using PDMApp.Models;
 
-namespace PDMApp.Dtos.PLM.CBD
+namespace PDMApp.Dtos.Cbd
 {
     public class CbdQueryDto
     {
@@ -16,7 +16,7 @@ namespace PDMApp.Dtos.PLM.CBD
             [JsonPropertyName("DataMId")] public string? Data_m_id { set; get; }
             [JsonPropertyName("ProductMId")] public string? Product_m_id { set; get; }
             [JsonPropertyName("ProductDId")] public string? Product_d_id { set; get; }
-            [JsonPropertyName("ItemtradingCode")] public string? Itemtrading_code { set; get; }
+            [JsonPropertyName("ItemTradingCode")] public string? Itemtrading_code { set; get; }
             [JsonPropertyName("DevelopmentNo")] public string? Development_no { set; get; }
             [JsonPropertyName("DevelopmentColorNo")] public string? Development_color_no { set; get; }
             public string? Stage { set; get; }
@@ -47,7 +47,7 @@ namespace PDMApp.Dtos.PLM.CBD
             [JsonPropertyName("ItemTradingCode")] public string? Item_Trading_Code { get; set; }
             [JsonPropertyName("ItemMode")] public string? Item_Mode { get; set; }
             [JsonPropertyName("ArticleDescription")] public string? Article_Description { get; set; }
-            [JsonPropertyName("Season_Forecast")] public int? Lp01_Season_Forecast { get; set; }
+            [JsonPropertyName("SeasonForecast")] public int? Lp01_Season_Forecast { get; set; }
             public string? Width { get; set; }
             public string? Last2 { get; set; }
             public string? Sizemap { get; set; }
@@ -121,7 +121,7 @@ namespace PDMApp.Dtos.PLM.CBD
         public class ExpenseDto
         {
             #region 黃色區
-            public decimal? Targetprice { get; set; }
+            [JsonPropertyName("TargetPrice")] public decimal? Targetprice { get; set; }
             public string? Forecast { get; set; }
             public string? Currency { get; set; }
             #endregion

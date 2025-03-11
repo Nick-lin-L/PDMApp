@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Utils;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -49,7 +50,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -70,7 +71,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return StatusCode(500, new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -83,7 +84,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -104,7 +105,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return StatusCode(500, new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -117,7 +118,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -140,7 +141,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -153,7 +154,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -174,7 +175,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -187,7 +188,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -208,7 +209,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -221,7 +222,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -242,7 +243,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -255,7 +256,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     Message = ""
                 });
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
@@ -285,7 +286,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new
                 {

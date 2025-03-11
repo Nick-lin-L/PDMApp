@@ -5,12 +5,19 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using PDMApp.Models;
+using PDMApp.Utils.Converters;
 
-namespace PDMApp.Parameters.PLM.CBD
+namespace PDMApp.Parameters.Cbd
 {
+    //[ModelBinder(BinderType = typeof(FlexibleDtoModelBinder))]
     public class CbdQueryParameter
     {
+        public class QueryData
+        {
+            [Required] public string? DataMId { get; set; }
+        }
         public class CbdQuery
         {
             [JsonPropertyName("DevelopmentNo")] public string? development_no { set; get; }
@@ -26,14 +33,15 @@ namespace PDMApp.Parameters.PLM.CBD
 
         public class CbdExcel
         {
-            [Required]
-            public String? DevNo { get; set; }
-            [Required]
-            public String? DevColorName { get; set; }
-            [Required]
-            public String? Stage { get; set; }
-            [Required]
-            public ExcelData? Data { get; set; }
+            [Required] public string? DevFactoryNo { get; set; }
+
+            [Required] public string? DevelopmentNo { get; set; }
+
+            [Required] public string? DevelopmentColorNo { get; set; }
+
+            [Required] public string? Stage { get; set; }
+
+            [Required] public ExcelData? Data { get; set; }
         }
 
         public class ExcelData
@@ -52,6 +60,7 @@ namespace PDMApp.Parameters.PLM.CBD
 
         public class HeaderData
         {
+            //DecimalToStringForSerializationJsonConverter
             public string? Stage { get; set; }
             [JsonPropertyName("ItemModeSubType")] public string? Itemmode_Subtype { get; set; }
             public string? Currency { get; set; }
