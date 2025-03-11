@@ -153,7 +153,7 @@ namespace Utils.PGTSPEC
                     // 2.1 檢查 MATERIAL 是否有值
                     if (string.IsNullOrWhiteSpace(item.Material))
                     {
-                        throw new Exception($"物料：{item.Parts} 的 MATERIAL 不能為空");
+                        throw new Exception("MATERIAL 需有值");
                     }
 
                     // 2.3 檢查是否有全型字元
