@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using PDMApp.Models;
 
-namespace PDMApp.Dtos.PLM.CBD
+namespace PDMApp.Dtos.Cbd
 {
     public class CbdQueryDto
     {
@@ -121,7 +121,7 @@ namespace PDMApp.Dtos.PLM.CBD
         public class ExpenseDto
         {
             #region 黃色區
-            public decimal? Targetprice { get; set; }
+            [JsonPropertyName("TargetPrice")] public decimal? Targetprice { get; set; }
             public string? Forecast { get; set; }
             public string? Currency { get; set; }
             #endregion

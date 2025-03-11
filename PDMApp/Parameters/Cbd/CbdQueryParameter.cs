@@ -9,14 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 using PDMApp.Models;
 using PDMApp.Utils.Converters;
 
-namespace PDMApp.Parameters.PLM.CBD
+namespace PDMApp.Parameters.Cbd
 {
     //[ModelBinder(BinderType = typeof(FlexibleDtoModelBinder))]
     public class CbdQueryParameter
     {
         public class QueryData
         {
-            [Required] public string DataMId { get; set; }
+            [Required] public string? DataMId { get; set; }
         }
         public class CbdQuery
         {
