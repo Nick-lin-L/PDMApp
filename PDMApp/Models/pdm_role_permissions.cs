@@ -15,7 +15,7 @@ namespace PDMApp.Models
         public int role_permission_id { get; set; }
         public int? role_id { get; set; }
         public int? permission_id { get; set; }
-        public string? dev_factory_no { get; set; }
+        public string dev_factory_no { get; set; }
         public string is_active { get; set; }
         public string createp { get; set; }
         public string readp { get; set; }

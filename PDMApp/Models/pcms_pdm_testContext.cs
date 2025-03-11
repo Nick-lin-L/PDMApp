@@ -2212,6 +2212,10 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("'Y'::character varying")
                     .HasComment("是否來自SSO建立帳號");
 
+                entity.Property(e => e.keycloak_iam_sub)
+                    .HasMaxLength(255)
+                    .HasComment("keycloak_sub也是唯一碼");
+
                 entity.Property(e => e.last_login).HasComment("上次登入時間");
 
                 entity.Property(e => e.local_name)
