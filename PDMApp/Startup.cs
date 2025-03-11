@@ -2,17 +2,25 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using PDMApp.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using PDMApp.Configurations;
+using Microsoft.AspNetCore.Http;
+using PDMApp.Service;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using PDMApp.Utils.BasicProgram;
@@ -118,12 +126,61 @@ namespace PDMApp
                     Implementation = t
                 })
                 .Where(t => t.Service != null); //確保有對應的介面
+            services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            });
+
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            }/*
+                .AddCookie(options =>
+                {
+                    options.Cookie.HttpOnly = true; // 防止客戶端腳本訪問
+                    options.ExpireTimeSpan = TimeSpan.FromHours(2); // Cookie 過期時間
+                    options.SlidingExpiration = true; // 每次請求重置過期時間
+                }
+            */
+            )
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+            {
+                options.Authority = Configuration["Authentication:PCG:Authority"]; // 設定 SSO 伺服器位址
+                options.ClientId = Configuration["Authentication:PCG:ClientId"];   // 設定 Client ID
+                options.ClientSecret = Configuration["Authentication:PCG:ClientSecret"]; // 設定 Secret
+                options.ResponseType = "code";       // 採用 Authorization Code 模式
+                options.SaveTokens = true;           // 保存 Token
+                options.Scope.Add("openid");         // 預設範圍
+                options.Scope.Add("profile");
+                options.CallbackPath = "/signin-oidc";//options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)
+                options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; //options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc"; // 登出重定向 
+                /*
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true, // 驗證頒發者
+                    ValidateAudience = true, // 驗證受眾
+                    ValidateLifetime = true, // 驗證 Token 是否過期
+                    ClockSkew = TimeSpan.FromMinutes(10), // 允許的時間偏差
+                    ValidIssuer = Configuration["Authentication:PCG:Authority"],
+                    ValidAudience = Configuration["Authentication:PCG:ClientId"]
+                };
+                */
+            });
+            services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
 
             foreach (var type in serviceTypes)
             {
                 services.AddScoped(type.Service, type.Implementation);
             }
         }
+
+            //services.AddAuthorization(); // 啟用授權
+            services.AddControllersWithViews();
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -158,7 +215,8 @@ namespace PDMApp
             app.UseMiniProfiler();
             app.UseCors("AllowSpecificOrigin");
 
-            app.UseAuthorization();
+            app.UseAuthentication(); // 啟用 JWT 驗證
+            app.UseAuthorization();  // 啟用授權
 
             app.UseEndpoints(endpoints =>
             {
