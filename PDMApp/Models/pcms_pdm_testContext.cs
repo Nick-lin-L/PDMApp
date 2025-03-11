@@ -2702,6 +2702,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.sampling_factory).HasMaxLength(2);
 
+                entity.Property(e => e.season).HasMaxLength(4);
+
                 entity.Property(e => e.series).HasMaxLength(30);
 
                 entity.Property(e => e.series_with_generation).HasMaxLength(30);
