@@ -26,7 +26,6 @@ using System.IO;
 using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
 using System.Reflection;
-using PDMApp.Service;
 using PDMApp.Middleware;
 
 
@@ -48,7 +47,7 @@ namespace PDMApp
             options.UseNpgsql(Configuration.GetConnectionString("PDMConnection")));
             // 原生swagger文件配置
             //services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "PDMApp", Version = "v1" }); });
-
+            services.AddScoped<PdmUsersRepository>(); // 註冊 UserRepository
             // NSwag OpenAPI文件配置
             services.AddOpenApiDocument(config =>
             {
@@ -108,6 +107,8 @@ namespace PDMApp
             {
                 options.LowercaseUrls = true; // 讓 API URL 變成小寫
             });
+            //services.AddAuthorization(); // 啟用授權
+            services.AddControllersWithViews();
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別
@@ -126,11 +127,6 @@ namespace PDMApp
                     Implementation = t
                 })
                 .Where(t => t.Service != null); //確保有對應的介面
-            services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.PropertyNamingPolicy = null;
-            });
-
 
             services.AddAuthentication(options =>
             {
@@ -176,10 +172,7 @@ namespace PDMApp
                 services.AddScoped(type.Service, type.Implementation);
             }
         }
-
-            //services.AddAuthorization(); // 啟用授權
-            services.AddControllersWithViews();
-        }
+        
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -212,12 +205,12 @@ namespace PDMApp
             });
 
             app.UseRouting();
-            app.UseMiniProfiler();
             app.UseCors("AllowSpecificOrigin");
 
             app.UseAuthentication(); // 啟用 JWT 驗證
             app.UseAuthorization();  // 啟用授權
 
+            app.UseMiniProfiler();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
