@@ -71,7 +71,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return StatusCode(500, new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -105,7 +105,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return StatusCode(500, new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -141,7 +141,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -175,7 +175,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -209,7 +209,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -243,7 +243,7 @@ namespace PDMApp.Controllers.PGTSPEC
 
                 if (!isSuccess)
                 {
-                    return BadRequest(new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message

@@ -106,7 +106,7 @@ namespace PDMApp.Controllers.SPEC
 
                 if (!success)
                 {
-                    return StatusCode(500, new { ErrorCode = "UPDATE_FAILED", Message = message });
+                    return StatusCode(200, new { ErrorCode = "UPDATE_FAILED", Message = message });
                 }
 
                 return StatusCode(200, new
