@@ -8,8 +8,8 @@ namespace PDMApp.Models
     public partial class pdm_role_permission_details
     {
         public int role_permission_detail_id { get; set; }
-        public int? role_id { get; set; }
-        public int? permission_id { get; set; }
+        public int role_id { get; set; }
+        public int permission_id { get; set; }
         public string dev_factory_no { get; set; }
         public string permission_key { get; set; }
         public string description { get; set; }
