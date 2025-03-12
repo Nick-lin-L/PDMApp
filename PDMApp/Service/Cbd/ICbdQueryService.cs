@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PDMApp.Dtos.BasicProgram;
-using PDMApp.Parameters.PLM.CBD;
+using PDMApp.Parameters.Cbd;
 
-namespace PDMApp.Service.PLM.CBD
+namespace PDMApp.Service.Cbd
 {
     /// <summary>
     /// PLM CBD 查詢相關服務

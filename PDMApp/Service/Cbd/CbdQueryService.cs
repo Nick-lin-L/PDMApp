@@ -11,11 +11,11 @@ using DocumentFormat.OpenXml.Math;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PDMApp.Dtos.BasicProgram;
-using PDMApp.Dtos.PLM.CBD;
+using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
 
-namespace PDMApp.Service.PLM.CBD
+namespace PDMApp.Service.Cbd
 {
     public class CbdQueryService : ICbdQueryService
     {
@@ -28,7 +28,7 @@ namespace PDMApp.Service.PLM.CBD
             _logger = logger;
         }
 
-        public async Task<dynamic> ExcelImport(Parameters.PLM.CBD.CbdQueryParameter.CbdExcel value)
+        public async Task<dynamic> ExcelImport(Parameters.Cbd.CbdQueryParameter.CbdExcel value)
         {
             try
             {
@@ -377,7 +377,7 @@ namespace PDMApp.Service.PLM.CBD
             {
                 var item = (from x in _context.plm_cbd_item
                             where x.data_m_id == Data_m_id
-                            select new Dtos.PLM.CBD.CbdQueryDto.CbdItemDto
+                            select new Dtos.Cbd.CbdQueryDto.CbdItemDto
                             {
                                 Data_m_id = x.data_m_id,
                                 Data_d_id = x.data_d_id,
@@ -444,19 +444,19 @@ namespace PDMApp.Service.PLM.CBD
                 var product_d_id = query.pi.product_d_id;
                 var stage = query.ch.stage;
 
-                var basic = new Dtos.PLM.CBD.CbdQueryDto.BasicDto();
+                var basic = new Dtos.Cbd.CbdQueryDto.BasicDto();
                 basic.SetValues(query.ch.GetPropertiesWithValues());
                 basic.SetValues(query.pi.GetPropertiesWithValues());
                 basic.SetValues(query.ph.GetPropertiesWithValues());
 
-                var expense = new Dtos.PLM.CBD.CbdQueryDto.ExpenseDto();
+                var expense = new Dtos.Cbd.CbdQueryDto.ExpenseDto();
                 expense.SetValues(query.ph.GetPropertiesWithValues());
                 expense.SetValues(query.ph.GetPropertiesWithValues());
                 expense.SetValues(query.ch.GetPropertiesWithValues());
 
                 foreach (var molditem in moldcharge)
                 {
-                    var tmp = new Dtos.PLM.CBD.CbdQueryDto.MoldDto();
+                    var tmp = new Dtos.Cbd.CbdQueryDto.MoldDto();
                     tmp.SetValues(molditem.GetPropertiesWithValues());
                     expense.mold.Add(tmp);
                 }

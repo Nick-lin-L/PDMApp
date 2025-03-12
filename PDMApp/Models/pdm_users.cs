@@ -39,6 +39,7 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
+        public string keycloak_iam_sub { get; set; }
 
         public virtual ICollection<pdm_factory> pdm_factorycreated_byNavigation { get; set; }
         public virtual ICollection<pdm_factory> pdm_factoryupdated_byNavigation { get; set; }

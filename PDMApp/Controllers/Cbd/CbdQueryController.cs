@@ -1,42 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using Npgsql.TypeHandlers.NetworkHandlers;
-using PDMApp.Extensions;
 using PDMApp.Models;
-using PDMApp.Parameters.PLM.CBD;
+using PDMApp.Parameters.Cbd;
 using PDMApp.Utils;
-using PDMApp.Dtos.PLM.CBD;
+using PDMApp.Dtos.Cbd;
 using PDMApp.Parameters.PGTSPEC;
-using PDMApp.Service;
 using System.Globalization;
-using PDMApp.Parameters.PLM.CBD;
 
-namespace PDMApp.Controllers.PLM.CBD
+namespace PDMApp.Controllers.Cbd
 {
-    [Route("api/v1/PLM/[controller]/[action]")]
+    [Route("api/v1/cbd/[controller]/[action]")]
     [ApiController]
     public class CbdQueryController : ControllerBase
     {
         private readonly ILogger<CbdQueryController> _logger;
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
         private readonly Service.IComboService _icomboService;
-        private readonly Service.PLM.CBD.ICbdQueryService _icbdqueryService;
+        private readonly Service.Cbd.ICbdQueryService _icbdqueryService;
         public CbdQueryController(pcms_pdm_testContext pcms_Pdm_testContext,
                                   ILogger<CbdQueryController> logger,
                                   Service.IComboService icomboService,
-                                  Service.PLM.CBD.ICbdQueryService icbdqueryService)
+                                  Service.Cbd.ICbdQueryService icbdqueryService)
         {
             _logger = logger;
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
@@ -183,7 +175,7 @@ namespace PDMApp.Controllers.PLM.CBD
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.PLM.CBD.CbdQueryDto.QueryDto>>>> Query(Parameters.PLM.CBD.CbdQueryParameter.CbdQuery parameter)
+        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.Cbd.CbdQueryDto.QueryDto>>>> Query(Parameters.Cbd.CbdQueryParameter.CbdQuery parameter)
         {
             var response = new APIStatusResponse<Utils.PagedResult<object>>();
             try
@@ -194,7 +186,7 @@ namespace PDMApp.Controllers.PLM.CBD
                             join ch in _pcms_Pdm_TestContext.plm_cbd_head
                             on pi.product_d_id equals ch.product_d_id
                             orderby ph.development_no ascending, ch.ver ascending
-                            select new Dtos.PLM.CBD.CbdQueryDto.QueryDto
+                            select new CbdQueryDto.QueryDto
                             {
                                 Data_m_id = ch.data_m_id,
                                 Product_m_id = ph.product_m_id,
@@ -285,7 +277,7 @@ namespace PDMApp.Controllers.PLM.CBD
             return response;
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Initial(DevelopmentFactoryParameter? value)
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Initial(DevelopmentFactoryParameter value)
         {
             var response = new APIStatusResponse<object>();
             try
