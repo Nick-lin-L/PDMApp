@@ -161,6 +161,7 @@ namespace PDMApp.Controllers
                 {
                     pccuid = pccuid, // 這裡使用 decimal
                     username = userInfo.family_name,
+                    local_name = userInfo.family_name + "(" + userInfo.uid.ToUpper() + ")",
                     sso_acct = userInfo.uid.ToUpper(),
                     email = userInfo.email,
                     password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
