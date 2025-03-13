@@ -38,13 +38,22 @@ namespace PDMApp.Utils
         private const string DefaultEmptyMessage = "查無資料";
 
         // 私有方法：生成統一格式的 API 回應
-        private static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message, T data)
+        public static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message, T data)
         {
             return new OkObjectResult(new APIStatusResponse<T>
             {
                 ErrorCode = errorCode,
                 Message = message,
                 Data = data
+            });
+        }
+
+        public static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message)
+        {
+            return new OkObjectResult(new APIStatusResponse<T>
+            {
+                ErrorCode = errorCode,
+                Message = message
             });
         }
 

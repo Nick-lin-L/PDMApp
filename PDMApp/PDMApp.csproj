@@ -55,18 +55,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Bartata.NET">
-      <HintPath>..\..\SSO IAM dll\Bartata.NET.dll</HintPath>
-    </Reference>
-    <Reference Include="Bartata.NET.Sample.WebForm">
-      <HintPath>..\..\SSO IAM dll\Bartata.NET.Sample.WebForm.dll</HintPath>
-    </Reference>
-    <Reference Include="Bartata.NET.WebForm">
-      <HintPath>..\..\SSO IAM dll\Bartata.NET.WebForm.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Controllers\FactorySPEC\" />
     <Folder Include="Parameters\ALink\" />
     <Folder Include="Utils\Cbd\" />
