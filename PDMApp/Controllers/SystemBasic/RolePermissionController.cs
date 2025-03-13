@@ -490,6 +490,92 @@ namespace PDMApp.Controllers
                 }
             }
         }
+
+        // 4. 停用角色及其相關權限
+        /// <summary>
+        /// 停用角色及其相關權限
+        /// </summary>
+        /// <param name="roleId">要停用的角色ID</param>
+        /// <param name="request">更新請求資訊包</param>
+        /// <returns>停用結果</returns>
+        [HttpPut("deactivate/{roleId}")]
+        public async Task<ActionResult<APIStatusResponse<object>>> DeactivateRole(int roleId, [FromBody] RolePermissionsParameter request)
+        {
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    long updatedBy = (long)request.UpdatedBy;
+                    // 查找角色是否存在
+                    var role = await _pcms_Pdm_TestContext.pdm_roles
+                        .FirstOrDefaultAsync(r => r.role_id == roleId);
+
+                    if (role == null)
+                    {
+                        return APIResponseHelper.HandleApiError<object>(
+                            errorCode: "40004",
+                            message: "找不到指定的角色",
+                            data: null
+                        );
+                    }
+
+                    var currentTime = DateTime.UtcNow;
+
+                    // 更新角色狀態
+                    role.is_active = "N";
+                    role.updated_by = updatedBy;
+                    role.updated_at = currentTime;
+
+                    // 更新相關的權限記錄
+                    var permissions = await _pcms_Pdm_TestContext.pdm_role_permissions
+                        .Where(p => p.role_id == roleId)
+                        .ToListAsync();
+
+                    foreach (var permission in permissions)
+                    {
+                        permission.is_active = "N";
+                        permission.updated_by = updatedBy;
+                        permission.updated_at = currentTime;
+                    }
+
+                    // 更新相關的權限詳細記錄
+                    var permissionDetails = await _pcms_Pdm_TestContext.pdm_role_permission_details
+                        .Where(d => d.role_id == roleId)
+                        .ToListAsync();
+
+                    foreach (var detail in permissionDetails)
+                    {
+                        detail.is_active = "N";
+                        detail.updated_by = updatedBy;
+                        detail.updated_at = currentTime;
+                    }
+
+                    // 儲存變更
+                    await _pcms_Pdm_TestContext.SaveChangesAsync();
+                    scope.Complete();
+
+                    return APIResponseHelper.HandleDynamicMultiPageResponse(new Dictionary<string, object>
+                    {
+                        { "message", "角色已成功停用" },
+                        { "deactivatedRecords", new {
+                            roleId = roleId,
+                            permissionsCount = permissions.Count,
+                            permissionDetailsCount = permissionDetails.Count
+                        }}
+                    }).Result;
+                }
+                catch (Exception ex)
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        errorCode: "50002",
+                        message: $"停用角色時發生錯誤: {ex.Message}",
+                        data: null
+                    );
+                }
+            }
+        }
+
         public class PermissionsWrapper
         {
             public IEnumerable<pdm_permissionsDto> Permissions { get; set; }
