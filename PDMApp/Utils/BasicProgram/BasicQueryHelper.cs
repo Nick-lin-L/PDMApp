@@ -83,7 +83,7 @@ namespace PDMApp.Utils.BasicProgram
 
                         //以下為pdm_role_permissions資料
                         //RolePermissionDetailId = Prpd.role_permission_detail_id,
-                        RoleId = Prpd.role_id,
+                        RoleId = (int)Prpd.role_id,
                         DevFactoryNoD = Prpd.dev_factory_no,
                         PermissionKey = Prpd.permission_key,
                         DescriptionD = Prpd.description,
@@ -170,7 +170,7 @@ namespace PDMApp.Utils.BasicProgram
                 join Pp in _pcms_Pdm_TestContext.pdm_permissions on Prpd.permission_id equals Pp.permission_id
                 select new pdm_role_permission_detailsInitDto
                 {
-                    PermissionId = Prpd.permission_id,
+                    PermissionId = (int)Prpd.permission_id,
                     PermissionName = Pp.permission_name,
                     Description = Pp.description,
                     PermissionKey = Prpd.permission_key,
@@ -270,8 +270,8 @@ namespace PDMApp.Utils.BasicProgram
                                select new pdm_role_permission_detailsDto
                                {
                                    //RolePermissionDetailId = Prpd.role_permission_detail_id,
-                                   RoleId = Prpd.role_id,
-                                   PermissionId = Prpd.permission_id,
+                                   RoleId = (int)Prpd.role_id,
+                                   PermissionId = (int)Prpd.permission_id,
                                    Description = Pp.description,
                                    DevFactoryNoD = Prpd.dev_factory_no,
                                    PermissionKey = Prpd.permission_key,
