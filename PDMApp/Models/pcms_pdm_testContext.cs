@@ -1008,6 +1008,9 @@ namespace PDMApp.Models
 
                 entity.ToTable("pdm_role_permission_details", "asics_pdm");
 
+                entity.HasIndex(e => new { e.role_id, e.permission_id, e.permission_key, e.dev_factory_no }, "uq_role_permission")
+                    .IsUnique();
+
                 entity.Property(e => e.role_permission_detail_id)
                     .HasDefaultValueSql("nextval('pdm_role_permission_details_role_permission_detail_id_seq'::regclass)")
                     .HasComment("Table ID");
@@ -2608,6 +2611,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.earliest_rid).HasMaxLength(8);
 
+                entity.Property(e => e.factory).HasMaxLength(4);
+
                 entity.Property(e => e.gender).HasMaxLength(10);
 
                 entity.Property(e => e.global_id).HasMaxLength(8);
@@ -2701,6 +2706,8 @@ namespace PDMApp.Models
                 entity.Property(e => e.regional_approval_date).HasMaxLength(8);
 
                 entity.Property(e => e.sampling_factory).HasMaxLength(2);
+
+                entity.Property(e => e.season).HasMaxLength(4);
 
                 entity.Property(e => e.series).HasMaxLength(30);
 

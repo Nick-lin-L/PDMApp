@@ -112,5 +112,7 @@ namespace PDMApp.Models
         public string assigned_agents { get; set; }
         public string global_rid { get; set; }
         public string brand_no { get; set; }
+        public string season { get; set; }
+        public string factory { get; set; }
     }
 }

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bartata.NET.WebForm;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
@@ -20,10 +19,12 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
 using PDMApp.Models;
 using PDMApp.Service;
+using Microsoft.AspNetCore.Authorization;
+using PDMApp.Utils;
 
 namespace PDMApp.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -40,6 +41,7 @@ namespace PDMApp.Controllers
         /// <summary>
         /// 取得登入 URL，讓前端重定向至 IAM 登入頁面
         /// </summary>
+        [AllowAnonymous]
         [HttpGet("login")]
         public IActionResult Login()
         {
@@ -64,10 +66,10 @@ namespace PDMApp.Controllers
         /// <summary>
         /// 取得目前登入的用戶資訊 (含Token) 
         /// </summary>
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetUserInfo()
         {
-            
             if (!User.Identity.IsAuthenticated)
             {
                 return Unauthorized(new { error = "User not authenticated" });
@@ -75,6 +77,9 @@ namespace PDMApp.Controllers
 
             // 從當前 HttpContext 取得access_token
             var accessToken = await HttpContext.GetTokenAsync("access_token");
+            var idToken = await HttpContext.GetTokenAsync("id_token");
+            // 從Cookies取得自訂Token
+            var PdmToken = HttpContext.Request.Cookies["PDMToken"];
 
             if (string.IsNullOrEmpty(accessToken))
             {
@@ -98,32 +103,112 @@ namespace PDMApp.Controllers
             return Ok(new { message = "User Info Retrieved", data = responseBody });
         }
 
+        //[Authorize]
         [HttpGet("me-info")]
         public IActionResult GetUserInfo2()
         {
             if (User.Identity.IsAuthenticated)
             {
-                return Ok(new
+                var userInfo = new
                 {
                     Username = User.Identity.Name,
                     Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    //AccessToken = HttpContext.GetTokenAsync("access_token").Result,
-                    //IdToken = HttpContext.GetTokenAsync("id_token").Result,
-                    PdmToken = HttpContext.GetTokenAsync("PDMToken").Result
-                });
+                    PdmToken = HttpContext.Request.Cookies["PDMToken"]
+                };
+                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", "").Result;
+                //return APIResponseHelper.HandleApiResponse(new[] { userInfo }, "OK", "查詢成功").Result;
             }
-            return Unauthorized(new { error = "User not authenticated" });
+            return APIResponseHelper.HandleApiError<object>("401", "使用者未驗證").Result;
         }
+        /*
+        [Authorize]
+        [HttpGet("login-status")]
+        public async Task<IActionResult> LoginStatus() 
+        {
+            // 1. Check if the user is authenticated
+            if (!User.Identity.IsAuthenticated)
+            {
+                // No valid authentication (no cookie or invalid token)
+                return Unauthorized(new { authenticated = false });
+            }
 
+            // 2. User is authenticated, retrieve current access token and refresh token
+            var accessToken = await HttpContext.GetTokenAsync("access_token");
+            var refreshToken = await HttpContext.GetTokenAsync("refresh_token");
+            var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");  // stored as a string if SaveTokens = true
+            DateTimeOffset? expiresAt = null;
+            if (!string.IsNullOrEmpty(expiresAtStr))
+                expiresAt = DateTimeOffset.Parse(expiresAtStr);
 
+            string username = User.Identity.Name ?? User.FindFirst("preferred_username")?.Value;
+
+            // 3. Validate access token expiration
+            bool tokenExpired = false;
+            if (expiresAt.HasValue)
+            {
+                tokenExpired = DateTimeOffset.UtcNow >= expiresAt.Value;
+            }
+            else
+            {
+                // If we don't have an "expires_at", we could fall back to introspecting the token or checking JWT exp claim.
+                // e.g., decode JWT and check its 'exp' claim against current time.
+            }
+
+            if (!tokenExpired)
+            {
+                // Access token is still valid
+                return Ok(new { authenticated = true, username = username });
+            }
+
+            // 4. If access token is expired, attempt to use the refresh token
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                // Call Keycloak token endpoint to refresh the access token
+                // (grant_type=refresh_token, using client credentials and the refresh token)
+                var newTokenResponse = await KeycloakTokenService.RefreshAsync(refreshToken);
+                if (newTokenResponse.IsSuccess)
+                {
+                    // Extract the new tokens from Keycloak's response
+                    string newAccessToken = newTokenResponse.AccessToken;
+                    string newRefreshToken = newTokenResponse.RefreshToken;
+                    int newExpiresIn = newTokenResponse.ExpiresIn; // e.g., seconds until expiration
+
+                    // (Optional) Update the authentication cookie with new tokens so future requests use the new access token
+                    var authInfo = await HttpContext.AuthenticateAsync();
+                    authInfo.Properties.UpdateTokenValue("access_token", newAccessToken);
+                    authInfo.Properties.UpdateTokenValue("refresh_token", newRefreshToken);
+                    var newExpiresAt = DateTimeOffset.UtcNow.AddSeconds(newExpiresIn).ToString("o");
+                    authInfo.Properties.UpdateTokenValue("expires_at", newExpiresAt);
+                    await HttpContext.SignInAsync(authInfo.Principal, authInfo.Properties);
+
+                    // Return the new access token to the client (if the client needs to know it)
+                    return Ok(new
+                    {
+                        authenticated = true,
+                        username = username,
+                        accessToken = newAccessToken
+                    });
+                }
+            }
+
+            // 5. If we cannot refresh (no refresh token or refresh token also expired/invalid)
+            return Unauthorized(new
+            {
+                authenticated = false,
+                error = "Access token expired"
+            });
+        }
+        */
 
         /// <summary>
         /// 登入資料回拋，交換Token、並返回用戶資料
         /// </summary>
+        [AllowAnonymous]
         [HttpGet("callback")]
         //public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
         public async Task<IActionResult> Callback()
         {
+            var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
             var accessToken = await HttpContext.GetTokenAsync("access_token");
             var idToken = await HttpContext.GetTokenAsync("id_token");
 
@@ -161,6 +246,7 @@ namespace PDMApp.Controllers
                 {
                     pccuid = pccuid, // 這裡使用 decimal
                     username = userInfo.family_name,
+                    local_name = userInfo.family_name + "(" + userInfo.uid.ToUpper() + ")",
                     sso_acct = userInfo.uid.ToUpper(),
                     email = userInfo.email,
                     password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
@@ -178,9 +264,20 @@ namespace PDMApp.Controllers
                 await _pdmUsersRepository.UpdateUser(user);
             }
 
-            //產生後端自訂的JWT Token
+            // 產生後端自訂的JWT Token
             var userToken = GenerateJwtToken(userInfo);
+            
+            // 設定 cookie 選項
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true, // 防止 JavaScript 存取
+                Secure = true,   // 若使用 HTTPS 就設定 true
+                SameSite = SameSiteMode.Lax, // 根據需求調整
+                Expires = DateTimeOffset.UtcNow.AddHours(1) // 與 JWT 的過期時間一致
+            };
 
+            // 將JWT寫入cookie，這裡cookie名稱可以自訂，例如"PDMToken"
+            HttpContext.Response.Cookies.Append("PDMToken", userToken, cookieOptions);
             //回傳給前端
             /*
             return Ok(new
@@ -212,6 +309,7 @@ namespace PDMApp.Controllers
         /// <summary>
         /// 登出，讓前端登出並清除登入狀態
         /// </summary>
+        [AllowAnonymous]
         [HttpGet("logout")]
         public IActionResult Logout()
         {
@@ -255,7 +353,7 @@ namespace PDMApp.Controllers
             };
 
             var token = new JwtSecurityToken(
-                issuer: "testissu",
+                issuer: "PDMAppissu",
                 audience: "testclient",
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
