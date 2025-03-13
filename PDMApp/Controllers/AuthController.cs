@@ -24,7 +24,7 @@ using PDMApp.Utils;
 
 namespace PDMApp.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -103,7 +103,7 @@ namespace PDMApp.Controllers
             return Ok(new { message = "User Info Retrieved", data = responseBody });
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("me-info")]
         public IActionResult GetUserInfo2()
         {
