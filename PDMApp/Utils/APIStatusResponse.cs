@@ -48,15 +48,6 @@ namespace PDMApp.Utils
             });
         }
 
-        public static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message)
-        {
-            return new OkObjectResult(new APIStatusResponse<T>
-            {
-                ErrorCode = errorCode,
-                Message = message
-            });
-        }
-
         // 處理正常 API 回應
         public static ActionResult<APIStatusResponse<IEnumerable<T>>> HandleApiResponse<T>(IEnumerable<T> data, string successCode = DefaultSuccessCode, string emptyCode = DefaultEmptyCode)
         {
