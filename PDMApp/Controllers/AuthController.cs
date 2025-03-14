@@ -105,8 +105,9 @@ namespace PDMApp.Controllers
 
         //[Authorize]
         [HttpGet("me-info")]
-        public IActionResult GetUserInfo2()
+        public async Task<IActionResult> GetUserInfo2()
         {
+            var expiresClaim = HttpContext.Request.Cookies["PDMToken"];
             if (User.Identity.IsAuthenticated)
             {
                 var userInfo = new
@@ -211,7 +212,7 @@ namespace PDMApp.Controllers
             var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
             var accessToken = await HttpContext.GetTokenAsync("access_token");
             var idToken = await HttpContext.GetTokenAsync("id_token");
-
+            var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");
             if (string.IsNullOrEmpty(accessToken))
             {
                 return BadRequest(new { error = "Access Token not found" });
@@ -265,8 +266,8 @@ namespace PDMApp.Controllers
             }
 
             // 產生後端自訂的JWT Token
-            var userToken = GenerateJwtToken(userInfo);
-            
+            var userToken = GenerateJwtToken(userInfo, expiresAtStr);
+
             // 設定 cookie 選項
             var cookieOptions = new CookieOptions
             {
@@ -296,13 +297,13 @@ namespace PDMApp.Controllers
                                 </head>
                                 <body>
                                     <script>
-                                        alert('登入成功，請手動關閉此視窗');
+
                                         window.close();
                                     </script>
                                 </body>
                                 </html>
                                 ", "text/html", System.Text.Encoding.UTF8);
-            
+
         }
 
 
@@ -311,14 +312,21 @@ namespace PDMApp.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            /*
+            var idToken = await HttpContext.GetTokenAsync("id_token");
+            if (string.IsNullOrEmpty(idToken))
+            {
+                return BadRequest(new { error = "ID Token not found" });
+            }*/
             var authProperties = new AuthenticationProperties
             {
                 RedirectUri = _config.PostLogoutRedirectUri
             };
 
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
+
         }
 
 
@@ -336,7 +344,7 @@ namespace PDMApp.Controllers
         }
 
         // 產生JWT Token
-        private string GenerateJwtToken(UserInfo user)
+        private string GenerateJwtToken(UserInfo user , string expiresAtStr)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -349,6 +357,7 @@ namespace PDMApp.Controllers
                 new Claim("pccuid", user.pccuid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.sub),
                 new Claim(JwtRegisteredClaimNames.Email, user.email),
+                new Claim("expires_at", expiresAtStr),
                 //new Claim("email_verified", user.email_verified.ToString()) // 轉成 string
             };
 
