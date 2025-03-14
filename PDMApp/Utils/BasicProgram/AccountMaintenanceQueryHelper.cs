@@ -12,6 +12,7 @@ public class AccountMaintenanceQueryHelper
     public static async Task<IDictionary<string, object>> QueryRoleDropdown(pcms_pdm_testContext _pcms_Pdm_TestContext)
     {
         var roleQuery = await (from r in _pcms_Pdm_TestContext.pdm_roles
+                               where r.is_active == "Y" // 過濾 is_active 為 "Y"
                                select new
                                {
                                    RoleId = r.role_id,          
