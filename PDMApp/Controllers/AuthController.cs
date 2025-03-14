@@ -107,19 +107,60 @@ namespace PDMApp.Controllers
         [HttpGet("me-info")]
         public async Task<IActionResult> GetUserInfo2()
         {
-            var expiresClaim = HttpContext.Request.Cookies["PDMToken"];
-            if (User.Identity.IsAuthenticated)
+            try
             {
-                var userInfo = new
+                // 檢查 PDMToken 是否存在
+                var pdmToken = HttpContext.Request.Cookies["PDMToken"];
+                if (string.IsNullOrEmpty(pdmToken))
                 {
-                    Username = User.Identity.Name,
-                    Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    PdmToken = HttpContext.Request.Cookies["PDMToken"]
-                };
-                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", "").Result;
-                //return APIResponseHelper.HandleApiResponse(new[] { userInfo }, "OK", "查詢成功").Result;
+                    return APIResponseHelper.HandleApiError<object>("401", "未找到登入令牌").Result;
+                }
+
+                // 驗證 PDMToken
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_jwtSecret);
+
+                try
+                {
+                    // 解析並驗證 token
+                    tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
+                        ValidIssuer = "PDMAppissu",
+                        ValidateAudience = true,
+                        ValidAudience = "testclient",
+                        ClockSkew = TimeSpan.Zero
+                    }, out SecurityToken validatedToken);
+
+                    if (User.Identity.IsAuthenticated)
+                    {
+                        var userInfo = new
+                        {
+                            Username = User.Identity.Name,
+                            Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                            PdmToken = pdmToken,
+                            Status = "authenticated"
+                        };
+                        return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userInfo).Result;
+                    }
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    return APIResponseHelper.HandleApiError<object>("10002", "Token expire").Result;
+                }
+                catch (SecurityTokenValidationException)
+                {
+                    return APIResponseHelper.HandleApiError<object>("10003", "JWT token not found").Result;
+                }
             }
-            return APIResponseHelper.HandleApiError<object>("401", "使用者未驗證").Result;
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>("50000", "server error：" + ex.Message).Result;
+            }
+
+            return APIResponseHelper.HandleApiError<object>("401", "Please Login").Result;
         }
         /*
         [Authorize]
