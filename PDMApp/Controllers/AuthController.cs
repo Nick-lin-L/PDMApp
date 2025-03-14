@@ -105,20 +105,62 @@ namespace PDMApp.Controllers
 
         //[Authorize]
         [HttpGet("me-info")]
-        public IActionResult GetUserInfo2()
+        public async Task<IActionResult> GetUserInfo2()
         {
-            if (User.Identity.IsAuthenticated)
+            try
             {
-                var userInfo = new
+                // 檢查 PDMToken 是否存在
+                var pdmToken = HttpContext.Request.Cookies["PDMToken"];
+                if (string.IsNullOrEmpty(pdmToken))
                 {
-                    Username = User.Identity.Name,
-                    Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    PdmToken = HttpContext.Request.Cookies["PDMToken"]
-                };
-                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", "").Result;
-                //return APIResponseHelper.HandleApiResponse(new[] { userInfo }, "OK", "查詢成功").Result;
+                    return APIResponseHelper.HandleApiError<object>("401", "未找到登入令牌").Result;
+                }
+
+                // 驗證 PDMToken
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_jwtSecret);
+
+                try
+                {
+                    // 解析並驗證 token
+                    tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
+                        ValidIssuer = "PDMAppissu",
+                        ValidateAudience = true,
+                        ValidAudience = "testclient",
+                        ClockSkew = TimeSpan.Zero
+                    }, out SecurityToken validatedToken);
+
+                    if (User.Identity.IsAuthenticated)
+                    {
+                        var userInfo = new
+                        {
+                            Username = User.Identity.Name,
+                            Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                            PdmToken = pdmToken,
+                            Status = "authenticated"
+                        };
+                        return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userInfo).Result;
+                    }
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    return APIResponseHelper.HandleApiError<object>("10002", "Token expire").Result;
+                }
+                catch (SecurityTokenValidationException)
+                {
+                    return APIResponseHelper.HandleApiError<object>("10003", "JWT token not found").Result;
+                }
             }
-            return APIResponseHelper.HandleApiError<object>("401", "使用者未驗證").Result;
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>("50000", "server error：" + ex.Message).Result;
+            }
+
+            return APIResponseHelper.HandleApiError<object>("401", "Please Login").Result;
         }
         /*
         [Authorize]
@@ -211,7 +253,7 @@ namespace PDMApp.Controllers
             var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
             var accessToken = await HttpContext.GetTokenAsync("access_token");
             var idToken = await HttpContext.GetTokenAsync("id_token");
-
+            var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");
             if (string.IsNullOrEmpty(accessToken))
             {
                 return BadRequest(new { error = "Access Token not found" });
@@ -265,8 +307,8 @@ namespace PDMApp.Controllers
             }
 
             // 產生後端自訂的JWT Token
-            var userToken = GenerateJwtToken(userInfo);
-            
+            var userToken = GenerateJwtToken(userInfo, expiresAtStr);
+
             // 設定 cookie 選項
             var cookieOptions = new CookieOptions
             {
@@ -296,13 +338,13 @@ namespace PDMApp.Controllers
                                 </head>
                                 <body>
                                     <script>
-                                        alert('登入成功，請手動關閉此視窗');
+
                                         window.close();
                                     </script>
                                 </body>
                                 </html>
                                 ", "text/html", System.Text.Encoding.UTF8);
-            
+
         }
 
 
@@ -311,14 +353,21 @@ namespace PDMApp.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            /*
+            var idToken = await HttpContext.GetTokenAsync("id_token");
+            if (string.IsNullOrEmpty(idToken))
+            {
+                return BadRequest(new { error = "ID Token not found" });
+            }*/
             var authProperties = new AuthenticationProperties
             {
                 RedirectUri = _config.PostLogoutRedirectUri
             };
 
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
+
         }
 
 
@@ -336,7 +385,7 @@ namespace PDMApp.Controllers
         }
 
         // 產生JWT Token
-        private string GenerateJwtToken(UserInfo user)
+        private string GenerateJwtToken(UserInfo user , string expiresAtStr)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -349,6 +398,7 @@ namespace PDMApp.Controllers
                 new Claim("pccuid", user.pccuid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.sub),
                 new Claim(JwtRegisteredClaimNames.Email, user.email),
+                new Claim("expires_at", expiresAtStr),
                 //new Claim("email_verified", user.email_verified.ToString()) // 轉成 string
             };
 
