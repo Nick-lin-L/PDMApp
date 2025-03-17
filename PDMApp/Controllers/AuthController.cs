@@ -104,6 +104,7 @@ namespace PDMApp.Controllers
         }
 
         //[Authorize]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         [HttpGet("me-info")]
         public async Task<IActionResult> GetUserInfo2()
         {
@@ -361,6 +362,7 @@ namespace PDMApp.Controllers
             {
                 return BadRequest(new { error = "ID Token not found" });
             }*/
+            Response.Cookies.Delete("PDMToken");
             var authProperties = new AuthenticationProperties
             {
                 RedirectUri = _config.PostLogoutRedirectUri
@@ -406,7 +408,7 @@ namespace PDMApp.Controllers
                 issuer: "PDMAppissu",
                 audience: "testclient",
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: DateTime.UtcNow.AddHours(1), // 自訂token過期時效
                 signingCredentials: credentials
             );
 
