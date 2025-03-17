@@ -1,5 +1,8 @@
 ﻿using System;
+<<<<<<< HEAD
+=======
 using System.Text.Json.Serialization;
+>>>>>>> 1b7f315968aa5d9a52fbafa3d39966405b3fd9cf
 
 namespace PDMApp.Dtos.BasicProgram
 {
@@ -13,6 +16,8 @@ namespace PDMApp.Dtos.BasicProgram
         public string DevFactoryNo { get; set; }
     }
 
+<<<<<<< HEAD
+=======
     public class DevelopmentNoDto
     {
         public string? ProductMId { get; set; }
@@ -34,4 +39,5 @@ namespace PDMApp.Dtos.BasicProgram
         public string Text { get; set; } // 外顯值
     }
 
+>>>>>>> 1b7f315968aa5d9a52fbafa3d39966405b3fd9cf
 }

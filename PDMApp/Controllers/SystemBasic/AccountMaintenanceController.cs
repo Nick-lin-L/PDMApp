@@ -28,6 +28,11 @@ namespace PDMApp.Controllers
         {
             try
             {
+<<<<<<< HEAD
+                var result = await AccountMaintenanceQueryHelper.QueryRoleDropdown(_pcms_Pdm_TestContext);
+                return APIResponseHelper.HandleDynamicMultiPageResponse(result);
+            }
+=======
                 // 創建字典來儲存查詢結果
                 var resultData = new Dictionary<string, object>();
           
@@ -38,6 +43,7 @@ namespace PDMApp.Controllers
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }         
+>>>>>>> 1b7f315968aa5d9a52fbafa3d39966405b3fd9cf
             catch (Exception ex)
             {
                 return new ObjectResult(APIResponseHelper.HandleApiError<IDictionary<string, object>>(

@@ -8,6 +8,25 @@ using System.Threading.Tasks;
 
 public class AccountMaintenanceQueryHelper
 {
+<<<<<<< HEAD
+
+    public static async Task<IDictionary<string, object>> QueryRoleDropdown(pcms_pdm_testContext _pcms_Pdm_TestContext)
+    {
+        var roleQuery = await (from r in _pcms_Pdm_TestContext.pdm_roles
+                               select new
+                               {
+                                   RoleId = r.role_id,          
+                                   RoleName = r.role_name,
+                                   DevFactoryNo = r.dev_factory_no 
+                               }).ToListAsync();
+
+        return new Dictionary<string, object>
+        {
+            { "Roles", roleQuery }
+        };
+    }
+
+=======
     public static IQueryable<DevFactoryNoDto> QueryDevFactoryNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
     {
 
@@ -51,6 +70,7 @@ public class AccountMaintenanceQueryHelper
 
         return groupedData;
     }
+>>>>>>> 1b7f315968aa5d9a52fbafa3d39966405b3fd9cf
 
     public static IQueryable<pdm_usersDto> QueryFilteredAccounts(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountSearchParameter value)
     {

@@ -14,6 +14,7 @@ using PDMApp.Dtos.BasicProgram;
 using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
+using PDMApp.Parameters.Cbd;
 
 namespace PDMApp.Service.Cbd
 {
@@ -494,6 +495,118 @@ namespace PDMApp.Service.Cbd
             var data = await query.ToListAsync();
             return data;
 
+        }
+
+        public async Task<IEnumerable<CbdSearchDto.ExcelData>> ExcelExport(CbdSearchParameter.QueryParameter value)
+        {
+
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        where (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                              (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.item_trading_code == value.ItemNo || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no == value.DevelopmentNo || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code == value.ColorCode || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ci.parts == value.Parts || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material == value.Material || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors == value.MaterialColor || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
+                              (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
+                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        select new CbdSearchDto.ExcelData
+                        {
+                            Season = ph.item_initial_season,
+                            Stage = ph.stage,
+                            Factory = ph.main_factory + (string.IsNullOrWhiteSpace(ph.sub_factory) ? "" : "," + ph.sub_factory) + (string.IsNullOrWhiteSpace(ph.sub_factory2) ? "" : "," + ph.sub_factory2),
+                            WorkingName = ph.working_name,
+                            ItemTradingCode = ph.item_trading_code,
+                            DevelopmentNo = ph.development_no,
+                            DevelopmentColorNo = pi.development_color_no,
+                            ColorCode = pi.color_code,
+                            No = ci.no,
+                            Parts = ci.parts,
+                            Detail = ci.detail,
+                            ProcessMk = ci.process_mk,
+                            Material = ci.material,
+                            MtrComment = ci.mtrcomment,
+                            Standard = ci.standard,
+                            Supplier = ci.supplier,
+                            Colors = ci.colors,
+                            Memo = ci.memo,
+                            CbdComment = ci.cbdcomment,
+                            HcHa = ci.hcha,
+                            Sec = ci.sec,
+                            Width = ci.width,
+                            Usage = ci.usage2,
+                            Price = ci.unitprice,
+                            Cost = ci.cost,
+                        };
+
+            return await query.ToListAsync();
+        }
+
+        public IQueryable<CbdSearchDto.QueryDto> CbdSearch(CbdSearchParameter.QueryParameter value)
+        {
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        where (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                              (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.Stage)) &&
+                              (ph.item_trading_code == value.ItemNo || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no == value.DevelopmentNo || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code == value.ColorCode || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ci.parts == value.Parts || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material == value.Material || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors == value.MaterialColor || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
+                              (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
+                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        select new CbdSearchDto.QueryDto
+                        {
+                            Stage = ph.stage,
+                            Season = ph.item_initial_season,
+                            DevelopmentNo = ph.development_no,
+                            WorkingName = ph.working_name,
+                            ColorCode = pi.color_code,
+                            ColorWay = pi.colorway,
+                            Last = ph.last1,
+                            PartNo = ci.no,
+                            Parts = ci.parts,
+                            MoldNo = ci.moldno,
+                            ProcessMk = ci.process_mk,
+                            Material = ci.material,
+                            Recycle = ci.recycle,
+                            MtrComment = ci.mtrcomment,
+                            CbdComment = ci.cbdcomment,
+                            Standard = ci.standard,
+                            Supplier = ci.supplier,
+                            Colors = ci.colors,
+                            Memo = ci.memo,
+                            ClrComment = ci.clrcomment,
+                            HcHa = ci.hcha,
+                            Sec = ci.sec,
+                            Width = ci.width,
+                            Usage1 = ci.usage1,
+                            Usage2 = ci.usage2,
+                            UnitPrice = ci.unitprice,
+                            Cost = ci.cost,
+                            DataMId = ch.data_m_id
+                        };
+
+            return query;
         }
     }
 }
