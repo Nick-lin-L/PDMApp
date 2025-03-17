@@ -100,7 +100,7 @@ namespace PDMApp.Controllers
             {
                 Pccuid = user.pccuid,
                 //Username = user.username,
-                Local_name = user.username + "(" + user.sso_acct + ")",
+                LocalName = user.username + "(" + user.sso_acct + ")",
             };
 
             return Ok(new { data = userDto });
