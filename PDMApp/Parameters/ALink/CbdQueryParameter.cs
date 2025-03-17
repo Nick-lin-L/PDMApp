@@ -34,13 +34,9 @@ namespace PDMApp.Parameters.Cbd
         public class CbdExcel
         {
             [Required] public string? DevFactoryNo { get; set; }
-
             [Required] public string? DevelopmentNo { get; set; }
-
             [Required] public string? DevelopmentColorNo { get; set; }
-
             [Required] public string? Stage { get; set; }
-
             [Required] public ExcelData? Data { get; set; }
         }
 

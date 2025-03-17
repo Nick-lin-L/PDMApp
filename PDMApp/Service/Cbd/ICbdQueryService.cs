@@ -8,11 +8,13 @@ using PDMApp.Parameters.Cbd;
 namespace PDMApp.Service.Cbd
 {
     /// <summary>
-    /// PLM CBD 查詢相關服務
+    /// CBD 查詢相關服務
     /// </summary>
     public interface ICbdQueryService : IScopedService
     {
         Task<dynamic> GetCbdDataByID(string Data_m_id);
         Task<dynamic> ExcelImport(CbdQueryParameter.CbdExcel value);
+        Task<IEnumerable<Dtos.Cbd.CbdSearchDto.ExcelData>> ExcelExport(CbdSearchParameter.QueryParameter value);
+        IQueryable<Dtos.Cbd.CbdSearchDto.QueryDto> CbdSearch(CbdSearchParameter.QueryParameter value);
     }
 }
