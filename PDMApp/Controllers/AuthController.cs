@@ -140,7 +140,7 @@ namespace PDMApp.Controllers
                         {
                             Username = User.Identity.Name,
                             Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                            PdmToken = pdmToken,
+                            //PdmToken = pdmToken,
                             Status = "authenticated"
                         };
                         return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userInfo).Result;
@@ -330,6 +330,7 @@ namespace PDMApp.Controllers
             });*/
             //return Redirect("/api/auth/close-window");轉址導向別的API
             // 回傳 HTML 給前端，並執行 window.close()
+            
             return Content($@"
                                 <!DOCTYPE html>
                                 <html lang='zh'>
@@ -338,8 +339,7 @@ namespace PDMApp.Controllers
                                 </head>
                                 <body>
                                     <script>
-
-                                        window.close();
+                                        window.location.replace('https://pcms-mif-test01.pouchen.com/PDM/');
                                     </script>
                                 </body>
                                 </html>
