@@ -100,7 +100,7 @@ namespace PDMApp.Controllers
             {
                 Pccuid = user.pccuid,
                 //Username = user.username,
-                Local_name = user.username + "(" + user.sso_acct + ")",
+                LocalName = user.username + "(" + user.sso_acct + ")",
             };
 
             return Ok(new { data = userDto });
@@ -201,7 +201,7 @@ namespace PDMApp.Controllers
             }
             catch (Exception ex)
             {
-                return APIResponseHelper.HandleApiError<object>("500", "server error：" + ex.Message).Result;
+                return APIResponseHelper.HandleApiError<object>("50000", "server error：" + ex.Message).Result;
             }
 
             return APIResponseHelper.HandleApiError<object>("401", "請登入").Result;
