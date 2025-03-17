@@ -32,9 +32,9 @@ public class AccountMaintenanceQueryHelper
                                where r.is_active == "Y"
                                select new
                                {
-                                   RoleId = r.role_id,
+                                   RoleId = r.role_id,          
                                    RoleName = r.role_name,
-                                   DevFactoryNo = r.dev_factory_no
+                                   DevFactoryNo = r.dev_factory_no 
                                }).ToListAsync();
 
         // **依據 DevFactoryNo 分組**
@@ -43,7 +43,7 @@ public class AccountMaintenanceQueryHelper
             .ToDictionary(
                 g => g.Key,
                 g => g.Select(r => new RoleDto
-                {
+        {
                     Value = r.RoleId,
                     Text = r.RoleName,
                 }).ToList()
@@ -51,6 +51,7 @@ public class AccountMaintenanceQueryHelper
 
         return groupedData;
     }
+
 
     public static IQueryable<pdm_usersDto> QueryFilteredAccounts(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountSearchParameter value)
     {

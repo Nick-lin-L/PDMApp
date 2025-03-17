@@ -37,7 +37,7 @@ namespace PDMApp.Controllers
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
-            }         
+            }
             catch (Exception ex)
             {
                 return new ObjectResult(APIResponseHelper.HandleApiError<IDictionary<string, object>>(
