@@ -70,37 +70,40 @@ namespace PDMApp.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetUserInfo()
         {
+            // 驗證使用者是否已登入
             if (!User.Identity.IsAuthenticated)
             {
                 return Unauthorized(new { error = "User not authenticated" });
             }
 
-            // 從當前 HttpContext 取得access_token
-            var accessToken = await HttpContext.GetTokenAsync("access_token");
-            var idToken = await HttpContext.GetTokenAsync("id_token");
-            // 從Cookies取得自訂Token
-            var PdmToken = HttpContext.Request.Cookies["PDMToken"];
-
-            if (string.IsNullOrEmpty(accessToken))
+            // 從 Claim 中取出使用者唯一識別 pccuid
+            var pccuidClaim = User.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
+            if (string.IsNullOrEmpty(pccuidClaim))
             {
-                return Unauthorized(new { error = "Access Token not found" });
+                return BadRequest(new { error = "User identifier (pccuid) not found" });
             }
 
-            // 呼叫IAM userinfo API
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
-            var response = await httpClient.GetAsync(userInfoEndpoint);
-            var responseBody = await response.Content.ReadAsStringAsync();
-            //var userInfo = JsonSerializer.Deserialize<UserInfo>(userInfoJson);
-            if (!response.IsSuccessStatusCode)
+            if (!decimal.TryParse(pccuidClaim, out decimal pccuid))
             {
-                return BadRequest(new { error = "Failed to fetch user info", details = responseBody });
+                return BadRequest(new { error = "Invalid pccuid format" });
             }
 
-            // 解析userinfo API 的回應，回傳給前端
-            return Ok(new { message = "User Info Retrieved", data = responseBody });
+            // 利用 Repository 查詢 DB 中的使用者資料
+            var user = await _pdmUsersRepository.GetByPccuid(pccuid);
+            if (user == null)
+            {
+                return NotFound(new { error = "User not found in database" });
+            }
+
+            // 選擇性：建立一個 DTO 來過濾不必要或敏感的欄位
+            var userDto = new
+            {
+                Pccuid = user.pccuid,
+                //Username = user.username,
+                Local_name = user.username + "(" + user.sso_acct + ")",
+            };
+
+            return Ok(new { data = userDto });
         }
 
         //[Authorize]
@@ -110,58 +113,98 @@ namespace PDMApp.Controllers
         {
             try
             {
-                // 檢查 PDMToken 是否存在
+                // 取得 PDMToken（後端自訂 Token）與 access_token（SSO）
                 var pdmToken = HttpContext.Request.Cookies["PDMToken"];
-                if (string.IsNullOrEmpty(pdmToken))
+                var accessToken = await HttpContext.GetTokenAsync("access_token");
+
+                // 確認至少有一個 Token 存在
+                if (string.IsNullOrEmpty(pdmToken) && string.IsNullOrEmpty(accessToken))
                 {
-                    return APIResponseHelper.HandleApiError<object>("401", "未找到登入令牌").Result;
+                    return APIResponseHelper.HandleApiError<object>("401", "未找到登入令牌，請登入").Result;
                 }
 
-                // 驗證 PDMToken
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_jwtSecret);
+                // 驗證 PDMToken（JWT），給預設值
+                bool isPdmTokenValid = false;
+                string pccuid = null;
+                string email = null;
 
-                try
+                if (!string.IsNullOrEmpty(pdmToken))
                 {
-                    // 解析並驗證 token
-                    tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = true,
-                        ValidIssuer = "PDMAppissu",
-                        ValidateAudience = true,
-                        ValidAudience = "testclient",
-                        ClockSkew = TimeSpan.Zero
-                    }, out SecurityToken validatedToken);
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.UTF8.GetBytes(_jwtSecret);
 
-                    if (User.Identity.IsAuthenticated)
+                    try
                     {
-                        var userInfo = new
+                        // 解析並驗證 JWT Token
+                        tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
                         {
-                            Username = User.Identity.Name,
-                            Email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                            //PdmToken = pdmToken,
-                            Status = "authenticated"
-                        };
-                        return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userInfo).Result;
+                            ValidateIssuer = true,
+                            ValidateAudience = true,
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(key),
+                            ClockSkew = TimeSpan.Zero,
+                            ValidIssuer = "PDMAppissu",
+                            ValidAudience = "testclient"
+                        }, out SecurityToken validatedToken);
+
+                        var jwtToken = (JwtSecurityToken)validatedToken;
+                        pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
+                        email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
+
+                        isPdmTokenValid = true;
+                    }
+                    catch (SecurityTokenExpiredException)
+                    {
+                        return APIResponseHelper.HandleApiError<object>("10002", "PDMToken 已過期").Result;
+                    }
+                    catch (SecurityTokenValidationException)
+                    {
+                        return APIResponseHelper.HandleApiError<object>("401", "PDMToken 驗證失敗").Result;
                     }
                 }
-                catch (SecurityTokenExpiredException)
+
+                // 如果 PDMToken 不存在或無效，則嘗試驗證 SSO (access_token)
+                bool isAccessTokenValid = false;
+                if (!isPdmTokenValid && !string.IsNullOrEmpty(accessToken))
                 {
-                    return APIResponseHelper.HandleApiError<object>("10002", "Token expire").Result;
+                    using var httpClient = new HttpClient();
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
+                    var response = await httpClient.GetAsync(userInfoEndpoint);
+                    var responseBody = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var userInfo = JsonSerializer.Deserialize<UserInfo>(responseBody);
+                        pccuid = userInfo.pccuid;
+                        email = userInfo.email;
+                        isAccessTokenValid = true;
+                    }
+                    else
+                    {
+                        return APIResponseHelper.HandleApiError<object>("401", "無法驗證 IAM 身分").Result;
+                    }
                 }
-                catch (SecurityTokenValidationException)
+
+                // 如果至少一個 Token 有效，回傳成功
+                if (isPdmTokenValid || isAccessTokenValid)
                 {
-                    return APIResponseHelper.HandleApiError<object>("10003", "JWT token not found").Result;
+                    var userInfoResponse = new
+                    {
+                        Pccuid = pccuid,
+                        Email = email,
+                        Status = "authenticated"
+                    };
+                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功","").Result;
                 }
             }
             catch (Exception ex)
             {
-                return APIResponseHelper.HandleApiError<object>("50000", "server error：" + ex.Message).Result;
+                return APIResponseHelper.HandleApiError<object>("500", "server error：" + ex.Message).Result;
             }
 
-            return APIResponseHelper.HandleApiError<object>("401", "Please Login").Result;
+            return APIResponseHelper.HandleApiError<object>("401", "請登入").Result;
         }
         /*
         [Authorize]
@@ -294,6 +337,7 @@ namespace PDMApp.Controllers
                     email = userInfo.email,
                     password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
                     keycloak_iam_sub = userInfo.sub,
+                    //keycloak_iam_sub = Guid.NewGuid().ToString(),
                     last_login = DateTime.UtcNow,
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
@@ -331,7 +375,7 @@ namespace PDMApp.Controllers
             });*/
             //return Redirect("/api/auth/close-window");轉址導向別的API
             // 回傳 HTML 給前端，並執行 window.close()
-            
+
             return Content($@"
                                 <!DOCTYPE html>
                                 <html lang='zh'>
@@ -368,6 +412,7 @@ namespace PDMApp.Controllers
                 RedirectUri = _config.PostLogoutRedirectUri
             };
 
+            
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
 
         }
@@ -387,7 +432,7 @@ namespace PDMApp.Controllers
         }
 
         // 產生JWT Token
-        private string GenerateJwtToken(UserInfo user , string expiresAtStr)
+        private string GenerateJwtToken(UserInfo user, string expiresAtStr)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
