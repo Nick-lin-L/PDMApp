@@ -28,22 +28,9 @@ namespace PDMApp.Controllers
         {
             try
             {
-<<<<<<< HEAD
                 var result = await AccountMaintenanceQueryHelper.QueryRoleDropdown(_pcms_Pdm_TestContext);
                 return APIResponseHelper.HandleDynamicMultiPageResponse(result);
             }
-=======
-                // 創建字典來儲存查詢結果
-                var resultData = new Dictionary<string, object>();
-          
-                // 依序執行查詢，確保每次只有一個查詢在執行
-                resultData["DevFactoryNo"] = await AccountMaintenanceQueryHelper.QueryDevFactoryNo(_pcms_Pdm_TestContext).ToListAsync(); ;
-                resultData["Roles"] = await AccountMaintenanceQueryHelper.QueryRoles(_pcms_Pdm_TestContext);
-
-                // 封裝結果並回傳
-                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
-            }         
->>>>>>> 1b7f315968aa5d9a52fbafa3d39966405b3fd9cf
             catch (Exception ex)
             {
                 return new ObjectResult(APIResponseHelper.HandleApiError<IDictionary<string, object>>(
