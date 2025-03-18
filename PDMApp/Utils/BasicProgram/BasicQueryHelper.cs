@@ -214,45 +214,45 @@ namespace PDMApp.Utils.BasicProgram
 
             // 查詢 permissions
             var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
-                                       // 先用 left join 連接 role_permissions
+                                       // left join 連接 role_permissions，只查詢指定角色的權限設定
                                    join Prp in _pcms_Pdm_TestContext.pdm_role_permissions
                                        on new { pid = Pp.permission_id, rid = parameters.RoleId.Value }
                                        equals new { pid = (int)Prp.permission_id, rid = (int)Prp.role_id }
                                        into rolePerms
                                    from Prp in rolePerms.DefaultIfEmpty()
-                                       // 再用 left join 連接 user_roles 取得建立/更新者資訊
-                                   join pu in _pcms_Pdm_TestContext.pdm_users
-                                       on Pp.created_by equals pu.user_id into createdByUser
-                                   from creator in createdByUser.DefaultIfEmpty()
-                                   join pu2 in _pcms_Pdm_TestContext.pdm_users
-                                       on Pp.updated_by equals pu2.user_id into updatedByUser
-                                   from updater in updatedByUser.DefaultIfEmpty()
+                                       // left join 連接 roles 取得角色資訊
+                                   join pr in _pcms_Pdm_TestContext.pdm_roles
+                                       on parameters.RoleId equals pr.role_id
+                                       into roleInfo
+                                   from pr in roleInfo.DefaultIfEmpty()
                                    select new pdm_permissionsDto
                                    {
                                        // 基本權限資訊
                                        PermissionId = Pp.permission_id,
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
-                                       CreatedAt = Pp.created_at,
-                                       CreatedBy = creator != null ? creator.username : string.Empty,
-                                       UpdatedAt = Pp.updated_at,
-                                       UpdatedBy = updater != null ? updater.username : string.Empty,
 
                                        // 角色權限設定，如果沒有設定則使用預設值
                                        RolePermissionId = Prp != null ? Prp.role_permission_id : 0,
                                        RoleId = parameters.RoleId,
-                                       DevFactoryNo = Prp != null ? Prp.dev_factory_no : parameters.DevFactoryNo,
-                                       IsActive = Prp != null ? Prp.is_active : "N",
-                                       Createp = Prp != null ? Prp.createp : "N",
-                                       Readp = Prp != null ? Prp.readp : "N",
-                                       Updatep = Prp != null ? Prp.updatep : "N",
-                                       Deletep = Prp != null ? Prp.deletep : "N",
-                                       Exportp = Prp != null ? Prp.exportp : "N",
-                                       Importp = Prp != null ? Prp.importp : "N",
-                                       Permission1 = Prp != null ? Prp.permission1 : "N",
-                                       Permission2 = Prp != null ? Prp.permission2 : "N",
-                                       Permission3 = Prp != null ? Prp.permission3 : "N",
-                                       Permission4 = Prp != null ? Prp.permission4 : "N"
+                                       DevFactoryNo = Prp.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
+                                       IsActive = Prp.is_active ?? "N",
+                                       Createp = Prp.createp ?? "N",
+                                       Readp = Prp.readp ?? "N",
+                                       Updatep = Prp.updatep ?? "N",
+                                       Deletep = Prp.deletep ?? "N",
+                                       Exportp = Prp.exportp ?? "N",
+                                       Importp = Prp.importp ?? "N",
+                                       Permission1 = Prp.permission1 ?? "N",
+                                       Permission2 = Prp.permission2 ?? "N",
+                                       Permission3 = Prp.permission3 ?? "N",
+                                       Permission4 = Prp.permission4 ?? "N",
+
+                                       // 時間和建立/更新者資訊
+                                       CreatedAt = Prp.created_at ?? Pp.created_at,
+                                       UpdatedAt = Prp.updated_at ?? Pp.updated_at,
+                                       CreatedBy = string.Empty, // 如果需要使用者名稱，可以再加入相關的 join
+                                       UpdatedBy = string.Empty
                                    };
 
             // 加入篩選條件
@@ -307,6 +307,7 @@ namespace PDMApp.Utils.BasicProgram
                 { "Permissions", permissions },
                 { "PermissionDetails", permissionDetails }
             };
+
         }
     }
 }

@@ -294,7 +294,7 @@ namespace PDMApp.Controllers
                 )); 不確認型別的寫法，也可以但可能轉型會出現CS0029*/
                 return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
                     errorCode: "50001",
-                    message: $"權限更新過程中發生錯誤: {ex.Message}",
+                    message: $"權限查詢過程中發生錯誤: {ex.Message}",
                     data: null
                 );
             }
