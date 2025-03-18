@@ -214,43 +214,50 @@ namespace PDMApp.Utils.BasicProgram
 
             // 查詢 permissions
             var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
-                                   join Prp in _pcms_Pdm_TestContext.pdm_role_permissions on Pp.permission_id equals Prp.permission_id
-                                   join pur in _pcms_Pdm_TestContext.pdm_user_roles on Prp.role_id equals pur.role_id into purJoin
-                                   from pur in purJoin.DefaultIfEmpty() // 將 pdm_user_roles 改為 left join
-                                   join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id into puJoin
-                                   from pu in puJoin.DefaultIfEmpty()   // pdm_users left join
+                                       // 先用 left join 連接 role_permissions
+                                   join Prp in _pcms_Pdm_TestContext.pdm_role_permissions
+                                       on new { pid = Pp.permission_id, rid = parameters.RoleId.Value }
+                                       equals new { pid = (int)Prp.permission_id, rid = (int)Prp.role_id }
+                                       into rolePerms
+                                   from Prp in rolePerms.DefaultIfEmpty()
+                                       // 再用 left join 連接 user_roles 取得建立/更新者資訊
+                                   join pu in _pcms_Pdm_TestContext.pdm_users
+                                       on Pp.created_by equals pu.user_id into createdByUser
+                                   from creator in createdByUser.DefaultIfEmpty()
+                                   join pu2 in _pcms_Pdm_TestContext.pdm_users
+                                       on Pp.updated_by equals pu2.user_id into updatedByUser
+                                   from updater in updatedByUser.DefaultIfEmpty()
                                    select new pdm_permissionsDto
                                    {
+                                       // 基本權限資訊
                                        PermissionId = Pp.permission_id,
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
                                        CreatedAt = Pp.created_at,
-                                       CreatedBy = pu != null ? pu.username : string.Empty,
+                                       CreatedBy = creator != null ? creator.username : string.Empty,
                                        UpdatedAt = Pp.updated_at,
-                                       UpdatedBy = pu != null ? pu.username : string.Empty,
-                                       RolePermissionId = Prp.role_permission_id,
-                                       RoleId = Prp.role_id,
-                                       DevFactoryNo = Prp.dev_factory_no,
-                                       IsActive = Prp.is_active,
-                                       Createp = Prp.createp,
-                                       Readp = Prp.readp,
-                                       Updatep = Prp.updatep,
-                                       Deletep = Prp.deletep,
-                                       Exportp = Prp.exportp,
-                                       Importp = Prp.importp,
-                                       Permission1 = Prp.permission1,
-                                       Permission2 = Prp.permission2,
-                                       Permission3 = Prp.permission3,
-                                       Permission4 = Prp.permission4
+                                       UpdatedBy = updater != null ? updater.username : string.Empty,
+
+                                       // 角色權限設定，如果沒有設定則使用預設值
+                                       RolePermissionId = Prp != null ? Prp.role_permission_id : 0,
+                                       RoleId = parameters.RoleId,
+                                       DevFactoryNo = Prp != null ? Prp.dev_factory_no : parameters.DevFactoryNo,
+                                       IsActive = Prp != null ? Prp.is_active : "N",
+                                       Createp = Prp != null ? Prp.createp : "N",
+                                       Readp = Prp != null ? Prp.readp : "N",
+                                       Updatep = Prp != null ? Prp.updatep : "N",
+                                       Deletep = Prp != null ? Prp.deletep : "N",
+                                       Exportp = Prp != null ? Prp.exportp : "N",
+                                       Importp = Prp != null ? Prp.importp : "N",
+                                       Permission1 = Prp != null ? Prp.permission1 : "N",
+                                       Permission2 = Prp != null ? Prp.permission2 : "N",
+                                       Permission3 = Prp != null ? Prp.permission3 : "N",
+                                       Permission4 = Prp != null ? Prp.permission4 : "N"
                                    };
-            if (parameters.RoleId.HasValue)
-            {
-                //int roleId = int.Parse(parameters.RoleId);
-                permissionsQuery = permissionsQuery.Where(p => p.RoleId == parameters.RoleId.Value);
-            }
+
+            // 加入篩選條件
             if (parameters.PermissionId.HasValue)
             {
-                //int permissionId = int.Parse(parameters.PermissionId);
                 permissionsQuery = permissionsQuery.Where(p => p.PermissionId == parameters.PermissionId.Value);
             }
             if (!string.IsNullOrWhiteSpace(parameters.PermissionName))
