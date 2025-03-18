@@ -85,7 +85,7 @@ namespace PDMApp.Controllers.Cbd
         }
 
         [HttpPost]
-        public async Task<IActionResult> Export(Parameters.Cbd.CbdSearchParameter.QueryParameter parameter)
+        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> Export(Parameters.Cbd.CbdSearchParameter.QueryParameter parameter)
         {
 
             try
@@ -114,7 +114,15 @@ namespace PDMApp.Controllers.Cbd
 
                 memoryStream.SaveAsByTemplate(@"ExportedFiles\CbdExcelTemplate.xlsx", value, configuration: configuration);
                 memoryStream.Seek(0, SeekOrigin.Begin);
-                return File(memoryStream, mimeType, fileName);
+                string base64File = Convert.ToBase64String(memoryStream.ToArray());
+                var response = new Dtos.ExportFileResponseDto
+                {
+                    FileName = fileName,
+                    FileContent = base64File
+                };
+
+                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                // return File(memoryStream, mimeType, fileName);
             }
             catch (Exception e)
             {
