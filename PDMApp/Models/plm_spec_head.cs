@@ -18,5 +18,6 @@ namespace PDMApp.Models
         public DateTime? create_date { get; set; }
         public string create_user { get; set; }
         public DateTime? update_date { get; set; }
+        public string update_user { get; set; }
     }
 }

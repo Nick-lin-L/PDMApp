@@ -11,6 +11,8 @@ namespace PDMApp.Models
         {
             pdm_factorycreated_byNavigation = new HashSet<pdm_factory>();
             pdm_factoryupdated_byNavigation = new HashSet<pdm_factory>();
+            pdm_permission_keyscreated_byNavigation = new HashSet<pdm_permission_keys>();
+            pdm_permission_keysupdated_byNavigation = new HashSet<pdm_permission_keys>();
             pdm_permission_logs = new HashSet<pdm_permission_logs>();
             pdm_permissionscreated_byNavigation = new HashSet<pdm_permissions>();
             pdm_permissionsupdated_byNavigation = new HashSet<pdm_permissions>();
@@ -43,6 +45,8 @@ namespace PDMApp.Models
 
         public virtual ICollection<pdm_factory> pdm_factorycreated_byNavigation { get; set; }
         public virtual ICollection<pdm_factory> pdm_factoryupdated_byNavigation { get; set; }
+        public virtual ICollection<pdm_permission_keys> pdm_permission_keyscreated_byNavigation { get; set; }
+        public virtual ICollection<pdm_permission_keys> pdm_permission_keysupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionscreated_byNavigation { get; set; }
         public virtual ICollection<pdm_permissions> pdm_permissionsupdated_byNavigation { get; set; }
