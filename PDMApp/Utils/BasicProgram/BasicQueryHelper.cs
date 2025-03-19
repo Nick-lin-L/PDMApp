@@ -272,11 +272,21 @@ namespace PDMApp.Utils.BasicProgram
             var permissions = await permissionsQuery.OrderBy(q => q.PermissionId).ToListAsync();
 
             // 查詢 details
-            var detailsQuery = from Prpd in _pcms_Pdm_TestContext.pdm_role_permission_details
-                               join Pp in _pcms_Pdm_TestContext.pdm_permissions on Prpd.permission_id equals Pp.permission_id
+            var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                               // 先用 left join 連接 role_permission_details
+                               join Prpd in _pcms_Pdm_TestContext.pdm_role_permission_details
+                                   on new { pid = Pp.permission_id, rid = parameters.RoleId.Value }
+                                   equals new { pid = (int)Prpd.permission_id, rid = (int)Prpd.role_id }
+                                   into rolePermDetails
+                               from Prpd in rolePermDetails.DefaultIfEmpty()
+                               // left join 連接 roles 取得角色資訊
+                               join pr in _pcms_Pdm_TestContext.pdm_roles
+                                   on parameters.RoleId equals pr.role_id
+                                   into roleInfo
+                               from pr in roleInfo.DefaultIfEmpty()
                                select new pdm_role_permission_detailsDto
                                {
-                                   //RolePermissionDetailId = Prpd.role_permission_detail_id,
+                                   /*
                                    RoleId = (int)Prpd.role_id,
                                    PermissionId = (int)Prpd.permission_id,
                                    Description = Pp.description,
@@ -284,11 +294,18 @@ namespace PDMApp.Utils.BasicProgram
                                    PermissionKey = Prpd.permission_key,
                                    DescriptionD = Prpd.description,
                                    IsActiveD = Prpd.is_active
+                                   */
+                                   RoleId = parameters.RoleId.Value,
+                                   PermissionId = Pp.permission_id,
+                                   Description = Pp.description,
+                                   // 如果該角色有設定，則使用設定值，否則使用預設值
+                                   DevFactoryNoD = Prpd.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
+                                   PermissionKey = Prpd.permission_key ?? string.Empty,
+                                   DescriptionD = Prpd.description ?? Pp.description,
+                                   IsActiveD = Prpd.is_active ?? "N"
                                };
-            if (parameters.RoleId.HasValue)
-            {
-                detailsQuery = detailsQuery.Where(d => d.RoleId == parameters.RoleId.Value);
-            }
+
+            // 加入篩選條件
             if (parameters.PermissionId.HasValue)
             {
                 detailsQuery = detailsQuery.Where(d => d.PermissionId == parameters.PermissionId.Value);
