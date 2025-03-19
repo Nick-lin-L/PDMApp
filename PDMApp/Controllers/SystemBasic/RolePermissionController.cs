@@ -628,8 +628,8 @@ namespace PDMApp.Controllers
 
                     // 提交交易
                     await transaction.CommitAsync();
-
-                    return APIResponseHelper.HandleDynamicMultiPageResponse(new Dictionary<string, object>
+                    return APIResponseHelper.GenerateApiResponse("OK", "刪除成功", "").Result;
+                    /*return APIResponseHelper.HandleDynamicMultiPageResponse(new Dictionary<string, object>
                     {
                         { "message", "角色已成功刪除" },
                         { "deletedRecords", new {
@@ -638,7 +638,7 @@ namespace PDMApp.Controllers
                             permissionsCount = permissions.Count,
                             roleId = roleId
                         }}
-                    }).Result;
+                    }).Result;*/
                 }
                 catch (Exception ex)
                 {

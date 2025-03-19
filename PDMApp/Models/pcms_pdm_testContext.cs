@@ -54,6 +54,9 @@ namespace PDMApp.Models
         public virtual DbSet<plm_product_item> plm_product_item { get; set; }
         public virtual DbSet<plm_spec_head> plm_spec_head { get; set; }
         public virtual DbSet<plm_spec_item> plm_spec_item { get; set; }
+        public virtual DbSet<sys_material_large_class> sys_material_large_class { get; set; }
+        public virtual DbSet<sys_material_medium_class> sys_material_medium_class { get; set; }
+        public virtual DbSet<sys_material_small_class> sys_material_small_class { get; set; }
         public virtual DbSet<sys_menu> sys_menu { get; set; }
         public virtual DbSet<sys_namevalue> sys_namevalue { get; set; }
 
@@ -1191,7 +1194,7 @@ namespace PDMApp.Models
 
                 entity.ToTable("pdm_role_permission_details", "asics_pdm");
 
-                entity.HasIndex(e => new { e.role_id, e.permission_id, e.permission_key, e.dev_factory_no }, "uq_role_permission")
+                entity.HasIndex(e => new { e.role_id, e.permission_id, e.permission_key_id, e.dev_factory_no }, "uq_role_permission")
                     .IsUnique();
 
                 entity.Property(e => e.role_permission_detail_id)
@@ -1216,12 +1219,14 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("'Y'::character varying")
                     .HasComment("是否啟用 (Y: 啟用, N: 停用)");
 
-                entity.Property(e => e.permission_id).HasComment("關聯 pdm_role_permissions 表中的 role_permission_id");
+                entity.Property(e => e.permission_id).HasComment("關聯 pdm_permissions 表中的 permission_id");
 
                 entity.Property(e => e.permission_key)
                     .IsRequired()
                     .HasMaxLength(50)
                     .HasComment("權限名稱");
+
+                entity.Property(e => e.permission_key_id).HasComment("關聯 pdm_permissions_keys 表中的 permission_key_id");
 
                 entity.Property(e => e.role_id).HasComment("角色 ID");
 
@@ -1237,11 +1242,11 @@ namespace PDMApp.Models
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("pdm_role_permission_details_created_by_fkey");
 
-                entity.HasOne(d => d.permission)
+                entity.HasOne(d => d.permission_keyNavigation)
                     .WithMany(p => p.pdm_role_permission_details)
-                    .HasForeignKey(d => d.permission_id)
+                    .HasForeignKey(d => d.permission_key_id)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("pdm_role_permission_details_role_permission_id_fkey");
+                    .HasConstraintName("fk_role_permission_details_permission_key");
 
                 entity.HasOne(d => d.role)
                     .WithMany(p => p.pdm_role_permission_details)
@@ -3122,6 +3127,87 @@ namespace PDMApp.Models
                 entity.Property(e => e.supplier).HasMaxLength(200);
 
                 entity.Property(e => e.update_date).HasColumnType("date");
+            });
+
+            modelBuilder.Entity<sys_material_large_class>(entity =>
+            {
+                entity.HasKey(e => e.class_l_no)
+                    .HasName("default_material_large_class_pk");
+
+                entity.ToTable("sys_material_large_class", "asics_pdm");
+
+                entity.Property(e => e.class_l_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_name_en)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.class_name_zh_tw)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.is_activate)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::bpchar");
+
+                entity.Property(e => e.mda_mtart)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasDefaultValueSql("'ZROH'::character varying");
+            });
+
+            modelBuilder.Entity<sys_material_medium_class>(entity =>
+            {
+                entity.HasKey(e => new { e.class_l_no, e.class_m_no })
+                    .HasName("default_material_medium_class_pk");
+
+                entity.ToTable("sys_material_medium_class", "asics_pdm");
+
+                entity.Property(e => e.class_l_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_m_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_name_en)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.class_name_zh_tw)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.is_activate)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::bpchar");
+
+                entity.Property(e => e.is_appt)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+            });
+
+            modelBuilder.Entity<sys_material_small_class>(entity =>
+            {
+                entity.HasKey(e => new { e.class_l_no, e.class_m_no, e.class_s_no })
+                    .HasName("default_material_small_class_pk");
+
+                entity.ToTable("sys_material_small_class", "asics_pdm");
+
+                entity.Property(e => e.class_l_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_m_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_s_no).HasMaxLength(2);
+
+                entity.Property(e => e.class_name_en)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.class_name_zh_tw)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.is_activate)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::bpchar");
             });
 
             modelBuilder.Entity<sys_menu>(entity =>

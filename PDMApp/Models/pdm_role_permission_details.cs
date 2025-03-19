@@ -18,9 +18,10 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
+        public int? permission_key_id { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
-        public virtual pdm_role_permissions permission { get; set; }
+        public virtual pdm_permission_keys permission_keyNavigation { get; set; }
         public virtual pdm_roles role { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
     }

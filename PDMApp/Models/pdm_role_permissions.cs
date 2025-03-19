@@ -7,11 +7,6 @@ namespace PDMApp.Models
 {
     public partial class pdm_role_permissions
     {
-        public pdm_role_permissions()
-        {
-            pdm_role_permission_details = new HashSet<pdm_role_permission_details>();
-        }
-
         public int role_permission_id { get; set; }
         public int? role_id { get; set; }
         public int? permission_id { get; set; }
@@ -36,6 +31,5 @@ namespace PDMApp.Models
         public virtual pdm_permissions permission { get; set; }
         public virtual pdm_roles role { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
-        public virtual ICollection<pdm_role_permission_details> pdm_role_permission_details { get; set; }
     }
 }
