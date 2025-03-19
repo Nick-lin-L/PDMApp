@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using PDMApp.Dtos;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,14 @@ namespace PDMApp.Utils
         /* APIStatusResponse 狀態碼共5碼
          * 以下說明5碼代表的意義。由左到右如下
          * Ex: **10001**
-         * 1 = TreeMenu的順序 (SPEC)
+         * 1 = TreeMenu的順序 1 = SPEC
+         *                   2 = CBD
+         *                   3 = FactorySPEC
+         *                   4 = PLM
+         *                   5 = PGTSPEC
          * 0 = 第二分類，目前無
-         * 0 = 十位數程式編號
-         * 0 = 個位數程式編號
+         * 0 = 十位數程式編號，目前無
+         * 0 = 個位數程式編號，目前無
          * 1 = 是否有值  (0 = false；1 = true)
          */
     }
@@ -33,7 +38,7 @@ namespace PDMApp.Utils
         private const string DefaultEmptyMessage = "查無資料";
 
         // 私有方法：生成統一格式的 API 回應
-        private static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message, T data)
+        public static ActionResult<APIStatusResponse<T>> GenerateApiResponse<T>(string errorCode, string message, T data)
         {
             return new OkObjectResult(new APIStatusResponse<T>
             {
@@ -77,22 +82,65 @@ namespace PDMApp.Utils
             string emptyCode = DefaultEmptyCode,
             string partialCode = DefaultPartialCode)
         {
-            var totalPages = data.Count;
-            var nonEmptyPages = data.Count(kv => kv.Value is IEnumerable<object> collection && collection.Any());
+            bool hasEmptyCollection = false;
+            bool allEmpty = true;
 
-            if (nonEmptyPages == 0)
+            foreach (var kv in data)
+            {
+                if (IsCollectionEmpty(kv.Value))
+                {
+                    hasEmptyCollection = true;
+                }
+                else
+                {
+                    allEmpty = false;
+                }
+            }
+            if (allEmpty)
             {
                 return GenerateApiResponse<IDictionary<string, object>>(emptyCode, DefaultEmptyMessage, new Dictionary<string, object>());
             }
-            else if (nonEmptyPages == totalPages)
-            {
-                return GenerateApiResponse<IDictionary<string, object>>(successCode, string.Empty, data);
-            }
-            else
+            if (hasEmptyCollection)
             {
                 return GenerateApiResponse<IDictionary<string, object>>(partialCode, "資料集缺少", data);
             }
+            return GenerateApiResponse<IDictionary<string, object>>(successCode, string.Empty, data);
         }
+
+        private static bool IsCollectionEmpty(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+
+            // 檢查是否為集合且有內容
+            if (value is IEnumerable<object> collection)
+            {
+                return !collection.Any();
+            }
+
+            // 檢查 Dictionary 是否為空 (適用於 {})
+            if (value is IDictionary<string, object> dict)
+            {
+                return !dict.Any();
+            }
+
+            // 檢查 JArray 或 JObject 是否為空
+            if (value is JArray jArray)
+            {
+                return jArray.Count == 0;
+            }
+            if (value is JObject jObject)
+            {
+                return !jObject.HasValues;
+            }
+
+            // 其他非集合類型視為非空
+            return false;
+        }
+
+
 
         // 處理錯誤的通用方法
         public static ActionResult<APIStatusResponse<T>> HandleApiError<T>(

@@ -43,10 +43,5 @@ namespace PDMApp.Models
         public string request3_uketsuke { get; set; }
         public string hs_code { get; set; }
         public string hs_code_name { get; set; }
-
-        // 外鍵與導航屬性
-        //public pdm_product_head ProductHead { get; set; }
-        //public ICollection<pdm_spec_head> SpecHeads { get; set; }
-
     }
 }

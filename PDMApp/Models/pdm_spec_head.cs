@@ -76,11 +76,5 @@ namespace PDMApp.Models
         public DateTime? cbd_update_date { get; set; }
         public string cbd_update_user { get; set; }
         public string check_out_area { get; set; }
-
-
-        // 外鍵與導航屬性
-        //public pdm_product_item ProductItem { get; set; }
-        //public ICollection<pdm_spec_item> SpecItems { get; set; }
-
     }
 }

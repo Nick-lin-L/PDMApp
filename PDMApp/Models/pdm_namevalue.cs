@@ -14,5 +14,6 @@ namespace PDMApp.Models
         public string text_ex2 { get; set; }
         public string group_key { get; set; }
         public string status { get; set; }
+        public string fact_no { get; set; }
     }
 }
