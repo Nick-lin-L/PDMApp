@@ -58,24 +58,24 @@ namespace PDMApp.Dtos
      
     public class SpecUpperDTO
     {
-        public string Spec_d_id { get; set; }
-        public string Spec_m_id { get; set; }
+        public string SpecDId { get; set; }
+        public string SpecMId { get; set; }
         public string No { get; set; }
         public string Type { get; set; }      //Newmaterial
         public string Parts { get; set; }
-        public string Mold_no { get; set; }
-        public string Factory_mold_no { get; set; }
-        public string Material_no { get; set; }
+        public string MoldNo { get; set; }
+        public string FactoryMoldNo { get; set; }
+        public string MaterialNo { get; set; }
         public string Material { get; set; }
-        public string Sub_material { get; set; }
+        public string SubMaterial { get; set; }
         public string Standard { get; set; }
         public string Supplier { get; set; }
         public string Hcha { get; set; }
         public string Sec { get; set; }
         public string Colors { get; set; }
-        public string Data_id { get; set; }
+        public string DataId { get; set; }
         public int? Seqno { get; set; } //seq
-        public string Act_no { get; set; }
+        public string ActNo { get; set; }
         public string Width { get; set; }
         public string Memo { get; set; }
         public string PartClass { get; set; }
@@ -84,16 +84,16 @@ namespace PDMApp.Dtos
 
     public class SpecStandardDTO
     {
-        public string data_id { get; set; }
-        public string Spec_m_id { get; set; }
+        public string DataId { get; set; }
+        public string SpecMId { get; set; }
         public int? Seq { get; set; }
         public string Size { get; set; }
-        public string Shoe_lace_length { get; set; }
-        public string Shoe_box { get; set; }
-        public string Gel_fore { get; set; }
-        public string Gel_rear { get; set; }
-        public string Toe_Keeper { get; set; }
-        public string Shoe_bag { get; set; }
+        public string ShoeLaceLength { get; set; }
+        public string ShoeBox { get; set; }
+        public string GelFore { get; set; }
+        public string GelRear { get; set; }
+        public string ToeKeeper { get; set; }
+        public string ShoeBag { get; set; }
         public string Itemval7 { get; set; }
         public string Itemval8 { get; set; }
         public string Itemval9 { get; set; }
