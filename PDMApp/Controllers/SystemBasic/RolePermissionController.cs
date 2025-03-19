@@ -576,6 +576,84 @@ namespace PDMApp.Controllers
             }
         }
 
+        // 4. 刪除角色及其相關權限
+        /// <summary>
+        /// 刪除角色及其相關權限
+        /// </summary>
+        /// <param name="roleId">要刪除的角色ID</param>
+        /// <returns>刪除結果</returns>
+        [HttpDelete("delete/{roleId}")]
+        public async Task<ActionResult<APIStatusResponse<object>>> DeleteRole(int roleId)
+        {
+            using (var transaction = await _pcms_Pdm_TestContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // 查找角色是否存在
+                    var role = await _pcms_Pdm_TestContext.pdm_roles
+                        .FirstOrDefaultAsync(r => r.role_id == roleId);
+
+                    if (role == null)
+                    {
+                        return APIResponseHelper.HandleApiError<object>(
+                            errorCode: "40004",
+                            message: "找不到指定的角色",
+                            data: null
+                        );
+                    }
+
+                    // 刪除使用者角色關聯記錄
+                    var userRoles = await _pcms_Pdm_TestContext.pdm_user_roles
+                        .Where(ur => ur.role_id == roleId)
+                        .ToListAsync();
+                    _pcms_Pdm_TestContext.pdm_user_roles.RemoveRange(userRoles);
+
+                    // 刪除相關的權限詳細記錄
+                    var permissionDetails = await _pcms_Pdm_TestContext.pdm_role_permission_details
+                        .Where(d => d.role_id == roleId)
+                        .ToListAsync();
+                    _pcms_Pdm_TestContext.pdm_role_permission_details.RemoveRange(permissionDetails);
+
+                    // 刪除相關的權限記錄
+                    var permissions = await _pcms_Pdm_TestContext.pdm_role_permissions
+                        .Where(p => p.role_id == roleId)
+                        .ToListAsync();
+                    _pcms_Pdm_TestContext.pdm_role_permissions.RemoveRange(permissions);
+
+                    // 刪除角色
+                    _pcms_Pdm_TestContext.pdm_roles.Remove(role);
+
+                    // 儲存變更
+                    await _pcms_Pdm_TestContext.SaveChangesAsync();
+
+                    // 提交交易
+                    await transaction.CommitAsync();
+
+                    return APIResponseHelper.HandleDynamicMultiPageResponse(new Dictionary<string, object>
+                    {
+                        { "message", "角色已成功刪除" },
+                        { "deletedRecords", new {
+                            userRolesCount = userRoles.Count,
+                            permissionDetailsCount = permissionDetails.Count,
+                            permissionsCount = permissions.Count,
+                            roleId = roleId
+                        }}
+                    }).Result;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return APIResponseHelper.HandleApiError<object>(
+                        errorCode: "50002",
+                        message: $"刪除角色時發生錯誤: {ex.Message}",
+                        data: null
+                    );
+                }
+            }
+        }
+
+
+
         public class PermissionsWrapper
         {
             public IEnumerable<pdm_permissionsDto> Permissions { get; set; }
