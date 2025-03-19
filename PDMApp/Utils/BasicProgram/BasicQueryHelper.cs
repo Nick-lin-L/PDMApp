@@ -273,38 +273,43 @@ namespace PDMApp.Utils.BasicProgram
 
             // 查詢 details
             var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
-                               // 先用 left join 連接 role_permission_details
+                                   // 先取得該作業的所有可用特殊權限
+                               join Pk in _pcms_Pdm_TestContext.pdm_permission_keys
+                                   on Pp.permission_id equals Pk.permission_id
+                               // left join 該角色的權限設定
                                join Prpd in _pcms_Pdm_TestContext.pdm_role_permission_details
-                                   on new { pid = Pp.permission_id, rid = parameters.RoleId.Value }
-                                   equals new { pid = (int)Prpd.permission_id, rid = (int)Prpd.role_id }
+                                   on new { keyId = Pk.permission_key_id, rid = parameters.RoleId.Value }
+                                   equals new { keyId = (int)Prpd.permission_key_id, rid = (int)Prpd.role_id }
                                    into rolePermDetails
                                from Prpd in rolePermDetails.DefaultIfEmpty()
-                               // left join 連接 roles 取得角色資訊
-                               join pr in _pcms_Pdm_TestContext.pdm_roles
-                                   on parameters.RoleId equals pr.role_id
-                                   into roleInfo
-                               from pr in roleInfo.DefaultIfEmpty()
                                select new pdm_role_permission_detailsDto
                                {
-                                   /*
-                                   RoleId = (int)Prpd.role_id,
-                                   PermissionId = (int)Prpd.permission_id,
-                                   Description = Pp.description,
-                                   DevFactoryNoD = Prpd.dev_factory_no,
-                                   PermissionKey = Prpd.permission_key,
-                                   DescriptionD = Prpd.description,
-                                   IsActiveD = Prpd.is_active
-                                   */
                                    RoleId = parameters.RoleId.Value,
                                    PermissionId = Pp.permission_id,
+                                   PermissionKeyId = Pk.permission_key_id,
+                                   PermissionKey = Pk.permission_key,
                                    Description = Pp.description,
-                                   // 如果該角色有設定，則使用設定值，否則使用預設值
-                                   DevFactoryNoD = Prpd.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
-                                   PermissionKey = Prpd.permission_key ?? string.Empty,
-                                   DescriptionD = Prpd.description ?? Pp.description,
+                                   DescriptionD = Pk.description,
+                                   DevFactoryNoD = Prpd.dev_factory_no ?? parameters.DevFactoryNo,
                                    IsActiveD = Prpd.is_active ?? "N"
                                };
+            /*
+                                              RoleId = (int)Prpd.role_id,
+                                              PermissionId = (int)Prpd.permission_id,
+                                              Description = Pp.description,
+                                              DevFactoryNoD = Prpd.dev_factory_no,
+                                              PermissionKey = Prpd.permission_key,
+                                              DescriptionD = Prpd.description,
+                                              IsActiveD = Prpd.is_active
 
+                                              RoleId = parameters.RoleId.Value,
+                                              PermissionId = Pp.permission_id,
+                                              Description = Pp.description,
+                                              // 如果該角色有設定，則使用設定值，否則使用預設值
+                                              DevFactoryNoD = Prpd.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
+                                              PermissionKey = Prpd.permission_key ?? string.Empty,
+                                              DescriptionD = Prpd.description ?? Pp.description,
+                                              IsActiveD = Prpd.is_active ?? "N"*/
             // 加入篩選條件
             if (parameters.PermissionId.HasValue)
             {
