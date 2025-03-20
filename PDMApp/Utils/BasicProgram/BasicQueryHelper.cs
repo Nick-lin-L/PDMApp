@@ -16,29 +16,22 @@ namespace PDMApp.Utils.BasicProgram
 
         public static IQueryable<pdm_rolesDto> QueryRoles(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
-            return from pr in _pcms_Pdm_TestContext.pdm_roles
-                       // leftjoin取得create
-                   join createdUser in _pcms_Pdm_TestContext.pdm_users
-                       on pr.created_by equals createdUser.user_id into createdUserJoin
-                   from createdUser in createdUserJoin.DefaultIfEmpty()
+            return (from pr in _pcms_Pdm_TestContext.pdm_roles
+                    join pu in _pcms_Pdm_TestContext.pdm_users on pr.updated_by equals pu.user_id into puJoin
+                    from pu in puJoin.DefaultIfEmpty()   // pdm_users left join
+                    select new pdm_rolesDto
+                    {
+                        RoleId = pr.role_id,
+                        RoleName = pr.role_name,
+                        Description = pr.description,
+                        DevFactoryNo = pr.dev_factory_no,
+                        CreatedAt = pr.created_at,
+                        CreatedBy = pu.username ?? string.Empty,
+                        UpdatedAt = pr.updated_at,
+                        UpdatedBy = pu.username ?? string.Empty,
+                        IsActive = pr.is_active
+                    });
 
-                       // left join取得更新者
-                   join updatedUser in _pcms_Pdm_TestContext.pdm_users
-                       on pr.updated_by equals updatedUser.user_id into updatedUserJoin
-                   from updatedUser in updatedUserJoin.DefaultIfEmpty()
-
-                   select new pdm_rolesDto
-                   {
-                       RoleId = pr.role_id,
-                       RoleName = pr.role_name,
-                       Description = pr.description,
-                       DevFactoryNo = pr.dev_factory_no,
-                       CreatedAt = pr.created_at,
-                       CreatedBy = createdUser.username ?? string.Empty,  // 避免 null
-                       UpdatedAt = pr.updated_at,
-                       UpdatedBy = updatedUser.username ?? string.Empty,  // 避免 null
-                       IsActive = pr.is_active
-                   };
         }
 
         // 查詢作業、作業權限權限
