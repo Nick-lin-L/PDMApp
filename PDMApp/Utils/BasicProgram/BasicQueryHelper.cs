@@ -295,7 +295,7 @@ namespace PDMApp.Utils.BasicProgram
                 detailsQuery = detailsQuery.Where(d => d.DevFactoryNoD == parameters.DevFactoryNo);
             }
 
-            var permissionDetails = await detailsQuery.OrderBy(q => q.PermissionId).ToListAsync();
+            var permissionDetails = await detailsQuery.OrderBy(q => q.PermissionKeyId).ToListAsync();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
