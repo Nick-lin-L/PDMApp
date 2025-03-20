@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,8 +15,8 @@ namespace PDMApp.Parameters.Cbd
         }
         public class QueryParameter
         {
-            public string? DevFactoryNo { get; set; }
-            public string? Brand { get; set; }
+            [Required] public string? DevFactoryNo { get; set; }
+            [Required] public string? Brand { get; set; }
             public string? ProductLineType { get; set; }
             public string? Stage { get; set; }
             public string? ItemNo { get; set; }

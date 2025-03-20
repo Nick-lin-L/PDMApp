@@ -575,9 +575,10 @@ namespace PDMApp.Service.Cbd
                               (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
                               (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
                               (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
-                        group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no } 
-                           by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no } 
+                        group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
+                           by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
                            into g
+                        orderby g.Key.development_no, g.Key.development_color_no ascending
                         select new CbdSearchDto.QueryDto
                         {
                             Stage = g.Key.stage,
@@ -587,7 +588,8 @@ namespace PDMApp.Service.Cbd
                             ColorCode = g.Key.color_code,
                             ColorWay = g.Key.colorway,
                             Last = g.Key.last1,
-                            DataMId = g.Key.data_m_id
+                            DataMId = g.Key.data_m_id,
+                            DevelopmentColorNo = g.Key.development_color_no
                         };
 
             return query.Distinct();
