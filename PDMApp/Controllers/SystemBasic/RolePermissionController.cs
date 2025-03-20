@@ -31,7 +31,7 @@ namespace PDMApp.Controllers
 
         // 0. Pageload 下拉查詢列表
         /// <summary>
-        /// Roles頁面初始化傳入的參數
+        /// Roles頁面初始化傳入的參數，與新增角色時的畫面資料
         /// </summary>
         /// <param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
         /// <returns>回傳一個包含初始數據的 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
