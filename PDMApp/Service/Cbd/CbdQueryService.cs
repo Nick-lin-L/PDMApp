@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml.Math;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
@@ -573,16 +575,37 @@ namespace PDMApp.Service.Cbd
                               (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
                               (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
                               (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
-                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no } 
+                           by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no } 
+                           into g
                         select new CbdSearchDto.QueryDto
                         {
-                            Stage = ph.stage,
-                            Season = ph.item_initial_season,
-                            DevelopmentNo = ph.development_no,
-                            WorkingName = ph.working_name,
-                            ColorCode = pi.color_code,
-                            ColorWay = pi.colorway,
-                            Last = ph.last1,
+                            Stage = g.Key.stage,
+                            Season = g.Key.item_initial_season,
+                            DevelopmentNo = g.Key.development_no,
+                            WorkingName = g.Key.working_name,
+                            ColorCode = g.Key.color_code,
+                            ColorWay = g.Key.colorway,
+                            Last = g.Key.last1,
+                            DataMId = g.Key.data_m_id
+                        };
+
+            return query.Distinct();
+        }
+
+        public IQueryable<CbdSearchDto.DetailsDto> CbdSearchDetail(String DataMId)
+        {
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        where ci.data_m_id == DataMId
+                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        select new CbdSearchDto.DetailsDto
+                        {
                             PartNo = ci.no,
                             Parts = ci.parts,
                             MoldNo = ci.moldno,
@@ -606,7 +629,7 @@ namespace PDMApp.Service.Cbd
                             DataMId = ch.data_m_id
                         };
 
-            return query;
+            return query.Distinct();
         }
     }
 }

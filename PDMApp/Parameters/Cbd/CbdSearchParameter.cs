@@ -29,5 +29,12 @@ namespace PDMApp.Parameters.Cbd
             public string? Last { get; set; }
             public PaginationParameter Pagination { get; set; } = new PaginationParameter();
         }
+
+        public class QueryDetailParameter
+        {
+            public string? DevFactoryNo { get; set; }
+            public string? DataMId { get; set; }
+            public PaginationParameter Pagination { get; set; } = new PaginationParameter();
+        }
     }
 }

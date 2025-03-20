@@ -264,8 +264,8 @@ namespace PDMApp.Service
                     .GroupBy(ph => ph.BrandNo)
                     .ToDictionary(
                         g => g.Key,
-                        g => g.Select(x => new { x.Season }).ToList().OrderBy(x => x.Season)
-                        ).ToList();
+                        g => g.Select(x => new { Text =  x.Season , Value=x.Season }).ToList().OrderBy(x => x.Text)
+                        );
             }
             catch (Exception e)
             {

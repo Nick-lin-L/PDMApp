@@ -45,6 +45,7 @@ namespace PDMApp.Controllers.Cbd
                 resultData["SupplierCombo"] = await _icomboService.Supplier();
                 resultData["StageCombo"] = await _icomboService.Stage();
                 resultData["SeasonCombo"] = await _icomboService.Season(value.DevFactoryNo);
+                resultData["DevelopmentNoCombo"] = await _icomboService.DevelopmentNo();
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
@@ -151,5 +152,25 @@ namespace PDMApp.Controllers.Cbd
             }
             return response;
         }
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.Cbd.CbdSearchDto.DetailsDto>>>> CbdDetails([FromBody] Parameters.Cbd.CbdSearchParameter.QueryDetailParameter parameter)
+        {
+            try
+            {
+                var query = _icbdqueryService.CbdSearchDetail(parameter.DataMId);
+                var data = await query.ToPagedResultAsync(parameter.Pagination.PageNumber, parameter.Pagination.PageSize);
+                return APIResponseHelper.HandlePagedApiResponse(data);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "20001",
+                    Message = "ServerError",
+                    Details = e.Message
+                });
+            }
+        }
+
     }
 }
