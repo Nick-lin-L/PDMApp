@@ -46,6 +46,12 @@ namespace PDMApp.Dtos.Cbd
             public string? ColorCode { get; set; }
             public string? ColorWay { get; set; }
             public string? Last { get; set; }
+            public string? DataMId { get; set; }
+            public string? DevelopmentColorNo { get; set; }
+        }
+
+        public class DetailsDto
+        {
             public string? PartNo { get; set; }
             public string? Parts { get; set; }
             public string? MoldNo { get; set; }

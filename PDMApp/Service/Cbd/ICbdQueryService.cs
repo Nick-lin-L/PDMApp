@@ -16,5 +16,6 @@ namespace PDMApp.Service.Cbd
         Task<dynamic> ExcelImport(CbdQueryParameter.CbdExcel value);
         Task<IEnumerable<Dtos.Cbd.CbdSearchDto.ExcelData>> ExcelExport(CbdSearchParameter.QueryParameter value);
         IQueryable<Dtos.Cbd.CbdSearchDto.QueryDto> CbdSearch(CbdSearchParameter.QueryParameter value);
+        IQueryable<Dtos.Cbd.CbdSearchDto.DetailsDto> CbdSearchDetail(String DataMId);
     }
 }
