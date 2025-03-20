@@ -37,17 +37,31 @@ namespace PDMApp.Controllers.SPEC
 
                 // BasicData 查詢
                 var basic_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
-                    .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));            
+                    .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
                 var resultBasic = await basic_query.Distinct().ToListAsync();
                 resultData.BasicData = resultBasic;
 
                 // Upper, Sole, Other 查詢
                 var upper_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
                     .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
+
                 var allUpperData = await upper_query.ToListAsync();
-                resultData.UpperData = allUpperData.Where(si => si.PartClass == "A").ToList();
-                resultData.SoleData = allUpperData.Where(si => si.PartClass == "B").ToList();
-                resultData.OtherData = allUpperData.Where(si => si.PartClass == "C").ToList();
+
+                // 直接按 SeqNo 排序
+                resultData.UpperData = allUpperData
+                    .Where(si => si.PartClass == "A")
+                    .OrderBy(si => si.SeqNo)
+                    .ToList();
+
+                resultData.SoleData = allUpperData
+                    .Where(si => si.PartClass == "B")
+                    .OrderBy(si => si.SeqNo)
+                    .ToList();
+
+                resultData.OtherData = allUpperData
+                    .Where(si => si.PartClass == "C")
+                    .OrderBy(si => si.SeqNo)
+                    .ToList();
 
                 // StandardData 查詢
                 var standard_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext)
@@ -74,9 +88,9 @@ namespace PDMApp.Controllers.SPEC
                     Message = "ServerError",
                     Details = ex.Message
                 });
-
             }
         }
+
 
         // POST: api/v1/FactorySpec5Sheets/Export
         [HttpPost("Export")]
