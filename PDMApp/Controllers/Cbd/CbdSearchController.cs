@@ -51,11 +51,11 @@ namespace PDMApp.Controllers.Cbd
             }
             catch (Exception e)
             {
-                return StatusCode(500, new
+                return StatusCode(200, new
                 {
-                    ErrorCode = "Server_ERROR",
-                    Message = "ServerError",
-                    Details = e.Message
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Data = ""
                 });
             }
         }
@@ -75,11 +75,11 @@ namespace PDMApp.Controllers.Cbd
             }
             catch (Exception e)
             {
-                return StatusCode(500, new
+                return StatusCode(200, new
                 {
-                    ErrorCode = "20001",
-                    Message = "ServerError",
-                    Details = e.Message
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Details = ""
                 });
 
             }
@@ -131,7 +131,6 @@ namespace PDMApp.Controllers.Cbd
 
                 response.Message = e.Message;
                 response.ErrorCode = "21001";
-                // return response;
                 return Ok(response);
             }
         }
@@ -163,11 +162,11 @@ namespace PDMApp.Controllers.Cbd
             }
             catch (Exception e)
             {
-                return StatusCode(500, new
+                return StatusCode(200, new
                 {
-                    ErrorCode = "20001",
-                    Message = "ServerError",
-                    Details = e.Message
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Details = ""
                 });
             }
         }
