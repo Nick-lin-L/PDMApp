@@ -136,20 +136,25 @@ namespace PDMApp.Utils.PGTSPEC
             // **先執行 SQL 查詢，將結果載入記憶體**
             var rawData = await query.ToListAsync();
 
-            // **在 C# 端執行 GroupBy**
+            // **在 C# 端執行 GroupBy 並過濾空值**
             var groupedData = rawData
+                .OrderBy(pi => pi.DevelopmentColorNo)
                 .GroupBy(pi => pi.ProductMId)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Select(pi => new DevelopmentColorNoDto
-                    {
-                        Text = pi.DevelopmentColorNo,
-                        Value = pi.DevelopmentColorNo
-                    }).ToList()
+                    g => g
+                        .Where(pi => !string.IsNullOrWhiteSpace(pi.DevelopmentColorNo)) // 過濾空值
+                        .Select(pi => new DevelopmentColorNoDto
+                        {
+                            Text = pi.DevelopmentColorNo,
+                            Value = pi.DevelopmentColorNo
+                        })
+                        .ToList()
                 );
 
             return groupedData;
         }
+
 
 
         public static IQueryable<PGTSPECHeaderDto> QuerySpecHead( pcms_pdm_testContext _pcms_Pdm_TestContext,bool latestVerOnly,PGTSPECSearchParameter value)

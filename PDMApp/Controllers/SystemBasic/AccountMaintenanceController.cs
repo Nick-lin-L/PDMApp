@@ -113,6 +113,16 @@ namespace PDMApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // 檢查 RoleId 是否為 0 或負數
+            if (userRoleParam.RoleId <= 0)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "INVALID_ROLE_ID",
+                    Message = "請選擇有效的角色進行新增"
+                });
+            }
+
             try
             {
                 // 先檢查是否已經存在相同的 user_id 和 role_id
