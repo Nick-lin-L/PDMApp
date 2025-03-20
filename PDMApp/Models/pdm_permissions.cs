@@ -20,6 +20,8 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
+        public int? frontend_id { get; set; }
+        public string is_active { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }

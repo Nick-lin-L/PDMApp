@@ -27,6 +27,7 @@ namespace PDMApp.Models
         public string is_active { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
+        public virtual pdm_factory dev_factory_noNavigation { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
         public virtual ICollection<pdm_permission_logs> pdm_permission_logs { get; set; }
         public virtual ICollection<pdm_role_permission_details> pdm_role_permission_details { get; set; }

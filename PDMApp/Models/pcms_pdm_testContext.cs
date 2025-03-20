@@ -872,6 +872,12 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                entity.Property(e => e.frontend_id).HasComment("前端id");
+
+                entity.Property(e => e.is_active)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
                 entity.Property(e => e.permission_name)
                     .IsRequired()
                     .HasMaxLength(100);
@@ -1386,6 +1392,13 @@ namespace PDMApp.Models
                     .HasForeignKey(d => d.created_by)
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("pdm_roles_created_by_fkey");
+
+                entity.HasOne(d => d.dev_factory_noNavigation)
+                    .WithMany(p => p.pdm_roles)
+                    .HasPrincipalKey(p => p.dev_factory_no)
+                    .HasForeignKey(d => d.dev_factory_no)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("pdm_roles_dev_factory_no_fkey");
 
                 entity.HasOne(d => d.updated_byNavigation)
                     .WithMany(p => p.pdm_rolesupdated_byNavigation)
