@@ -13,6 +13,8 @@ namespace PDMApp.Dtos.BasicProgram
         public int? PermissionId { get; set; }
         public string PermissionName { get; set; }
         public string Description { get; set; }
+        public int? FrontEndId { get; set; }
+        public string IsActive { get; set; }
         public string? CreatedBy { get; set; }
         [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? CreatedAt { get; set; }
@@ -25,7 +27,7 @@ namespace PDMApp.Dtos.BasicProgram
         public int? RoleId { get; set; }
         //public int? PermissionId { get; set; }
         public string DevFactoryNo { get; set; }
-        public string? IsActive { get; set; }
+        public string? IsActivep { get; set; }
         public string? Createp { get; set; }
         public string? Readp { get; set; }
         public string? Updatep { get; set; }
@@ -44,6 +46,7 @@ namespace PDMApp.Dtos.BasicProgram
         public int? PermissionId { get; set; }
         public string PermissionName { get; set; }
         public string Description { get; set; }
+        public int? FrontEndId { get; set; }
 
         //以下是role_permissions表資料
         //public int RolePermissionId { get; set; }
