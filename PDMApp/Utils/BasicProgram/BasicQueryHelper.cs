@@ -127,8 +127,8 @@ namespace PDMApp.Utils.BasicProgram
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
                                        FrontEndId = Pp.frontend_id,
-                                       IsActive = Pp.is_active ?? "N",
-                                       // 預設權限設定為 "N"
+                                       IsActive = Pp.is_active ?? "Y",
+                                       // 預設權限設定為 "Y"
                                        Createp = "Y",
                                        Readp = "Y",
                                        Updatep = "Y",
