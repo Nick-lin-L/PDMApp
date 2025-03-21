@@ -73,12 +73,8 @@ namespace PDMApp.Controllers.SPEC
                 resultData["EntryModeCombo"] = await Utils.SPEC.SPECQueryHelper.QueryEntryMode(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["SeasonCombo"] = await Utils.SPEC.SPECQueryHelper.QuerySeason(_pcms_Pdm_TestContext, value).ToListAsync();
 
-                // 加入 ErrorCode 和 Message
-                resultData["ErrorCode"] = "OK";
-                resultData["Message"] = "查詢成功";
-
                 // 封裝結果並回傳
-                return StatusCode(200, resultData);
+                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
             catch (Exception ex)
             {
