@@ -196,7 +196,7 @@ namespace PDMApp.Controllers
                         Email = email,
                         Status = "authenticated"
                     };
-                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功","").Result;
+                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", "").Result;
                 }
             }
             catch (Exception ex)
@@ -352,7 +352,7 @@ namespace PDMApp.Controllers
             }
 
             // 產生後端自訂的JWT Token
-            var userToken = GenerateJwtToken(userInfo, expiresAtStr);
+            var userToken = GenerateJwtToken(userInfo, expiresAtStr, user.user_id);
 
             // 設定 cookie 選項
             var cookieOptions = new CookieOptions
@@ -412,7 +412,7 @@ namespace PDMApp.Controllers
                 RedirectUri = _config.PostLogoutRedirectUri
             };
 
-            
+
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
 
         }
@@ -424,15 +424,15 @@ namespace PDMApp.Controllers
         {
             public string pccuid { get; set; }
             public string sub { get; set; }
-            public string uid { get; set; }
-            public string employee_type { get; set; }
+            public string uid { get; set; }             //小寫英文名 如 jack.yu
+            public string employee_type { get; set; }  //"01-集團員工"
             public bool email_verified { get; set; } = false; //預設false
-            public string family_name { get; set; }
-            public string email { get; set; }
+            public string family_name { get; set; } //中文姓名
+            public string email { get; set; }  //mail
         }
 
         // 產生JWT Token
-        private string GenerateJwtToken(UserInfo user, string expiresAtStr)
+        private string GenerateJwtToken(UserInfo user, string expiresAtStr, long userId)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -442,11 +442,14 @@ namespace PDMApp.Controllers
             }
             var claims = new[]
             {
+                new Claim("name", user.family_name.ToString()),
+                new Claim("name_en", user.uid.ToString()),
                 new Claim("pccuid", user.pccuid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.sub),
                 new Claim(JwtRegisteredClaimNames.Email, user.email),
                 new Claim("expires_at", expiresAtStr),
                 //new Claim("email_verified", user.email_verified.ToString()) // 轉成 string
+                new Claim("user_id", userId.ToString())
             };
 
             var token = new JwtSecurityToken(

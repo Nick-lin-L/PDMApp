@@ -140,8 +140,7 @@ namespace PDMApp
                     options.SlidingExpiration = true; // 每次請求重置過期時間
                 }
             */
-            )
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+            ).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = Configuration["Authentication:PCG:Authority"]; // 設定 SSO 伺服器位址
@@ -165,7 +164,45 @@ namespace PDMApp
                 };
                 
             });
+
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
+            // ? 加上 JWT 驗證，從 Cookie["PDMToken"] 解析 JWT
+            var jwtSecret = Configuration["Authentication:PCG:ClientSecret"];
+            var jwtKey = Encoding.UTF8.GetBytes(jwtSecret);
+
+            services.AddAuthentication()
+                .AddJwtBearer("PDMToken", options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = "PDMAppissu",     // ?? 必須與產生 JWT 時一致
+            ValidAudience = "testclient",   // ?? 同上
+            IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
+                    };
+
+        // 讓 ASP.NET Core 從 Cookie["PDMToken"] 讀取 JWT
+        options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var token = context.Request.Cookies["PDMToken"];
+                            if (!string.IsNullOrEmpty(token))
+                            {
+                                context.Token = token;
+                            }
+                            return Task.CompletedTask;
+                        },
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine($"[JWT 驗證失敗] {context.Exception.Message}");
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
 
             foreach (var type in serviceTypes)
             {

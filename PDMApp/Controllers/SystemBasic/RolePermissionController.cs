@@ -162,6 +162,8 @@ namespace PDMApp.Controllers
         }
 
         // 3. 新增或更新角色資料
+        //[Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "PDMToken")]
+        [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("upsert")]
         //public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> UpsertRolePermission([FromBody] RolePermissionsParameter request)
@@ -170,6 +172,21 @@ namespace PDMApp.Controllers
             {
                 try
                 {
+                    var currentUser = CurrentUserUtils.Get(HttpContext);
+
+                    if (currentUser?.UserId == null)
+                    {
+                        return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                            errorCode: "40001",
+                            message: "The P.permission_id or RoleID must not be empty.",
+                            data: null
+                        );
+                        //return APIResponseHelper.HandleApiError<object>("401", "找不到登入者資訊");
+                    }
+
+                    // 然後你就可以用：
+                    var updatedBy = currentUser.UserId;
+
                     // 確保 Permissions 和 PermissionDetails 不為 null
                     request.Permissions ??= new List<PermissionRequest>();
                     request.PermissionDetails ??= new List<PermissionDetails>();
@@ -188,7 +205,7 @@ namespace PDMApp.Controllers
                             description = request.Description,
                             dev_factory_no = request.DevFactoryNo,
                             is_active = request.IsActive,
-                            created_by = request.UpdatedBy,
+                            created_by = updatedBy,
                             created_at = DateTime.UtcNow
                         };
                         _pcms_Pdm_TestContext.pdm_roles.Add(role);
@@ -209,7 +226,7 @@ namespace PDMApp.Controllers
                         role.description = request.Description ?? role.description;
                         role.dev_factory_no = request.DevFactoryNo ?? role.dev_factory_no;
                         role.is_active = request.IsActive ?? role.is_active;
-                        role.updated_by = request.UpdatedBy;
+                        role.updated_by = updatedBy;
                         role.updated_at = DateTime.UtcNow;
                     }
 
@@ -225,7 +242,7 @@ namespace PDMApp.Controllers
                         if (existingPerm != null)
                         {
                             // 更新權限
-                            existingPerm.is_active = perm.IsActiveP ?? existingPerm.is_active;
+                            existingPerm.is_active = perm.IsActive ?? existingPerm.is_active;
                             existingPerm.createp = perm.CreateP ?? existingPerm.createp;
                             existingPerm.readp = perm.ReadP ?? existingPerm.readp;
                             existingPerm.updatep = perm.UpdateP ?? existingPerm.updatep;
@@ -237,7 +254,7 @@ namespace PDMApp.Controllers
                             existingPerm.permission3 = perm.Permission3 ?? existingPerm.permission3;
                             existingPerm.permission4 = perm.Permission4 ?? existingPerm.permission4;
                             existingPerm.dev_factory_no = request.DevFactoryNo;
-                            existingPerm.updated_by = request.UpdatedBy;
+                            existingPerm.updated_by = updatedBy;
                             existingPerm.updated_at = DateTime.UtcNow;
                         }
                         else
@@ -247,7 +264,7 @@ namespace PDMApp.Controllers
                             {
                                 role_id = roleIdt,
                                 permission_id = perm.PermissionId,
-                                is_active = perm.IsActiveP,
+                                is_active = perm.IsActive,
                                 createp = perm.CreateP,
                                 readp = perm.ReadP,
                                 updatep = perm.UpdateP,
@@ -259,7 +276,7 @@ namespace PDMApp.Controllers
                                 permission3 = perm.Permission3,
                                 permission4 = perm.Permission4,
                                 dev_factory_no = request.DevFactoryNo,
-                                created_by = request.UpdatedBy,
+                                created_by = updatedBy,
                                 created_at = DateTime.UtcNow
                             };
                             if (!newPerm.permission_id.HasValue || roleIdt == 0)
@@ -290,7 +307,7 @@ namespace PDMApp.Controllers
                             existingDetail.dev_factory_no = request.DevFactoryNo;
                             existingDetail.permission_key = detail.PermissionKey ?? existingDetail.permission_key;
                             existingDetail.description = detail.DescriptionD ?? existingDetail.description;
-                            existingDetail.updated_by = request.UpdatedBy;
+                            existingDetail.updated_by = updatedBy;
                             existingDetail.updated_at = DateTime.UtcNow;
                         }
                         else
@@ -304,7 +321,7 @@ namespace PDMApp.Controllers
                                 is_active = detail.IsActiveD,
                                 description = detail.DescriptionD,
                                 dev_factory_no = request.DevFactoryNo,
-                                created_by = request.UpdatedBy,
+                                created_by = updatedBy,
                                 created_at = DateTime.UtcNow
                             };/*
                             if (newDetail.permission_id == 0)
