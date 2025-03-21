@@ -4,6 +4,7 @@
     {
         // 接收使用者查詢的參數
 #nullable enable
+        public string? Brand { get; set; }
         public string? EntryMode { get; set; }  
         public string? Season { get; set; }     
         public string? ItemNo { get; set; }     

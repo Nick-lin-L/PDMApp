@@ -8,6 +8,7 @@ namespace Dtos.SPEC
     public class SPECHeaderDto
     {
         public string SpecMId { get; set; }
+        public string Brand { get; set; }
         public string Stage { get; set; }
         public string SampleFactory { get; set; }
         public string DevelopmentNo { get; set; }
