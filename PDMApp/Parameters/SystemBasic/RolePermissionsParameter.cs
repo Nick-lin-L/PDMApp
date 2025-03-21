@@ -24,7 +24,7 @@ namespace PDMApp.Parameters.Basic
     public class PermissionRequest
     {
         public int? PermissionId { get; set; } // 權限 ID
-        public string IsActiveP { get; set; } // 是否啟用
+        public string IsActive { get; set; } // 是否啟用
         public string CreateP { get; set; } // 新增權限
         public string ReadP { get; set; } // 讀取權限
         public string UpdateP { get; set; } // 更新權限

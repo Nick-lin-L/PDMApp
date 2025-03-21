@@ -27,7 +27,6 @@ namespace PDMApp.Dtos.BasicProgram
         public int? RoleId { get; set; }
         //public int? PermissionId { get; set; }
         public string DevFactoryNo { get; set; }
-        public string? IsActivep { get; set; }
         public string? Createp { get; set; }
         public string? Readp { get; set; }
         public string? Updatep { get; set; }

@@ -25,8 +25,8 @@ namespace PDMApp.Utils.BasicProgram
                         RoleName = pr.role_name,
                         Description = pr.description,
                         DevFactoryNo = pr.dev_factory_no,
-                        CreatedAt = pr.created_at,
-                        CreatedBy = pu.username ?? string.Empty,
+                        //CreatedAt = pr.created_at,
+                        //CreatedBy = pu.username ?? string.Empty,
                         UpdatedAt = pr.updated_at,
                         UpdatedBy = pu.username ?? string.Empty,
                         IsActive = pr.is_active
@@ -205,13 +205,13 @@ namespace PDMApp.Utils.BasicProgram
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
                                        FrontEndId = Pp.frontend_id,
-                                       IsActive = Pp.is_active ?? "N",
+                                       //IsActive = Pp.is_active ?? "N",
 
                                        // 角色權限設定，如果沒有設定則使用預設值
                                        RolePermissionId = Prp != null ? Prp.role_permission_id : 0,
                                        RoleId = parameters.RoleId,
                                        DevFactoryNo = Prp.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
-                                       IsActivep = Prp.is_active ?? "N",
+                                       IsActive = Prp.is_active ?? "N",
                                        Createp = Prp.createp ?? "N",
                                        Readp = Prp.readp ?? "N",
                                        Updatep = Prp.updatep ?? "N",

@@ -225,7 +225,7 @@ namespace PDMApp.Controllers
                         if (existingPerm != null)
                         {
                             // 更新權限
-                            existingPerm.is_active = perm.IsActiveP ?? existingPerm.is_active;
+                            existingPerm.is_active = perm.IsActive ?? existingPerm.is_active;
                             existingPerm.createp = perm.CreateP ?? existingPerm.createp;
                             existingPerm.readp = perm.ReadP ?? existingPerm.readp;
                             existingPerm.updatep = perm.UpdateP ?? existingPerm.updatep;
@@ -247,7 +247,7 @@ namespace PDMApp.Controllers
                             {
                                 role_id = roleIdt,
                                 permission_id = perm.PermissionId,
-                                is_active = perm.IsActiveP,
+                                is_active = perm.IsActive,
                                 createp = perm.CreateP,
                                 readp = perm.ReadP,
                                 updatep = perm.UpdateP,
