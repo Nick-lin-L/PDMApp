@@ -200,7 +200,7 @@ namespace PDMApp.Controllers
                                 data: new Dictionary<string, object>
                                 {
                                     { "RoleName", string.IsNullOrWhiteSpace(request.RoleName) ? "角色名稱為空" : null },
-                                    { "DevFactoryNo", string.IsNullOrWhiteSpace(request.DevFactoryNo) ? "開發工廠代碼為空" : null }
+                                    { "DevFactoryNo", string.IsNullOrWhiteSpace(request.DevFactoryNo) ? "開發工廠為空" : null }
                                 }
                             );
                         }
@@ -288,7 +288,7 @@ namespace PDMApp.Controllers
                                     permissionErrors.Add(new
                                     {
                                         PermissionId = perm.PermissionId,
-                                        Error = "新增權限時開發工廠代碼不能為空"
+                                        Error = "新增權限時開發工廠不能為空"
                                     });
                                     continue;
                                 }
@@ -345,7 +345,7 @@ namespace PDMApp.Controllers
                                 detailErrors.Add(new
                                 {
                                     PermissionKeyId = detail.PermissionKeyId,
-                                    Error = "權限鍵ID必須大於0"
+                                    Error = "PermissionkeyID必須大於0"
                                 });
                                 continue;
                             }
