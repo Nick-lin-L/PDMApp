@@ -442,6 +442,8 @@ namespace PDMApp.Controllers
             }
             var claims = new[]
             {
+                new Claim("name", user.family_name.ToString()),
+                new Claim("name_en", user.uid.ToString()),
                 new Claim("pccuid", user.pccuid.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.sub),
                 new Claim(JwtRegisteredClaimNames.Email, user.email),
