@@ -18,8 +18,11 @@ namespace PDMApp.Utils.SPEC
                              join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
                              join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
                              where n_stage.group_key == "stage"
+                             join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
+                             where n_brand.group_key == "brand"
                              select new
                              {
+                                 Brand = n_brand.text,
                                  EntryMode = ph.product_line_type,
                                  Season = ph.season,
                                  ItemNo = ph.item_trading_code,
@@ -40,6 +43,8 @@ namespace PDMApp.Utils.SPEC
                              }).Distinct();
 
             // **WHERE 過濾條件**
+            if (!string.IsNullOrWhiteSpace(value.Brand))
+                baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
             if (!string.IsNullOrWhiteSpace(value.EntryMode))
                 baseQuery = baseQuery.Where(ph => ph.EntryMode == value.EntryMode);
             if (!string.IsNullOrWhiteSpace(value.Season))
@@ -88,6 +93,7 @@ namespace PDMApp.Utils.SPEC
             return latestQuery.Select(q => new SPECHeaderDto
             {
                 SpecMId = q.SpecMId,
+                Brand = q.Brand,
                 Stage = q.Stage,
                 SampleFactory = q.SampleFactory,
                 DevelopmentNo = q.DevelopmentNo,
