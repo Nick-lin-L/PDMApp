@@ -529,7 +529,91 @@ namespace PDMApp.Controllers
             }
         }
 
+        // 5. 取得user tree menu
+        /// <summary>
+        /// 取得user選單
+        /// </summary>
+        /// <param name="languageCode">語言國別完整代號</param>
+        /// <returns>選單的樹狀結構</returns>
+        [HttpGet("user-menu")]
+        public async Task<ActionResult<APIStatusResponse<IEnumerable<MenuTreeDto>>>> GetUserMenu([FromQuery] string languageCode = "zh-TW")
+        {
+            try
+            {
+                // 1. 從 Token 獲取用戶資訊
+                var userId = User.FindFirst("user_id")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return APIResponseHelper.HandleApiError<IEnumerable<MenuTreeDto>>(
+                        "401", "未登入或Token無效", null);
+                }
 
+                // 2. 獲取用戶的角色和權限
+                var userRoles = await _pcms_Pdm_TestContext.pdm_user_roles
+                    .Where(ur => ur.user_id.ToString() == userId)
+                    .Select(ur => ur.role_id)
+                    .ToListAsync();
+
+                // 3. 獲取該角色可以訪問的選單
+                var permissionKeys = await _pcms_Pdm_TestContext.pdm_role_permissions
+                    .Where(rp => userRoles.Contains(rp.role_id.Value))
+                    .Select(rp => rp.permission.pdm_permission_keys
+                        .Select(pk => pk.permission_key))
+                    .SelectMany(x => x)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 4. 獲取選單樹
+                var menus = await _pcms_Pdm_TestContext.sys_menus
+                    .Include(m => m.sys_menu_i18n)
+                    .Where(m => m.is_active == "Y" &&
+                           permissionKeys.Contains(m.permission_key))
+                    .OrderBy(m => m.sort_order)
+                    .Select(m => new MenuTreeDto
+                    {
+                        MenuId = m.menu_id,
+                        ParentId = m.parent_id,
+                        MenuName = m.sys_menu_i18n
+                            .Where(i => i.language_code == languageCode)
+                            .Select(i => i.menu_name)
+                            .DefaultIfEmpty(m.menu_name)
+                            .First(),
+                        MenuPath = m.menu_path,
+                        ComponentPath = m.component_path,
+                        Icon = m.menu_icon,
+                        SortOrder = m.sort_order ?? 0
+                    })
+                    .ToListAsync();
+
+                var menuTree = BuildMenuTree(menus).ToList();
+                return APIResponseHelper.HandleApiResponse(menuTree);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<IEnumerable<MenuTreeDto>>(
+                    "50001", $"獲取選單失敗: {ex.Message}", null);
+            }
+        }
+
+        // 建立樹狀結構
+        private List<MenuTreeDto> BuildMenuTree(List<MenuTreeDto> menus, int? parentId = null)
+        {
+            return menus
+                .Where(m => m.ParentId == parentId)
+                .Select(m => new MenuTreeDto
+                {
+                    MenuId = m.MenuId,
+                    ParentId = m.ParentId,
+                    MenuName = m.MenuName,
+                    MenuPath = m.MenuPath,
+                    ComponentPath = m.ComponentPath,
+                    Icon = m.Icon,
+                    SortOrder = m.SortOrder,
+                    Children = BuildMenuTree(menus, m.MenuId)
+                })
+                .OrderBy(m => m.SortOrder)
+                .ToList();
+        }
 
         public class PermissionsWrapper
         {
