@@ -7,7 +7,6 @@ using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Utils;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -33,11 +32,15 @@ namespace PDMApp.Controllers.PGTSPEC
 
             try
             {
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var nameEn = HttpContext.Items["name_en"]?.ToString();
+
                 // **當 value.Ver 為空時，預設為 "Latest Ver"**
                 bool latestVerOnly = string.IsNullOrWhiteSpace(value.Ver) || value.Ver == "Latest Ver";
 
                 // **將篩選條件直接傳遞到 QuerySpecHead**
-                var query = Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value);
+                var query = Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
 
                 // 排序
                 query = query
@@ -67,7 +70,11 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -101,7 +108,11 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -137,7 +148,12 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+                var nameEn = HttpContext.Items["name_en"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
                 if (!isSuccess)
                 {
@@ -171,7 +187,12 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckinHelper.CheckinSpecAsync(_pcms_Pdm_TestContext, value);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+                var nameEn = HttpContext.Items["name_en"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckinHelper.CheckinSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
                 if (!isSuccess)
                 {
@@ -205,7 +226,11 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -239,7 +264,11 @@ namespace PDMApp.Controllers.PGTSPEC
         {
             try
             {
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false);
+                // 從 HttpContext.Items 中讀取 pccuid 和 name
+                var pccuid = HttpContext.Items["pccuid"]?.ToString();
+                var name = HttpContext.Items["name"]?.ToString();
+
+                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false, pccuid, name);
 
                 if (!isSuccess)
                 {

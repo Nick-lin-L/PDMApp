@@ -13,7 +13,7 @@ namespace PDMApp.Utils.PGTSPEC
         /// <summary>
         /// 插入 SPEC 資料，根據 SpecSource 決定是否插入 pcg_spec_item。
         /// </summary>
-        public static async Task<(bool, string)> InsertSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, InsertSpecParameter value)
+        public static async Task<(bool, string)> InsertSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, InsertSpecParameter value,string pccuid,string name)
         {
             try
             {
@@ -65,8 +65,8 @@ namespace PDMApp.Utils.PGTSPEC
                     ver = 0,
                     create_mode = value.SpecSource == "NEW" ? "B" : "A",
                     create_date = DateTime.Now,
-                    create_user_id = "20211200037074",
-                    create_user_nm = "鄭名硯",
+                    create_user_id = pccuid,
+                    create_user_nm = name,
                     remarks_prohibit = value.DevFactoryNo == "6400" ? "※所有材質的使用，均需符合\"ASICS 化學物質管理運用方針\"之規定。" : null
                 };
 

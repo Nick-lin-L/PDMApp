@@ -9,12 +9,10 @@ namespace PDMApp.Utils.PGTSPEC
 {
     public class PGTSPECCheckoutHelper
     {
-        public static async Task<(bool IsSuccess, string Message)> CheckoutSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, CheckoutSpecParameter value)
+        public static async Task<(bool IsSuccess, string Message)> CheckoutSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, CheckoutSpecParameter value, string pccuid, string name, string name_en)
         {
-            var userId = "allen1.cheng"; // TODO: 從身份驗證系統取得
-            var userName = "鄭名硯";  // TODO: 從身份驗證系統取得
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(name_en))
             {
                 return (false, "無法取得使用者資訊。");
             }
@@ -33,7 +31,7 @@ namespace PDMApp.Utils.PGTSPEC
                 return (false, "此份檔案已經 LOCK，請通知主管解 LOCK。");
             }
 
-            if (spec.checkoutmk == "Y" && spec.checkoutuser != userId)
+            if (spec.checkoutmk == "Y" && spec.checkoutuser != name_en)
             {
                 return (false, "已有人在編輯此份 SPEC。");
             }
@@ -44,10 +42,10 @@ namespace PDMApp.Utils.PGTSPEC
                 {
                     spec.ver = 1;
                     spec.checkoutmk = "Y";
-                    spec.checkoutuser = userId;
+                    spec.checkoutuser = name_en;
                     spec.update_date = DateTime.Now;
-                    spec.update_user_id = "20211200037074"; // TODO: 未來改為 pccuId
-                    spec.update_user_nm = userName;
+                    spec.update_user_id = pccuid; // TODO: 未來改為 pccuId
+                    spec.update_user_nm = name;
 
                     await _pcms_Pdm_TestContext.SaveChangesAsync();
                     return (true, "CHECKOUT 成功。");
@@ -71,7 +69,7 @@ namespace PDMApp.Utils.PGTSPEC
                     ver = newVer,
                     stage_code = spec.stage_code,
                     checkoutmk = "Y",
-                    checkoutuser = userId,
+                    checkoutuser = name_en,
                     speclockmk = null,
                     create_mode = spec.create_mode,
                     ref_dev_no = spec.ref_dev_no,
@@ -80,8 +78,8 @@ namespace PDMApp.Utils.PGTSPEC
                     create_user_id = spec.create_user_id,
                     create_user_nm = spec.create_user_nm,
                     update_date = DateTime.Now,
-                    update_user_id = "20211200037074", // TODO: 未來改為 pccuId
-                    update_user_nm = userName
+                    update_user_id = pccuid, // TODO: 未來改為 pccuId
+                    update_user_nm = name
                 };
 
                 await _pcms_Pdm_TestContext.pcg_spec_head.AddAsync(newSpec);
