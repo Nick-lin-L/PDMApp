@@ -157,33 +157,33 @@ namespace PDMApp.Utils.PGTSPEC
 
 
 
-        public static IQueryable<PGTSPECHeaderDto> QuerySpecHead( pcms_pdm_testContext _pcms_Pdm_TestContext,bool latestVerOnly,PGTSPECSearchParameter value)
+        public static IQueryable<PGTSPECHeaderDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, bool latestVerOnly, PGTSPECSearchParameter value, string pccuid, string name)
         {
             var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
-                            join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                            join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
-                            join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
-                            join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
-                            where n_stage.group_key == "stage"
-                            join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
-                            where n_brand.group_key == "brand"
-                            select new
-                            {
-                                SpecMId = sh.spec_m_id, // 加入 SpecMId
-                                Brand = n_brand.text,
-                                DevelopmentNo = ph.development_no,
-                                DevelopmentColorNo = pi.development_color_no,
-                                ColorCode = pi.color_code,
-                                Colorway = pi.colorway,
-                                Stage = n_stage.text,
-                                ModelName = ph.working_name,
-                                Ver = sh.ver,
-                                CheckoutMk = sh.checkoutmk,
-                                CheckoutUser = sh.checkoutuser,
-                                SpecLockMk = sh.speclockmk,
-                                UpdateDate = sh.update_date,
-                                UpdateUser = sh.update_user_nm
-                            }).Distinct(); 
+                             join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                             join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
+                             join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
+                             join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
+                             where n_stage.group_key == "stage"
+                             join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
+                             where n_brand.group_key == "brand"
+                             select new
+                             {
+                                 SpecMId = sh.spec_m_id, // 加入 SpecMId
+                                 Brand = n_brand.text,
+                                 DevelopmentNo = ph.development_no,
+                                 DevelopmentColorNo = pi.development_color_no,
+                                 ColorCode = pi.color_code,
+                                 Colorway = pi.colorway,
+                                 Stage = n_stage.text,
+                                 ModelName = ph.working_name,
+                                 Ver = sh.ver,
+                                 CheckoutMk = sh.checkoutmk,
+                                 CheckoutUser = sh.checkoutuser,
+                                 SpecLockMk = sh.speclockmk,
+                                 UpdateDate = sh.update_date,
+                                 UpdateUser = sh.update_user_nm
+                             }).Distinct();
 
             // **WHERE 過濾條件**
             if (!string.IsNullOrWhiteSpace(value.Brand))
@@ -235,7 +235,8 @@ namespace PDMApp.Utils.PGTSPEC
                     CheckoutUser = q.CheckoutUser,
                     SpecLockMk = q.SpecLockMk,
                     UpdateDate = q.UpdateDate,
-                    UpdateUser = q.UpdateUser
+                    UpdateUser = q.UpdateUser,
+                    EditMk = (q.CheckoutUser == name && q.CheckoutMk == "Y") ? "Y" : "N"
                 });
             }
 
@@ -254,7 +255,8 @@ namespace PDMApp.Utils.PGTSPEC
                 CheckoutUser = q.CheckoutUser,
                 SpecLockMk = q.SpecLockMk,
                 UpdateDate = q.UpdateDate,
-                UpdateUser = q.UpdateUser
+                UpdateUser = q.UpdateUser,
+                EditMk = (q.CheckoutUser == name && q.CheckoutMk == "Y") ? "Y" : "N"
             });
         }
 

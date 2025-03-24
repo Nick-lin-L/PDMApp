@@ -27,7 +27,7 @@ using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Middleware;
-
+using System.IdentityModel.Tokens.Jwt;
 
 namespace PDMApp
 {
@@ -109,6 +109,51 @@ namespace PDMApp
             });
             //services.AddAuthorization(); // 啟用授權
             services.AddControllersWithViews();
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
+          .AddJwtBearer(options =>
+          {
+              options.Events = new JwtBearerEvents
+              {
+                  OnMessageReceived = context =>
+                  {
+                      // 確保 cookie 中有 JWT Token
+                      if (context.Request.Cookies.ContainsKey("PDMToken"))
+                      {
+                          var token = context.Request.Cookies["PDMToken"];
+
+                          // 解析 JWT Token
+                          var handler = new JwtSecurityTokenHandler();
+                          var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+
+                          // 提取各種聲明並存入 HttpContext.Items
+                          var claims = jsonToken?.Claims.ToList(); // 提取所有聲明
+
+                          if (claims != null)
+                          {
+                              // 提取需要的聲明
+                              var name = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                              var nameEn = claims.FirstOrDefault(c => c.Type == "name_en")?.Value;
+                              var pccuid = claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
+                              var email = claims.FirstOrDefault(c => c.Type == "email")?.Value;
+                              var userId = claims.FirstOrDefault(c => c.Type == "user_id")?.Value;
+
+                              // 將所有需要的資料存入 HttpContext.Items
+                              context.HttpContext.Items["name"] = name;
+                              context.HttpContext.Items["name_en"] = nameEn;
+                              context.HttpContext.Items["pccuid"] = pccuid;
+                              context.HttpContext.Items["email"] = email;
+                              context.HttpContext.Items["user_id"] = userId;
+
+                          }
+                      }
+                      return Task.CompletedTask;
+                  }
+              };
+ 
+          });
+
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別

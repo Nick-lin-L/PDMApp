@@ -9,9 +9,8 @@ namespace PDMApp.Utils.PGTSPEC
 {
     public class PGTSPECLockHelper
     {
-        public static async Task<(bool isSuccess, string message)> LockSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecLockParameter value, bool isLock)
+        public static async Task<(bool isSuccess, string message)> LockSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecLockParameter value, bool isLock, string pccuid, string name)
         {
-            var userName = "鄭名硯";  // TODO: 從身份驗證系統取得
             var spec = await _pcms_Pdm_TestContext.pcg_spec_head.FirstOrDefaultAsync(s => s.spec_m_id == value.SpecMId);
 
             if (spec == null)
@@ -22,8 +21,8 @@ namespace PDMApp.Utils.PGTSPEC
 
             spec.speclockmk = isLock ? "Y" : "N";
             spec.update_date = DateTime.Now;
-            spec.update_user_id = "20211200037074"; // TODO: 未來改為 pccuId
-            spec.update_user_nm = userName; // TODO: 未來改為 userName
+            spec.update_user_id = pccuid; // TODO: 未來改為 pccuId
+            spec.update_user_nm = name; // TODO: 未來改為 userName
 
             await _pcms_Pdm_TestContext.SaveChangesAsync();
 

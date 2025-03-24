@@ -10,7 +10,7 @@ namespace PDMApp.Utils.PGTSPEC
 {
     public class PGTSPECCopyToHelper
     {
-        public static async Task<(bool IsSuccess, string Message)> CopyToSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, CopyToSpecParameter value)
+        public static async Task<(bool IsSuccess, string Message)> CopyToSpecAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, CopyToSpecParameter value, string pccuid, string name)
         {
             try
             {
@@ -66,8 +66,8 @@ namespace PDMApp.Utils.PGTSPEC
                     ver = 0,
                     create_mode = "C",
                     create_date = DateTime.Now,
-                    create_user_id = "20211200037074", // 這裡應該改為 USER ID
-                    create_user_nm = "鄭名硯", // 這裡應該改為 USER_NAME
+                    create_user_id = pccuid, // 這裡應該改為 USER ID
+                    create_user_nm = name, // 這裡應該改為 USER_NAME
                     ref_dev_no = value.DevelopmentNo,
                     remarks_prohibit = value.DevFactoryNo == "6400" ? "※所有材質的使用，均需符合\"ASICS 化學物質管理運用方針\"之規定。" : null
                 };

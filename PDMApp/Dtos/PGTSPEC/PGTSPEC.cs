@@ -23,6 +23,8 @@ namespace Dtos.PGTSPEC
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? UpdateDate { get; internal set; }
         public string UpdateUser { get; internal set; }
+        public string EditMk { get; internal set; }
+        
     }
 
 
