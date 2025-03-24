@@ -54,10 +54,13 @@ namespace PDMApp.Models
         public virtual DbSet<plm_product_item> plm_product_item { get; set; }
         public virtual DbSet<plm_spec_head> plm_spec_head { get; set; }
         public virtual DbSet<plm_spec_item> plm_spec_item { get; set; }
+        public virtual DbSet<sys_languages> sys_languages { get; set; }
         public virtual DbSet<sys_material_large_class> sys_material_large_class { get; set; }
         public virtual DbSet<sys_material_medium_class> sys_material_medium_class { get; set; }
         public virtual DbSet<sys_material_small_class> sys_material_small_class { get; set; }
         public virtual DbSet<sys_menu> sys_menu { get; set; }
+        public virtual DbSet<sys_menu_i18n> sys_menu_i18n { get; set; }
+        public virtual DbSet<sys_menus> sys_menus { get; set; }
         public virtual DbSet<sys_namevalue> sys_namevalue { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -3142,6 +3145,45 @@ namespace PDMApp.Models
                 entity.Property(e => e.update_date).HasColumnType("date");
             });
 
+            modelBuilder.Entity<sys_languages>(entity =>
+            {
+                entity.HasKey(e => e.language_id)
+                    .HasName("sys_languages_pkey");
+
+                entity.ToTable("sys_languages", "asics_pdm");
+
+                entity.HasIndex(e => e.language_code, "sys_languages_language_code_key")
+                    .IsUnique();
+
+                entity.Property(e => e.language_id).HasDefaultValueSql("nextval('sys_languages_language_id_seq'::regclass)");
+
+                entity.Property(e => e.is_active)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::character varying");
+
+                entity.Property(e => e.is_default)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying");
+
+                entity.Property(e => e.language_code)
+                    .IsRequired()
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.language_name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.sys_languagescreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .HasConstraintName("sys_languages_created_by_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.sys_languagesupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .HasConstraintName("sys_languages_updated_by_fkey");
+            });
+
             modelBuilder.Entity<sys_material_large_class>(entity =>
             {
                 entity.HasKey(e => e.class_l_no)
@@ -3257,6 +3299,92 @@ namespace PDMApp.Models
                     .IsRequired()
                     .HasMaxLength(2)
                     .HasComment("排序");
+            });
+
+            modelBuilder.Entity<sys_menu_i18n>(entity =>
+            {
+                entity.HasKey(e => e.menu_i18n_id)
+                    .HasName("sys_menu_i18n_pkey");
+
+                entity.ToTable("sys_menu_i18n", "asics_pdm");
+
+                entity.HasIndex(e => new { e.menu_id, e.language_code }, "sys_menu_i18n_menu_id_language_code_key")
+                    .IsUnique();
+
+                entity.Property(e => e.menu_i18n_id).HasDefaultValueSql("nextval('sys_menu_i18n_menu_i18n_id_seq'::regclass)");
+
+                entity.Property(e => e.language_code)
+                    .IsRequired()
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.menu_name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.sys_menu_i18ncreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .HasConstraintName("sys_menu_i18n_created_by_fkey");
+
+                entity.HasOne(d => d.menu)
+                    .WithMany(p => p.sys_menu_i18n)
+                    .HasForeignKey(d => d.menu_id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("sys_menu_i18n_menu_id_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.sys_menu_i18nupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .HasConstraintName("sys_menu_i18n_updated_by_fkey");
+            });
+
+            modelBuilder.Entity<sys_menus>(entity =>
+            {
+                entity.HasKey(e => e.menu_id)
+                    .HasName("sys_menus_pkey");
+
+                entity.ToTable("sys_menus", "asics_pdm");
+
+                entity.Property(e => e.menu_id).HasDefaultValueSql("nextval('sys_menus_menu_id_seq'::regclass)");
+
+                entity.Property(e => e.component_path).HasMaxLength(200);
+
+                entity.Property(e => e.dev_factory_no).HasMaxLength(50);
+
+                entity.Property(e => e.is_active).HasMaxLength(1);
+
+                entity.Property(e => e.is_visible).HasMaxLength(1);
+
+                entity.Property(e => e.menu_code)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.menu_icon).HasMaxLength(50);
+
+                entity.Property(e => e.menu_name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.menu_path).HasMaxLength(200);
+
+                entity.Property(e => e.menu_type).HasMaxLength(20);
+
+                entity.Property(e => e.permission_key).HasMaxLength(100);
+
+                entity.HasOne(d => d.created_byNavigation)
+                    .WithMany(p => p.sys_menuscreated_byNavigation)
+                    .HasForeignKey(d => d.created_by)
+                    .HasConstraintName("sys_menus_created_by_fkey");
+
+                entity.HasOne(d => d.parent)
+                    .WithMany(p => p.Inverseparent)
+                    .HasForeignKey(d => d.parent_id)
+                    .HasConstraintName("sys_menus_parent_id_fkey");
+
+                entity.HasOne(d => d.updated_byNavigation)
+                    .WithMany(p => p.sys_menusupdated_byNavigation)
+                    .HasForeignKey(d => d.updated_by)
+                    .HasConstraintName("sys_menus_updated_by_fkey");
             });
 
             modelBuilder.Entity<sys_namevalue>(entity =>
