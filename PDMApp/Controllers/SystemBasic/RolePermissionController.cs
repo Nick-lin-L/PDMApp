@@ -162,7 +162,6 @@ namespace PDMApp.Controllers
         }
 
         // 3. 新增或更新角色資料
-        //[Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "PDMToken")]
         [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("upsert")]
         //public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
@@ -191,13 +190,41 @@ namespace PDMApp.Controllers
                     request.Permissions ??= new List<PermissionRequest>();
                     request.PermissionDetails ??= new List<PermissionDetails>();
 
-                    int? roleId = int.TryParse(request.RoleId, out int parsedId) ? parsedId : null;
+                    // 驗證廠別是否存在
+                    var factoryExists = await _pcms_Pdm_TestContext.pdm_factory
+                        .AnyAsync(f => f.dev_factory_no == request.DevFactoryNo);
+
+                    if (!factoryExists)
+                    {
+                        return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                            errorCode: "40001",
+                            message: $"廠別代號 {request.DevFactoryNo} 不存在於系統中。",
+                            data: null
+                        );
+                    }
+                    int? roleId = null;
+                    if (!string.IsNullOrWhiteSpace(request.RoleId))
+                    {
+                        roleId = int.TryParse(request.RoleId, out int parsedId) ? parsedId : null;
+                    }
+
                     // **[1] 角色處理**
-                    var role = await _pcms_Pdm_TestContext.pdm_roles
-                        .FirstOrDefaultAsync(r => roleId.HasValue && r.role_id == roleId.Value);
+                    var role = roleId.HasValue
+                        ? await _pcms_Pdm_TestContext.pdm_roles.FirstOrDefaultAsync(r => r.role_id == roleId.Value)
+                        : null;
 
                     if (role == null)
                     {
+                        // 驗證必要欄位
+                        if (string.IsNullOrWhiteSpace(request.RoleName) || string.IsNullOrWhiteSpace(request.DevFactoryNo))
+                        {
+                            return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                errorCode: "40001",
+                                message: "角色名稱和廠別代號不能為空。",
+                                data: null
+                            );
+                        }
+
                         // 新增角色
                         role = new pdm_roles
                         {
@@ -209,14 +236,6 @@ namespace PDMApp.Controllers
                             created_at = DateTime.UtcNow
                         };
                         _pcms_Pdm_TestContext.pdm_roles.Add(role);
-                        if (string.IsNullOrWhiteSpace(request.RoleName) || string.IsNullOrWhiteSpace(request.DevFactoryNo))
-                        {
-                            return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
-                                errorCode: "40001",
-                                message: "The role name and development factory code must not be empty.",
-                                data: null
-                            );
-                        }
                         await _pcms_Pdm_TestContext.SaveChangesAsync();
                     }
                     else
@@ -237,7 +256,7 @@ namespace PDMApp.Controllers
                     foreach (var perm in request.Permissions)
                     {
                         var existingPerm = await _pcms_Pdm_TestContext.pdm_role_permissions
-                            .FirstOrDefaultAsync(p => p.permission_id == perm.PermissionId && p.role_id == roleId);
+                            .FirstOrDefaultAsync(p => p.permission_id == perm.PermissionId && p.role_id == roleIdt);
 
                         if (existingPerm != null)
                         {
@@ -264,29 +283,21 @@ namespace PDMApp.Controllers
                             {
                                 role_id = roleIdt,
                                 permission_id = perm.PermissionId,
-                                is_active = perm.IsActive,
-                                createp = perm.CreateP,
-                                readp = perm.ReadP,
-                                updatep = perm.UpdateP,
-                                deletep = perm.DeleteP,
-                                exportp = perm.ExportP,
-                                importp = perm.ImportP,
-                                permission1 = perm.Permission1,
-                                permission2 = perm.Permission2,
-                                permission3 = perm.Permission3,
-                                permission4 = perm.Permission4,
+                                is_active = perm.IsActive ?? "Y",
+                                createp = perm.CreateP ?? "Y",
+                                readp = perm.ReadP ?? "Y",
+                                updatep = perm.UpdateP ?? "Y",
+                                deletep = perm.DeleteP ?? "Y",
+                                exportp = perm.ExportP ?? "Y",
+                                importp = perm.ImportP ?? "Y",
+                                permission1 = perm.Permission1 ?? "Y",
+                                permission2 = perm.Permission2 ?? "Y",
+                                permission3 = perm.Permission3 ?? "Y",
+                                permission4 = perm.Permission4 ?? "Y",
                                 dev_factory_no = request.DevFactoryNo,
                                 created_by = updatedBy,
                                 created_at = DateTime.UtcNow
                             };
-                            if (!newPerm.permission_id.HasValue || roleIdt == 0)
-                            {
-                                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
-                                    errorCode: "40001",
-                                    message: "The P.permission_id or RoleID must not be empty.",
-                                    data: null
-                                );
-                            }
                             _pcms_Pdm_TestContext.pdm_role_permissions.Add(newPerm);
                         }
                     }

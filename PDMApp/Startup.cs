@@ -197,7 +197,7 @@ namespace PDMApp
                 options.Scope.Add("profile");
                 options.CallbackPath = "/signin-oidc";//options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)
                 options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; //options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc"; // 登出重定向 
-                
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true, // 驗證頒發者
@@ -207,7 +207,7 @@ namespace PDMApp
                     ValidIssuer = Configuration["Authentication:PCG:Authority"],
                     ValidAudience = Configuration["Authentication:PCG:ClientId"]
                 };
-                
+
             });
 
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
@@ -225,12 +225,12 @@ namespace PDMApp
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = "PDMAppissu",     // ?? 必須與產生 JWT 時一致
-            ValidAudience = "testclient",   // ?? 同上
-            IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
+                        ValidAudience = "testclient",   // ?? 同上
+                        IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
                     };
 
-        // 讓 ASP.NET Core 從 Cookie["PDMToken"] 讀取 JWT
-        options.Events = new JwtBearerEvents
+                    // 讓 ASP.NET Core 從 Cookie["PDMToken"] 讀取 JWT
+                    options.Events = new JwtBearerEvents
                     {
                         OnMessageReceived = context =>
                         {
@@ -254,7 +254,7 @@ namespace PDMApp
                 services.AddScoped(type.Service, type.Implementation);
             }
         }
-        
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
