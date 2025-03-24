@@ -109,7 +109,7 @@ namespace PDMApp
             });
             //services.AddAuthorization(); // 啟用授權
             services.AddControllersWithViews();
-
+            /*
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
           .AddJwtBearer(options =>
@@ -153,7 +153,7 @@ namespace PDMApp
               };
  
           });
-
+            */
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別

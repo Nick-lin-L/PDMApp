@@ -294,11 +294,28 @@ namespace PDMApp.Controllers
                     // **[3] 更新 PermissionDetails**
                     foreach (var detail in request.PermissionDetails)
                     {
+                        // 檢查 PermissionKeyId 是否存在於 pdm_permission_keys
+                        var permissionKey = await _pcms_Pdm_TestContext.pdm_permission_keys
+                            .FirstOrDefaultAsync(pk => pk.permission_key_id == detail.PermissionKeyId);
+
+                        // 如果 permission key 不存在，則新增一個
+                        if (permissionKey == null)
+                        {
+                            permissionKey = new pdm_permission_keys
+                            {
+                                permission_key_id = detail.PermissionKeyId,
+                                permission_key = detail.PermissionKey,
+                                created_by = updatedBy,
+                                created_at = DateTime.UtcNow
+                            };
+                            _pcms_Pdm_TestContext.pdm_permission_keys.Add(permissionKey);
+                            await _pcms_Pdm_TestContext.SaveChangesAsync(); // 先儲存以獲得正確的 ID
+                        }
+
                         var existingDetail = await _pcms_Pdm_TestContext.pdm_role_permission_details
                             .FirstOrDefaultAsync(d => d.role_id == roleId &&
-                              //                              d.permission_id == detail.PermissionId &&
-                              d.permission_key_id == detail.PermissionKeyId &&
-                              d.dev_factory_no == request.DevFactoryNo);
+                                d.permission_key_id == detail.PermissionKeyId &&
+                                d.dev_factory_no == request.DevFactoryNo);
 
                         if (existingDetail != null)
                         {
@@ -312,26 +329,19 @@ namespace PDMApp.Controllers
                         }
                         else
                         {
-                            // 新增詳細權限
+                            // 新增詳細權限，預設為停用狀態
                             var newDetail = new pdm_role_permission_details
                             {
                                 role_id = roleIdt,
                                 permission_id = detail.PermissionId,
                                 permission_key_id = detail.PermissionKeyId,
-                                is_active = detail.IsActiveD,
+                                is_active = detail.IsActiveD ?? "N",  // 如果沒有指定，預設為 "N"
                                 description = detail.DescriptionD,
+                                permission_key = detail.PermissionKey,
                                 dev_factory_no = request.DevFactoryNo,
                                 created_by = updatedBy,
                                 created_at = DateTime.UtcNow
-                            };/*
-                            if (newDetail.permission_id == 0)
-                            {
-                                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
-                                    errorCode: "40001",
-                                    message: "The D.permission_id must not be empty.",
-                                    data: null
-                                );
-                            }*/
+                            };
                             _pcms_Pdm_TestContext.pdm_role_permission_details.Add(newDetail);
                         }
                     }
