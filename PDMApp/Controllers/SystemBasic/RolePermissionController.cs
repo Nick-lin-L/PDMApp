@@ -198,10 +198,11 @@ namespace PDMApp.Controllers
                     {
                         return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
                             errorCode: "40001",
-                            message: $"廠別代號 {request.DevFactoryNo} 不存在於系統中。",
+                            message: $"DevFactoryNo {request.DevFactoryNo} does not exist in the system.",
                             data: null
                         );
                     }
+
                     int? roleId = null;
                     if (!string.IsNullOrWhiteSpace(request.RoleId))
                     {
@@ -283,17 +284,17 @@ namespace PDMApp.Controllers
                             {
                                 role_id = roleIdt,
                                 permission_id = perm.PermissionId,
-                                is_active = perm.IsActive ?? "Y",
-                                createp = perm.CreateP ?? "Y",
-                                readp = perm.ReadP ?? "Y",
-                                updatep = perm.UpdateP ?? "Y",
-                                deletep = perm.DeleteP ?? "Y",
-                                exportp = perm.ExportP ?? "Y",
-                                importp = perm.ImportP ?? "Y",
-                                permission1 = perm.Permission1 ?? "Y",
-                                permission2 = perm.Permission2 ?? "Y",
-                                permission3 = perm.Permission3 ?? "Y",
-                                permission4 = perm.Permission4 ?? "Y",
+                                is_active = perm.IsActive ?? "N",
+                                createp = perm.CreateP ?? "N",
+                                readp = perm.ReadP ?? "N",
+                                updatep = perm.UpdateP ?? "N",
+                                deletep = perm.DeleteP ?? "N",
+                                exportp = perm.ExportP ?? "N",
+                                importp = perm.ImportP ?? "N",
+                                permission1 = perm.Permission1 ?? "N",
+                                permission2 = perm.Permission2 ?? "N",
+                                permission3 = perm.Permission3 ?? "N",
+                                permission4 = perm.Permission4 ?? "N",
                                 dev_factory_no = request.DevFactoryNo,
                                 created_by = updatedBy,
                                 created_at = DateTime.UtcNow

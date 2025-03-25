@@ -155,6 +155,7 @@ namespace PDMApp.Utils.BasicProgram
                                    PermissionName = Pp.permission_name,
                                    Description = Pp.description,
                                    PermissionKey = Ppk.permission_key,
+                                   PermissionKeyId = Ppk.permission_key_id,
                                    DescriptionD = Ppk.description,
                                    IsActiveD = "Y"  // 預設為未啟用
                                };
