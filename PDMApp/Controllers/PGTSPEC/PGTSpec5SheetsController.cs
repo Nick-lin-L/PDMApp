@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System;
 using Utils.PGTSPEC;
 using System.Data.Common;
+using Microsoft.AspNetCore.Authorization;
+using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Controllers.SPEC
 {
@@ -90,11 +92,17 @@ namespace PDMApp.Controllers.SPEC
         }
 
         // POST api/v1/PGTSpec5Sheets/UpdateSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("UpdateSpec")]
         public async Task<ActionResult> Post([FromBody] PGTSpec5SheetsUpdateParameter value)
         {
             try
             {
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
+
                 var headData = value.HeadData.FirstOrDefault();
                 if (headData == null || string.IsNullOrWhiteSpace(headData.SpecMId))
                 {
@@ -102,7 +110,7 @@ namespace PDMApp.Controllers.SPEC
                 } 
 
                 // 嘗試更新 SpecHead 和 SpecItem
-                var (success, message) = await PGTSPECUpdateHelper.UpdateSpecAsync(_pcms_Pdm_TestContext, value);
+                var (success, message) = await PGTSPECUpdateHelper.UpdateSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!success)
                 {

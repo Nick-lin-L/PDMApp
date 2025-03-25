@@ -1,10 +1,12 @@
 ﻿
 using Dtos.PGTSPEC;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Utils;
+using PDMApp.Utils.BasicProgram;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,7 @@ namespace PDMApp.Controllers.PGTSPEC
         }
 
         // POST api/<PGTSpecHeadController>
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<PGTSPECHeaderDto>>>> Post([FromBody] PGTSPECSearchParameter value)
         {
@@ -32,11 +35,12 @@ namespace PDMApp.Controllers.PGTSPEC
 
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var nameEn = HttpContext.Items["name_en"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
 
-                // **當 value.Ver 為空時，預設為 "Latest Ver"**
+                // 當 value.Ver 為空時，預設為 "Latest Ver"
                 bool latestVerOnly = string.IsNullOrWhiteSpace(value.Ver) || value.Ver == "Latest Ver";
 
                 // **將篩選條件直接傳遞到 QuerySpecHead**
@@ -76,15 +80,17 @@ namespace PDMApp.Controllers.PGTSPEC
 
 
         // POST api/v1/PGTSpecHead/InsertSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("InsertSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> InsertSpec([FromBody] InsertSpecParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
-
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
+           
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!isSuccess)
@@ -114,14 +120,16 @@ namespace PDMApp.Controllers.PGTSPEC
         }
 
         // POST api/v1/PGTSpecHead/CopyToSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CopyToSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> CopyToSpec([FromBody] CopyToSpecParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
@@ -154,15 +162,17 @@ namespace PDMApp.Controllers.PGTSPEC
 
 
         // POST api/v1/PGTSpecHead/CheckoutSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CheckoutSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> CheckoutSpec([FromBody] CheckoutSpecParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
-                var nameEn = HttpContext.Items["name_en"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
+                var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
 
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
@@ -193,15 +203,17 @@ namespace PDMApp.Controllers.PGTSPEC
         }
 
         // POST api/v1/PGTSpecHead/CheckinSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CheckinSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> CheckinSpec([FromBody] CheckinSpecParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
-                var nameEn = HttpContext.Items["name_en"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
+                var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
 
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckinHelper.CheckinSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
@@ -232,14 +244,16 @@ namespace PDMApp.Controllers.PGTSPEC
         }
 
         // POST api/v1/PGTSpecHead/LockSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("LockSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> LockSpec([FromBody] SpecLockParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true, pccuid, name);
 
@@ -270,14 +284,16 @@ namespace PDMApp.Controllers.PGTSPEC
         }
 
         // POST api/v1/PGTSpecHead/UnlockSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("UnlockSpec")]
         public async Task<ActionResult<APIStatusResponse<string>>> UnlockSpec([FromBody] SpecLockParameter value)
         {
             try
             {
-                // 從 HttpContext.Items 中讀取 pccuid 和 name
-                var pccuid = HttpContext.Items["pccuid"]?.ToString();
-                var name = HttpContext.Items["name"]?.ToString();
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
                 var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false, pccuid, name);
 

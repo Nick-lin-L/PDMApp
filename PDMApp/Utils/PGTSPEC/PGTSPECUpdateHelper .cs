@@ -82,7 +82,7 @@ namespace Utils.PGTSPEC
         /// <summary>
         /// 更新 SPEC_HEAD 和 SPEC_ITEM (確保整體一致性)
         /// </summary>
-        public static async Task<(bool, string)> UpdateSpecAsync(pcms_pdm_testContext context, PGTSpec5SheetsUpdateParameter value)
+        public static async Task<(bool, string)> UpdateSpecAsync(pcms_pdm_testContext context, PGTSpec5SheetsUpdateParameter value, string pccuid, string name)
         {
             using var transaction = await context.Database.BeginTransactionAsync();
             try
@@ -108,8 +108,8 @@ namespace Utils.PGTSPEC
                 headEntity.mold_no3 = headData.MoldNo3?.Trim();
                 headEntity.remarks_spec = headData.RemarksSpec?.Trim();
                 headEntity.remarks_prohibit = headData.RemarksProhibit?.Trim();
-                headEntity.update_user_id = "20211200037074"; // 這裡應該改為 USER ID
-                headEntity.update_user_nm = "鄭名硯"; // 這裡應該改為 USER_NAME
+                headEntity.update_user_id = pccuid; // 這裡應該改為 USER ID
+                headEntity.update_user_nm = name; // 這裡應該改為 USER_NAME
                 headEntity.update_date = DateTime.Now;
 
                 // 取得現有的 SPEC_ITEM
