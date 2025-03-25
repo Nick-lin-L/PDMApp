@@ -49,32 +49,22 @@ namespace PDMApp.Controllers.ALink
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
-            //if (!ModelState.IsValid)
-            //    return BadRequest(ModelState);
+            // 使用反射來檢查所有字串屬性
+            var searchProperties = typeof(SpecSearchParameter)
+                .GetProperties()
+                .Where(p => p.PropertyType == typeof(string))
+                .Select(p => p.GetValue(value) as string)
+                .Any(v => !string.IsNullOrWhiteSpace(v));
 
-
-            // 手動檢查必填欄位
-            var inputErrors = new List<string>();
-            if (string.IsNullOrWhiteSpace(value.Year))
-            {
-                inputErrors.Add("Year is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(value.Stage))
-            {
-                inputErrors.Add("Stage is required.");
-            }
-
-            // 如果有驗證錯誤，返回自定義格式的錯誤訊息
-            if (inputErrors.Any())
+            if (!searchProperties)
             {
                 return Ok(new APIStatusResponse<object>
                 {
                     ErrorCode = "10001",
-                    Message = "One or more validation errors occurred.",
-                    Data = new { Errors = inputErrors }
+                    Message = "Please enter at least one search condition."
                 });
             }
+
             try
             {
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
