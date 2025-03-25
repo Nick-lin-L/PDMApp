@@ -43,7 +43,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 // 當 value.Ver 為空時，預設為 "Latest Ver"
                 bool latestVerOnly = string.IsNullOrWhiteSpace(value.Ver) || value.Ver == "Latest Ver";
 
-                // **將篩選條件直接傳遞到 QuerySpecHead**
+                // 將篩選條件直接傳遞到 QuerySpecHead
                 var (isSuccess, message, query) = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
 
                 // 檢查是否成功
@@ -77,6 +77,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 });
             }
         }
+
 
 
         // POST api/v1/PGTSpecHead/InsertSpec
