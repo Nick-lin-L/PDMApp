@@ -70,34 +70,72 @@ namespace PDMApp.Controllers.ALink
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
                 // 動態篩選條件
                 var filters = new List<Expression<Func<pdm_spec_headDto, bool>>>();
+                // 定義精確匹配的屬性
+                var exactMatchProperties = new Dictionary<string, Expression<Func<pdm_spec_headDto, string>>>
+                {
+                    { value.Factory, ph => ph.Factory },
+                    { value.EntryMode, ph => ph.EntryMode },
+                    { value.Season, ph => ph.Season },
+                    { value.Year, ph => ph.Year },
+                    { value.Stage, ph => ph.Stage },
+                    { value.CustomerKbn, ph => ph.CustomerKbn },
+                    { value.ModeName, ph => ph.Mode }
+                };
 
-                if (!string.IsNullOrWhiteSpace(value.SpecMId))
-                    filters.Add(ph => ph.SpecMId == value.SpecMId);
-                if (!string.IsNullOrWhiteSpace(value.Factory))
-                    filters.Add(ph => ph.Factory == value.Factory);
-                if (!string.IsNullOrWhiteSpace(value.EntryMode))
-                    filters.Add(ph => ph.EntryMode == value.EntryMode);
-                if (!string.IsNullOrWhiteSpace(value.Season))
-                    filters.Add(ph => ph.Season == value.Season);
-                if (!string.IsNullOrWhiteSpace(value.Year))
-                    filters.Add(ph => ph.Year == value.Year);
-                if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                    filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
-                if (!string.IsNullOrWhiteSpace(value.ColorNo))
-                    filters.Add(ph => ph.ColorNo == value.ColorNo);
-                if (!string.IsNullOrWhiteSpace(value.DevNo))
-                    filters.Add(ph => ph.DevNo == value.DevNo);
-                if (!string.IsNullOrWhiteSpace(value.Devcolorno))
-                    filters.Add(ph => ph.DevColorDispName.Contains(value.Devcolorno));
-                if (!string.IsNullOrWhiteSpace(value.Stage))
-                    filters.Add(ph => ph.Stage.Equals(value.Stage));
-                if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
-                    filters.Add(ph => ph.CustomerKbn.Contains(value.CustomerKbn));
-                if (!string.IsNullOrWhiteSpace(value.ModeName))
-                    filters.Add(ph => ph.Mode.Contains(value.ModeName));
-                if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
-                    filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo)); //filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{value.OutMoldNo}%"));
+                // 定義模糊匹配的屬性
+                var containsMatchProperties = new Dictionary<string, Expression<Func<pdm_spec_headDto, string>>>
+                {
+                    { value.ItemNo, ph => ph.ItemNo },
+                    { value.ColorNo, ph => ph.ColorNo },
+                    { value.DevNo, ph => ph.DevNo },
+                    { value.Devcolorno, ph => ph.DevColorDispName },
+                    { value.OutMoldNo, ph => ph.OutMoldNo },
+                    { value.LastNo, ph => ph.LastNo1 },
+                    { value.LastNo, ph => ph.LastNo2 },
+                    { value.LastNo, ph => ph.LastNo3 },
+                    { value.ItemNameENG, ph => ph.ItemNameEng },
+                    { value.ItemNameJPN, ph => ph.ItemNameJpn },
+                    { value.HeelHeight, ph => ph.HeelHeight },
+                    { value.PartName, ph => ph.PartName },
+                    { value.PartNo, ph => ph.PartNo },
+                    { value.MatColor, ph => ph.MatColor },
+                    { value.Material, ph => ph.Material },
+                    { value.SubMaterial, ph => ph.SubMaterial },
+                    { value.Supplier, ph => ph.Supplier },
+                    { value.Width, ph => ph.Width },
+                    { value.HeelHeight, ph => ph.HeelHeight },
+                };
 
+                // 處理精確匹配
+                foreach (var prop in exactMatchProperties)
+                {
+                    if (!string.IsNullOrWhiteSpace(prop.Key))
+                    {
+                        var valueEq = prop.Key;
+                        var selector = prop.Value;
+                        filters.Add(Expression.Lambda<Func<pdm_spec_headDto, bool>>(
+                            Expression.Equal(
+                                Expression.Invoke(selector, Expression.Parameter(typeof(pdm_spec_headDto), "ph")),
+                                Expression.Constant(value)
+                            ),
+                            Expression.Parameter(typeof(pdm_spec_headDto), "ph")
+                        ));
+                    }
+                }
+
+                // 處理模糊匹配
+                foreach (var prop in containsMatchProperties)
+                {
+                    if (!string.IsNullOrWhiteSpace(prop.Key))
+                    {
+                        var valueContians = prop.Key;
+                        var selector = prop.Value;
+                        filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(
+                            Expression.Invoke(selector, Expression.Parameter(typeof(pdm_spec_headDto), "ph")).ToString(),
+                            $"%{value}%"
+                        ));
+                    }
+                }
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
