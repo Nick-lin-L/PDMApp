@@ -8,10 +8,28 @@ using System.Threading.Tasks;
 
 public class AccountMaintenanceQueryHelper
 {
+    public static IQueryable<DevFactoryNoDto> QueryDevFactoryNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+    {
 
-    public static async Task<IDictionary<string, object>> QueryRoleDropdown(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        var factoryQuery = from Pf in _pcms_Pdm_TestContext.pdm_factory
+                           select new 
+                           {
+                               DevFactoryNo = Pf.dev_factory_no,
+                           };
+
+        // 轉換成 ComboDto
+        return factoryQuery.Select(n => new DevFactoryNoDto
+        {
+            Text = n.DevFactoryNo,
+            Value = n.DevFactoryNo
+        });
+
+    }
+
+    public static async Task<IDictionary<string, List<RoleDto>>> QueryRoles(pcms_pdm_testContext _pcms_Pdm_TestContext)
     {
         var roleQuery = await (from r in _pcms_Pdm_TestContext.pdm_roles
+                               where r.is_active == "Y"
                                select new
                                {
                                    RoleId = r.role_id,          
@@ -19,10 +37,19 @@ public class AccountMaintenanceQueryHelper
                                    DevFactoryNo = r.dev_factory_no 
                                }).ToListAsync();
 
-        return new Dictionary<string, object>
+        // **依據 DevFactoryNo 分組**
+        var groupedData = roleQuery
+            .GroupBy(r => r.DevFactoryNo)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(r => new RoleDto
         {
-            { "Roles", roleQuery }
-        };
+                    Value = r.RoleId,
+                    Text = r.RoleName,
+                }).ToList()
+            );
+
+        return groupedData;
     }
 
 

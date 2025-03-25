@@ -28,8 +28,15 @@ namespace PDMApp.Controllers
         {
             try
             {
-                var result = await AccountMaintenanceQueryHelper.QueryRoleDropdown(_pcms_Pdm_TestContext);
-                return APIResponseHelper.HandleDynamicMultiPageResponse(result);
+                // 創建字典來儲存查詢結果
+                var resultData = new Dictionary<string, object>();
+          
+                // 依序執行查詢，確保每次只有一個查詢在執行
+                resultData["DevFactoryNo"] = await AccountMaintenanceQueryHelper.QueryDevFactoryNo(_pcms_Pdm_TestContext).ToListAsync(); ;
+                resultData["Roles"] = await AccountMaintenanceQueryHelper.QueryRoles(_pcms_Pdm_TestContext);
+
+                // 封裝結果並回傳
+                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
             catch (Exception ex)
             {
@@ -105,6 +112,16 @@ namespace PDMApp.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            // 檢查 RoleId 是否為 0 或負數
+            if (userRoleParam.RoleId <= 0)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "INVALID_ROLE_ID",
+                    Message = "請選擇有效的角色進行新增"
+                });
+            }
 
             try
             {
