@@ -106,7 +106,7 @@ namespace PDMApp.Controllers.ALink
                 if (!string.IsNullOrWhiteSpace(value.ModeName))
                     filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
-                    filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
+                    filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo)); //filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{value.OutMoldNo}%"));
 
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
