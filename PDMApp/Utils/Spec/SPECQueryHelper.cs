@@ -105,26 +105,26 @@ namespace PDMApp.Utils.SPEC
                     });
 
                 // **篩選最新版本**
-                var latestQuery = from q in baseQuery
-                                  join maxVer in maxVerQuery
-                                  on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
-                                  equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
-                                  select q;
+                var latestQuery = (from q in baseQuery
+                                   join maxVer in maxVerQuery
+                                   on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
+                                   equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
+                                   select new SPECHeaderDto // 直接轉換為 DTO
+                                   {
+                                       SpecMId = q.SpecMId,
+                                       Brand = q.Brand,
+                                       Stage = q.Stage,
+                                       SampleFactory = q.SampleFactory,
+                                       DevelopmentNo = q.DevelopmentNo,
+                                       ItemNo = q.ItemNo,
+                                       Season = q.Season,
+                                       DevelopmentColorNo = q.DevelopmentColorNo,
+                                       ColorCode = q.ColorCode,
+                                       Colorway = q.Colorway,
+                                       Last = q.LastNo
+                                   }).Distinct(); // 確保唯一
 
-                var resultQuery = latestQuery.Select(q => new SPECHeaderDto
-                {
-                    SpecMId = q.SpecMId,
-                    Brand = q.Brand,
-                    Stage = q.Stage,
-                    SampleFactory = q.SampleFactory,
-                    DevelopmentNo = q.DevelopmentNo,
-                    ItemNo = q.ItemNo,
-                    Season = q.Season,
-                    DevelopmentColorNo = q.DevelopmentColorNo,
-                    ColorCode = q.ColorCode,
-                    Colorway = q.Colorway,
-                    Last = q.LastNo
-                });
+                var resultQuery = latestQuery; // 直接使用 latestQuery
 
                 return (true, "Query successful", resultQuery);
             }
