@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Models;
 using PDMApp.Parameters.SPEC;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,101 +11,129 @@ namespace PDMApp.Utils.SPEC
 {
     public static class SPECQueryHelper
     {
-        public static IQueryable<SPECHeaderDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SPECSearchParameter value)
+        public static async Task<(bool, string, IQueryable<SPECHeaderDto>)> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SPECSearchParameter value)
         {
-            var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
-                             join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                             join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
-                             join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
-                             join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
-                             where n_stage.group_key == "stage"
-                             join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
-                             where n_brand.group_key == "brand"
-                             select new
-                             {
-                                 Brand = n_brand.text,
-                                 EntryMode = ph.product_line_type,
-                                 Season = ph.season,
-                                 ItemNo = ph.item_trading_code,
-                                 DevelopmentNo = ph.development_no,
-                                 ColorCode = pi.color_code,
-                                 DevelopmentColorNo = pi.development_color_no,
-                                 Stage = n_stage.text,
-                                 LastNo = ph.last1,
-                                 PartName = si.parts,
-                                 Material = si.material,
-                                 MaterialColor = si.material_color,
-                                 Supplier = si.supplier,
-                                 HeelHeight = ph.heel_height,
-                                 Ver = sh.ver,
-                                 SpecMId = sh.spec_m_id,
-                                 SampleFactory = ph.sampling_factory,
-                                 Colorway = pi.colorway
-                             }).Distinct();
-
-            // **WHERE 過濾條件**
-            if (!string.IsNullOrWhiteSpace(value.Brand))
-                baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
-            if (!string.IsNullOrWhiteSpace(value.EntryMode))
-                baseQuery = baseQuery.Where(ph => ph.EntryMode == value.EntryMode);
-            if (!string.IsNullOrWhiteSpace(value.Season))
-                baseQuery = baseQuery.Where(ph => ph.Season == value.Season);
-            if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                baseQuery = baseQuery.Where(ph => ph.ItemNo == value.ItemNo);
-            if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
-                baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
-            if (!string.IsNullOrWhiteSpace(value.ColorCode))
-                baseQuery = baseQuery.Where(ph => ph.ColorCode == value.ColorCode);
-            if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
-                baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
-            if (!string.IsNullOrWhiteSpace(value.Stage))
-                baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
-            if (!string.IsNullOrWhiteSpace(value.LastNo))
-                baseQuery = baseQuery.Where(ph => ph.LastNo == value.LastNo);
-            if (!string.IsNullOrWhiteSpace(value.PartName))
-                baseQuery = baseQuery.Where(ph => ph.PartName == value.PartName);
-            if (!string.IsNullOrWhiteSpace(value.Material))
-                baseQuery = baseQuery.Where(ph => ph.Material == value.Material);
-            if (!string.IsNullOrWhiteSpace(value.MaterialColor))
-                baseQuery = baseQuery.Where(ph => ph.MaterialColor == value.MaterialColor);
-            if (!string.IsNullOrWhiteSpace(value.Supplier))
-                baseQuery = baseQuery.Where(ph => ph.Supplier == value.Supplier);
-            if (!string.IsNullOrWhiteSpace(value.HeelHeight))
-                baseQuery = baseQuery.Where(ph => ph.HeelHeight == value.HeelHeight);
-         
-            // **先計算最大版本**
-            var maxVerQuery = baseQuery
-                .GroupBy(x => new { x.DevelopmentNo, x.DevelopmentColorNo, x.Stage })
-                .Select(g => new
+            try
+            {
+                // 檢查除了 Brand 之外，至少有一個欄位必須填寫
+                if (string.IsNullOrWhiteSpace(value.EntryMode) &&
+                    string.IsNullOrWhiteSpace(value.Season) &&
+                    string.IsNullOrWhiteSpace(value.ItemNo) &&
+                    string.IsNullOrWhiteSpace(value.DevelopmentNo) &&
+                    string.IsNullOrWhiteSpace(value.ColorCode) &&
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) &&
+                    string.IsNullOrWhiteSpace(value.Stage) &&
+                    string.IsNullOrWhiteSpace(value.LastNo) &&
+                    string.IsNullOrWhiteSpace(value.PartName) &&
+                    string.IsNullOrWhiteSpace(value.Material) &&
+                    string.IsNullOrWhiteSpace(value.MaterialColor) &&
+                    string.IsNullOrWhiteSpace(value.Supplier) &&
+                    string.IsNullOrWhiteSpace(value.HeelHeight))
                 {
-                    g.Key.DevelopmentNo,
-                    g.Key.DevelopmentColorNo,
-                    g.Key.Stage,
-                    MaxVer = g.Max(x => x.Ver)
+                    return (false, "除了 Brand 之外，至少必須填寫一個欄位！", null);
+                }
+
+                var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
+                                 join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                                 join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
+                                 join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
+                                 join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
+                                 where n_stage.group_key == "stage"
+                                 join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
+                                 where n_brand.group_key == "brand"
+                                 select new
+                                 {
+                                     Brand = n_brand.text,
+                                     EntryMode = ph.product_line_type,
+                                     Season = ph.season,
+                                     ItemNo = ph.item_trading_code,
+                                     DevelopmentNo = ph.development_no,
+                                     ColorCode = pi.color_code,
+                                     DevelopmentColorNo = pi.development_color_no,
+                                     Stage = n_stage.text,
+                                     LastNo = ph.last1,
+                                     PartName = si.parts,
+                                     Material = si.material,
+                                     MaterialColor = si.material_color,
+                                     Supplier = si.supplier,
+                                     HeelHeight = ph.heel_height,
+                                     Ver = sh.ver,
+                                     SpecMId = sh.spec_m_id,
+                                     SampleFactory = ph.sampling_factory,
+                                     Colorway = pi.colorway
+                                 }).Distinct();
+
+                // **WHERE 過濾條件**
+                if (!string.IsNullOrWhiteSpace(value.Brand))
+                    baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
+                if (!string.IsNullOrWhiteSpace(value.EntryMode))
+                    baseQuery = baseQuery.Where(ph => ph.EntryMode == value.EntryMode);
+                if (!string.IsNullOrWhiteSpace(value.Season))
+                    baseQuery = baseQuery.Where(ph => ph.Season == value.Season);
+                if (!string.IsNullOrWhiteSpace(value.ItemNo))
+                    baseQuery = baseQuery.Where(ph => ph.ItemNo == value.ItemNo);
+                if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
+                if (!string.IsNullOrWhiteSpace(value.ColorCode))
+                    baseQuery = baseQuery.Where(ph => ph.ColorCode == value.ColorCode);
+                if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
+                if (!string.IsNullOrWhiteSpace(value.Stage))
+                    baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
+                if (!string.IsNullOrWhiteSpace(value.LastNo))
+                    baseQuery = baseQuery.Where(ph => ph.LastNo == value.LastNo);
+                if (!string.IsNullOrWhiteSpace(value.PartName))
+                    baseQuery = baseQuery.Where(ph => ph.PartName == value.PartName);
+                if (!string.IsNullOrWhiteSpace(value.Material))
+                    baseQuery = baseQuery.Where(ph => ph.Material == value.Material);
+                if (!string.IsNullOrWhiteSpace(value.MaterialColor))
+                    baseQuery = baseQuery.Where(ph => ph.MaterialColor == value.MaterialColor);
+                if (!string.IsNullOrWhiteSpace(value.Supplier))
+                    baseQuery = baseQuery.Where(ph => ph.Supplier == value.Supplier);
+                if (!string.IsNullOrWhiteSpace(value.HeelHeight))
+                    baseQuery = baseQuery.Where(ph => ph.HeelHeight == value.HeelHeight);
+
+                // **先計算最大版本**
+                var maxVerQuery = baseQuery
+                    .GroupBy(x => new { x.DevelopmentNo, x.DevelopmentColorNo, x.Stage })
+                    .Select(g => new
+                    {
+                        g.Key.DevelopmentNo,
+                        g.Key.DevelopmentColorNo,
+                        g.Key.Stage,
+                        MaxVer = g.Max(x => x.Ver)
+                    });
+
+                // **篩選最新版本**
+                var latestQuery = from q in baseQuery
+                                  join maxVer in maxVerQuery
+                                  on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
+                                  equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
+                                  select q;
+
+                var resultQuery = latestQuery.Select(q => new SPECHeaderDto
+                {
+                    SpecMId = q.SpecMId,
+                    Brand = q.Brand,
+                    Stage = q.Stage,
+                    SampleFactory = q.SampleFactory,
+                    DevelopmentNo = q.DevelopmentNo,
+                    ItemNo = q.ItemNo,
+                    Season = q.Season,
+                    DevelopmentColorNo = q.DevelopmentColorNo,
+                    ColorCode = q.ColorCode,
+                    Colorway = q.Colorway,
+                    Last = q.LastNo
                 });
 
-            // **篩選最新版本**
-            var latestQuery = from q in baseQuery
-                              join maxVer in maxVerQuery
-                              on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
-                              equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
-                              select q;
-
-            return latestQuery.Select(q => new SPECHeaderDto
+                return (true, "Query successful", resultQuery);
+            }
+            catch (Exception ex)
             {
-                SpecMId = q.SpecMId,
-                Brand = q.Brand,
-                Stage = q.Stage,
-                SampleFactory = q.SampleFactory,
-                DevelopmentNo = q.DevelopmentNo,
-                ItemNo = q.ItemNo,
-                Season = q.Season,
-                DevelopmentColorNo = q.DevelopmentColorNo,
-                ColorCode = q.ColorCode,
-                Colorway = q.Colorway,
-                Last = q.LastNo
-            });
+                return (false, $"Error occurred: {ex.Message}", null);
+            }
         }
+
 
         public static IQueryable<SPECDetailDto> QuerySpecDetail(pcms_pdm_testContext _pcms_Pdm_TestContext, SPECDetailSearchParameter value)
         {

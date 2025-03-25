@@ -32,7 +32,17 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // **將篩選條件直接傳遞到 QuerySpecHead**
-                var query = Utils.SPEC.SPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message, query) = await Utils.SPEC.SPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
+
+                // 檢查是否成功
+                if (!isSuccess)
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
 
                 // 排序
                 query = query
@@ -47,14 +57,15 @@ namespace PDMApp.Controllers.SPEC
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
+                return StatusCode(200, new
                 {
-                    ErrorCode = "Server_ERROR",
+                    ErrorCode = "SERVER_ERROR",
                     Message = "ServerError",
                     Details = ex.Message
                 });
             }
         }
+
 
         // POST api/v1/SPEC/SpecHeader/initial
         [HttpPost("initial")]

@@ -40,7 +40,17 @@ namespace PDMApp.Controllers.PGTSPEC
                 bool latestVerOnly = string.IsNullOrWhiteSpace(value.Ver) || value.Ver == "Latest Ver";
 
                 // **將篩選條件直接傳遞到 QuerySpecHead**
-                var query = Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
+                var (isSuccess, message, query) = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
+
+                // 檢查是否成功
+                if (!isSuccess)
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
 
                 // 排序
                 query = query
@@ -57,12 +67,13 @@ namespace PDMApp.Controllers.PGTSPEC
             {
                 return StatusCode(500, new
                 {
-                    ErrorCode = "Server_ERROR",
+                    ErrorCode = "SERVER_ERROR",
                     Message = "ServerError",
                     Details = ex.Message
                 });
             }
         }
+
 
         // POST api/v1/PGTSpecHead/InsertSpec
         [HttpPost("InsertSpec")]
