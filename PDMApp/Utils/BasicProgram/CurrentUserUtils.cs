@@ -29,16 +29,16 @@ namespace PDMApp.Utils.BasicProgram
             long.TryParse(claims.FirstOrDefault(c => c.Type == "pccuid")?.Value, out var pccuid);
             long.TryParse(claims.FirstOrDefault(c => c.Type == "user_id")?.Value, out var userId);
             var email = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
-            //var name = claims.FirstOrDefault(c => c.Type == "name")?.Value;
-            //var nameen = claims.FirstOrDefault(c => c.Type == "name_en")?.Value;
+            var name = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+            var nameen = claims.FirstOrDefault(c => c.Type == "name_en")?.Value;
 
             return new CurrentUser
             {
                 Pccuid = pccuid != 0 ? pccuid : (long?)null,
                 UserId = userId != 0 ? userId : (long?)null,
                 Email = email,
-                //Name = name,
-                //NameEn = nameen
+                Name = name,
+                NameEn = nameen
             };
         }
     }

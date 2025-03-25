@@ -28,6 +28,7 @@ namespace PDMApp.Utils
                         EntryMode = sh.entrymode,
                         Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
                         MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
+                        OutMoldNo = ph.out_mold_no,
                         Shfactory = sh.factory,
                         Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
                         ItemNameEng = ph.item_name_eng,
