@@ -107,6 +107,17 @@ namespace PDMApp.Controllers.ALink
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
                 // 動態篩選條件
                 var filters = new List<Expression<Func<pdm_spec_headDto, bool>>>();
+                // 定義精確匹配的屬性
+                var exactMatchProperties = new Dictionary<string, Expression<Func<pdm_spec_headDto, string>>>
+                {
+                    { value.Factory, ph => ph.Factory },
+                    { value.EntryMode, ph => ph.EntryMode },
+                    { value.Season, ph => ph.Season },
+                    { value.Year, ph => ph.Year },
+                    { value.Stage, ph => ph.Stage },
+                    { value.CustomerKbn, ph => ph.CustomerKbn },
+                    { value.ModeName, ph => ph.Mode }
+                };
 
                 if (!string.IsNullOrWhiteSpace(value.SpecMId))
                     filters.Add(ph => ph.SpecMId == value.SpecMId);
@@ -158,6 +169,19 @@ namespace PDMApp.Controllers.ALink
                     filters.Add(ph => ph.HeelHeight.Contains(value.HeelHeight));
 
 
+                // 處理模糊匹配
+                foreach (var prop in containsMatchProperties)
+                {
+                    if (!string.IsNullOrWhiteSpace(prop.Key))
+                    {
+                        var valueContians = prop.Key;
+                        var selector = prop.Value;
+                        filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(
+                            Expression.Invoke(selector, Expression.Parameter(typeof(pdm_spec_headDto), "ph")).ToString(),
+                            $"%{value}%"
+                        ));
+                    }
+                }
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
