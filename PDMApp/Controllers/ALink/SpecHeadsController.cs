@@ -149,8 +149,31 @@ namespace PDMApp.Controllers.ALink
                     filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
-                //filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{value.OutMoldNo}%"));
-                
+                if (!string.IsNullOrWhiteSpace(value.LastNo))
+                    filters.Add(ph => ph.LastNo1.Contains(value.LastNo) || ph.LastNo2.Contains(value.LastNo) || ph.LastNo3.Contains(value.LastNo));
+                if (!string.IsNullOrWhiteSpace(value.ItemNameENG))
+                    filters.Add(ph => ph.ItemNameEng.Contains(value.ItemNameENG));
+                if (!string.IsNullOrWhiteSpace(value.ItemNameJPN))
+                    filters.Add(ph => ph.ItemNameJpn.Contains(value.ItemNameJPN));
+                /*
+                if (!string.IsNullOrWhiteSpace(value.PartName))
+                    filters.Add(ph => ph.PartName.Contains(value.PartName));
+                if (!string.IsNullOrWhiteSpace(value.PartNo))
+                    filters.Add(ph => ph.PartNo.Contains(value.PartNo));
+                if (!string.IsNullOrWhiteSpace(value.MatColor))
+                    filters.Add(ph => ph.MatColor.Contains(value.MatColor));
+                if (!string.IsNullOrWhiteSpace(value.Material))
+                    filters.Add(ph => ph.Material.Contains(value.Material));
+                if (!string.IsNullOrWhiteSpace(value.SubMaterial))
+                    filters.Add(ph => ph.SubMaterial.Contains(value.SubMaterial));
+                if (!string.IsNullOrWhiteSpace(value.Supplier))
+                    filters.Add(ph => ph.Supplier.Contains(value.Supplier));
+                if (!string.IsNullOrWhiteSpace(value.Width))
+                    filters.Add(ph => ph.Width.Contains(value.Width));
+                */
+                if (!string.IsNullOrWhiteSpace(value.HeelHeight))
+                    filters.Add(ph => ph.HeelHeight.Contains(value.HeelHeight));
+
 
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
