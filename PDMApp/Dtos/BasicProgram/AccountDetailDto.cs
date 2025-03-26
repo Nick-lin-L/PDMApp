@@ -11,6 +11,9 @@ namespace PDMApp.Dtos.BasicProgram
         public string UserName { get; set; }
         public string RoleName { get; set; }
         public string DevFactoryNo { get; set; }
+        public string CreatedBy { get; set; }
+        [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
+        public DateTime? CreatedAt { get; set; } 
     }
 
     public class DevelopmentNoDto
