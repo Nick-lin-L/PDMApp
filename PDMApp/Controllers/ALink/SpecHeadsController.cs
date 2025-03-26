@@ -51,10 +51,20 @@ namespace PDMApp.Controllers.ALink
         {
             try
             {
+                // 加入輸入驗證
+                if (!ValidateSearchParams(value))
+                {
+                    return Ok(new APIStatusResponse<object>
+                    {
+                        ErrorCode = "50001",
+                        Message = "Please enter at least one search condition."
+                    });
+                }
+
                 // permissions 查詢
-                var result = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
-                //return APIResponseHelper.HandleDynamicMultiPageResponse(result);
+                var result = QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value);
                 var pagedResult = await result.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
             catch (Exception ex)
@@ -117,7 +127,12 @@ namespace PDMApp.Controllers.ALink
                 if (!string.IsNullOrWhiteSpace(value.Season))
                     filters.Add(ph => ph.Season == value.Season);
                 if (!string.IsNullOrWhiteSpace(value.Year))
-                    filters.Add(ph => ph.Year == value.Year);
+                {
+                    var years = value.Year.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(y => y.Trim())
+                                               .ToArray();
+                    query = query.Where(ph => years.Contains(ph.Year));
+                }
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
                     filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
                 if (!string.IsNullOrWhiteSpace(value.ColorNo))
@@ -353,6 +368,16 @@ namespace PDMApp.Controllers.ALink
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+        private bool ValidateSearchParams(SpecSearchParameter value)
+        {
+            return typeof(SpecSearchParameter)
+                .GetProperties()
+                .Where(p => p.Name != "Pagination")
+                .Any(p => {
+                    var propertyValue = p.GetValue(value);
+                    return propertyValue != null && !string.IsNullOrWhiteSpace(propertyValue.ToString());
+                });
         }
     }
 }
