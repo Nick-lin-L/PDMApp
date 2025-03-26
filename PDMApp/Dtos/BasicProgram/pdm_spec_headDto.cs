@@ -37,6 +37,7 @@ namespace PDMApp.Dtos.BasicProgram
         public string? ProductDId { get; set; }
 
         //以下是表頭用不到，但查詢條件需要的欄位
+        public string? LastNo { get; set; }
         public string? LastNo1 { get; set; }
         public string? LastNo2 { get; set; }
         public string? LastNo3 { get; set; }

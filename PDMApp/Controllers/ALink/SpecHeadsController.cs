@@ -46,6 +46,43 @@ namespace PDMApp.Controllers.ALink
 
         // POST api/<SpecHeadsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
+        [HttpPost("post2")]
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post2([FromBody] SpecSearchParameter value)
+        {
+            try
+            {
+                // permissions 查詢
+                var result = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
+                //return APIResponseHelper.HandleDynamicMultiPageResponse(result);
+                var pagedResult = await result.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                /*
+                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"查詢過程中發生錯誤: {ex.Message}",
+                    data: null
+                )); 不確認型別的寫法，也可以但可能轉型會出現CS0029
+                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                    errorCode: "50001",
+                    message: $"權限查詢過程中發生錯誤: {ex.Message}",
+                    data: null
+                );*/
+                return StatusCode(500, new
+                {
+                    ErrorCode = "Server_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message,
+                    ex.StackTrace,
+                    InnerException = ex.InnerException?.Message
+                });
+            }
+        }
+
+        // POST api/<SpecHeadsController>
+        // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
         [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {

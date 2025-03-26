@@ -1,4 +1,5 @@
-﻿using PDMApp.Dtos;
+﻿using Microsoft.EntityFrameworkCore;
+using PDMApp.Dtos;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.ALink;
@@ -11,74 +12,124 @@ namespace PDMApp.Utils
 {
     public static class QueryHelper
     {
-        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecSearchParameter value)
+        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecSearchParameter searchParams)
         {
-            // 使用多表 Join 查詢來組合所需欄位
-            var specheadsQuery = from ph in _pcms_Pdm_TestContext.pdm_product_head
-                    join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
-                    join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
-                    join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
-                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
-                    where pn.group_key == "stage"
-                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
-                    where pnse.group_key == "season"
-                    select new pdm_spec_headDto
-                    {
-                        Year = ph.year,
-                        Season = pnse.text, //使用前端傳入的「值」直接查詢key value的value
-                        EntryMode = sh.entrymode,
-                        Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
-                        MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
-                        OutMoldNo = ph.out_mold_no,
-                        Shfactory = sh.factory,
-                        Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
-                        ItemNameEng = ph.item_name_eng,
-                        ItemNameJpn = ph.item_name_jpn,
-                        ItemNo = ph.item_no,
-                        DevNo = ph.dev_no,
-                        DevColorDispName = pi.dev_color_disp_name,
-                        ColorNo = pi.color_no,
-                        SpecMId = sh.spec_m_id,
-                        Cbdlockmk = sh.cbdlockmk,
-                        ProductMId = ph.product_m_id,
-                        ProductDId = pi.product_d_id,
-                        CustomerKbn = ph.customer_kbn,
-                        Mode = ph.mode_name,
-                        LastNo1 = ph.last_no1,
-                        LastNo2 = ph.last_no2,
-                        LastNo3 = ph.last_no3,
-                        pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>(), // 初始化空的 Spec_ItemDtos 列表
-                    };
+            // 基礎查詢
+            var query = from ph in _pcms_Pdm_TestContext.pdm_product_head
+                        join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
+                        join sh in _pcms_Pdm_TestContext.pdm_spec_head on pi.product_d_id equals sh.product_d_id
+                        join si in _pcms_Pdm_TestContext.pdm_spec_item on sh.spec_m_id equals si.spec_m_id
+                        join pn in _pcms_Pdm_TestContext.pdm_namevalue on sh.stage equals pn.value_desc
+                        where pn.group_key == "stage"
+                        join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
+                        where pnse.group_key == "season"
+                        select new pdm_spec_headDto
+                        {
+                            Year = ph.year,
+                            Season = pnse.text,
+                            EntryMode = sh.entrymode,
+                            Stage = pn.text,
+                            MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
+                            OutMoldNo = ph.out_mold_no,
+                            Shfactory = sh.factory,
+                            Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
+                            ItemNameEng = ph.item_name_eng,
+                            ItemNameJpn = ph.item_name_jpn,
+                            ItemNo = ph.item_no,
+                            DevNo = ph.dev_no,
+                            DevColorDispName = pi.dev_color_disp_name,
+                            ColorNo = pi.color_no,
+                            SpecMId = sh.spec_m_id,
+                            Cbdlockmk = sh.cbdlockmk,
+                            ProductMId = ph.product_m_id,
+                            ProductDId = pi.product_d_id,
+                            CustomerKbn = ph.customer_kbn,
+                            Mode = ph.mode_name,
+                            LastNo = string.Join(",", new[] { ph.last_no1, ph.last_no2, ph.last_no3 }.Where(ln => !string.IsNullOrEmpty(ln))),
+                            LastNo1 = ph.last_no1,
+                            LastNo2 = ph.last_no2,
+                            LastNo3 = ph.last_no3,
+                            HeelHeight = sh.heelheight.ToString(),
+                            Material = si.material,
+                            SubMaterial = si.submaterial,
+                            Supplier = si.supplier,
+                            Width = si.width,
+                            PartNo = si.act_no,
+                            MatColor = si.colors
+                        };
 
-            // 加入篩選條件
-            if (!string.IsNullOrWhiteSpace(value.SpecMId))
-                specheadsQuery = specheadsQuery.Where(p => p.SpecMId.Contains(value.SpecMId));
-            if (!string.IsNullOrWhiteSpace(value.Factory))
-                specheadsQuery = specheadsQuery.Where(p => p.Factory.Equals(value.Factory));
-            if (!string.IsNullOrWhiteSpace(value.EntryMode))
-                specheadsQuery = specheadsQuery.Where(p => p.EntryMode.Equals(value.EntryMode));
-            if (!string.IsNullOrWhiteSpace(value.Season))
-                specheadsQuery = specheadsQuery.Where(p => p.Season.Equals(value.Season));
-            if (!string.IsNullOrWhiteSpace(value.Year))
-                specheadsQuery = specheadsQuery.Where(p => p.Year.Equals(value.Year));
-            if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                specheadsQuery = specheadsQuery.Where(p => p.ItemNo.Equals(value.ItemNo));
-            if (!string.IsNullOrWhiteSpace(value.ColorNo))
-                specheadsQuery = specheadsQuery.Where(p => p.ColorNo.Equals(value.ColorNo));
-            if (!string.IsNullOrWhiteSpace(value.DevNo))
-                specheadsQuery = specheadsQuery.Where(p => p.DevNo.Equals(value.DevNo));
-            if (!string.IsNullOrWhiteSpace(value.Devcolorno))
-                specheadsQuery = specheadsQuery.Where(p => p.DevColorDispName.Contains(value.Devcolorno));
-            if (!string.IsNullOrWhiteSpace(value.Stage))
-                specheadsQuery = specheadsQuery.Where(p => p.Stage.Equals(value.Stage));
-            if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
-                specheadsQuery = specheadsQuery.Where(p => p.CustomerKbn.Contains(value.CustomerKbn));
-            if (!string.IsNullOrWhiteSpace(value.ModeName))
-                specheadsQuery = specheadsQuery.Where(p => p.Mode.Contains(value.ModeName));
-            if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
-                specheadsQuery = specheadsQuery.Where(p => p.OutMoldNo.Contains(value.OutMoldNo));
+            // 精確匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.SpecMId))
+                query = query.Where(ph => ph.SpecMId == searchParams.SpecMId);
+            if (!string.IsNullOrWhiteSpace(searchParams.Factory))
+                query = query.Where(ph => ph.Factory == searchParams.Factory);
+            if (!string.IsNullOrWhiteSpace(searchParams.EntryMode))
+                query = query.Where(ph => ph.EntryMode == searchParams.EntryMode);
+            if (!string.IsNullOrWhiteSpace(searchParams.Season))
+                query = query.Where(ph => ph.Season == searchParams.Season);
+            if (!string.IsNullOrWhiteSpace(searchParams.Year))
+                query = query.Where(ph => ph.Year == searchParams.Year);
+            if (!string.IsNullOrWhiteSpace(searchParams.Stage))
+                query = query.Where(ph => ph.Stage == searchParams.Stage);
+            if (!string.IsNullOrWhiteSpace(searchParams.CustomerKbn))
+                query = query.Where(ph => ph.CustomerKbn == searchParams.CustomerKbn);
+            if (!string.IsNullOrWhiteSpace(searchParams.ModeName))
+                query = query.Where(ph => ph.Mode == searchParams.ModeName);
 
-            return specheadsQuery;
+            // 模糊匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.ItemNo))
+                query = query.Where(ph => ph.ItemNo != null && EF.Functions.Like(ph.ItemNo, $"%{searchParams.ItemNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.ColorNo))
+                query = query.Where(ph => ph.ColorNo != null && EF.Functions.Like(ph.ColorNo, $"%{searchParams.ColorNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.DevNo))
+                query = query.Where(ph => ph.DevNo != null && EF.Functions.Like(ph.DevNo, $"%{searchParams.DevNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Devcolorno))
+                query = query.Where(ph => ph.DevColorDispName != null && EF.Functions.Like(ph.DevColorDispName, $"%{searchParams.Devcolorno}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.OutMoldNo))
+                query = query.Where(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{searchParams.OutMoldNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.LastNo))
+                query = query.Where(ph => ph.LastNo != null && EF.Functions.Like(ph.LastNo, $"%{searchParams.LastNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.ItemNameENG))
+                query = query.Where(ph => ph.ItemNameEng != null && EF.Functions.Like(ph.ItemNameEng, $"%{searchParams.ItemNameENG}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.ItemNameJPN))
+                query = query.Where(ph => ph.ItemNameJpn != null && EF.Functions.Like(ph.ItemNameJpn, $"%{searchParams.ItemNameJPN}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.PartName))
+                query = query.Where(ph => ph.PartName != null && EF.Functions.Like(ph.PartName, $"%{searchParams.PartName}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
+                query = query.Where(ph => ph.PartNo != null && EF.Functions.Like(ph.PartNo, $"%{searchParams.PartNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.MatColor))
+                query = query.Where(ph => ph.MatColor != null && EF.Functions.Like(ph.MatColor, $"%{searchParams.MatColor}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Material))
+                query = query.Where(ph => ph.Material != null && EF.Functions.Like(ph.Material, $"%{searchParams.Material}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.SubMaterial))
+                query = query.Where(ph => ph.SubMaterial != null && EF.Functions.Like(ph.SubMaterial, $"%{searchParams.SubMaterial}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Supplier))
+                query = query.Where(ph => ph.Supplier != null && EF.Functions.Like(ph.Supplier, $"%{searchParams.Supplier}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Width))
+                query = query.Where(ph => ph.Width != null && EF.Functions.Like(ph.Width, $"%{searchParams.Width}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
+                query = query.Where(ph => ph.HeelHeight != null && EF.Functions.Like(ph.HeelHeight, $"%{searchParams.HeelHeight}%"));
+            /*
+            // LastNo 特殊處理
+            if (!string.IsNullOrWhiteSpace(searchParams.LastNo))
+            {
+                query = query.Where(ph =>
+                    (ph.LastNo1 != null && EF.Functions.Like(ph.LastNo1, $"%{searchParams.LastNo}%")) ||
+                    (ph.LastNo2 != null && EF.Functions.Like(ph.LastNo2, $"%{searchParams.LastNo}%")) ||
+                    (ph.LastNo3 != null && EF.Functions.Like(ph.LastNo3, $"%{searchParams.LastNo}%"))
+                );
+
+                query = query.Where(ph =>
+                    (!string.IsNullOrEmpty(ph.LastNo1) && ph.LastNo1.Contains(searchParams.LastNo)) ||
+                    (!string.IsNullOrEmpty(ph.LastNo2) && ph.LastNo2.Contains(searchParams.LastNo)) ||
+                    (!string.IsNullOrEmpty(ph.LastNo3) && ph.LastNo3.Contains(searchParams.LastNo))
+                );
+            }*/
+
+            // 預設排序
+            return query.OrderBy(ph => ph.DevNo)
+                        .ThenBy(ph => ph.DevColorDispName)
+                        .ThenBy(ph => ph.Stage);
         }
 
         public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
