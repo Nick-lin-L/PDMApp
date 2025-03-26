@@ -90,19 +90,23 @@ public class AccountMaintenanceQueryHelper
         var query = from u in _pcms_Pdm_TestContext.pdm_users
                     join ur in _pcms_Pdm_TestContext.pdm_user_roles on u.user_id equals ur.user_id
                     join r in _pcms_Pdm_TestContext.pdm_roles on ur.role_id equals r.role_id
+                    join cu in _pcms_Pdm_TestContext.pdm_users on ur.created_by equals cu.pccuid 
                     where u.user_id == value.UserId
                     select new AccountDetailDto
                     {
                         UserId = u.user_id,
                         PccUid = (decimal)u.pccuid,
                         UserName = u.username,
-                        RoleId = r.role_id,    
+                        RoleId = r.role_id,
                         RoleName = r.role_name,
-                        DevFactoryNo = r.dev_factory_no
-                    };      
+                        DevFactoryNo = r.dev_factory_no,
+                        CreatedBy = cu.username, // 直接取 username
+                        CreatedAt = ur.created_at
+                    };
 
         return query;
     }
+
 
 
 }
