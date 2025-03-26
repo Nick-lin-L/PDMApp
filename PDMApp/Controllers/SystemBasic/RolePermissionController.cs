@@ -234,7 +234,9 @@ namespace PDMApp.Controllers
                             dev_factory_no = request.DevFactoryNo,
                             is_active = request.IsActive,
                             created_by = updatedBy,
-                            created_at = DateTime.UtcNow
+                            created_at = DateTime.UtcNow,
+                            updated_by = updatedBy,
+                            updated_at = DateTime.UtcNow
                         };
                         _pcms_Pdm_TestContext.pdm_roles.Add(role);
                         await _pcms_Pdm_TestContext.SaveChangesAsync();
