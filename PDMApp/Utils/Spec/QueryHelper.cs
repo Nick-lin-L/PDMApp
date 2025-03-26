@@ -156,6 +156,7 @@ namespace PDMApp.Utils
                         Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
                         ItemNameEng = ph.item_name_eng,
                         ItemNameJpn = ph.item_name_jpn,
+                        /*
                         PartName = si.parts,
                         PartNo = si.act_no,
                         MatColor = si.colors,
@@ -163,6 +164,7 @@ namespace PDMApp.Utils
                         SubMaterial = si.submaterial,
                         Supplier = si.supplier,
                         Width = si.width,
+                        */
                         ItemNo = ph.item_no,
                         DevNo = ph.dev_no,
                         DevColorDispName = pi.dev_color_disp_name,

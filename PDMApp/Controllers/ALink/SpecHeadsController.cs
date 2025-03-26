@@ -155,6 +155,7 @@ namespace PDMApp.Controllers.ALink
                     filters.Add(ph => ph.ItemNameEng.Contains(value.ItemNameENG));
                 if (!string.IsNullOrWhiteSpace(value.ItemNameJPN))
                     filters.Add(ph => ph.ItemNameJpn.Contains(value.ItemNameJPN));
+                /*
                 if (!string.IsNullOrWhiteSpace(value.PartName))
                     filters.Add(ph => ph.PartName.Contains(value.PartName));
                 if (!string.IsNullOrWhiteSpace(value.PartNo))
@@ -169,6 +170,7 @@ namespace PDMApp.Controllers.ALink
                     filters.Add(ph => ph.Supplier.Contains(value.Supplier));
                 if (!string.IsNullOrWhiteSpace(value.Width))
                     filters.Add(ph => ph.Width.Contains(value.Width));
+                */
                 if (!string.IsNullOrWhiteSpace(value.HeelHeight))
                     filters.Add(ph => ph.HeelHeight.Contains(value.HeelHeight));
 
