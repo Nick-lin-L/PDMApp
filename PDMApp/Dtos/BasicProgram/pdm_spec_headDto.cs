@@ -44,7 +44,7 @@ namespace PDMApp.Dtos.BasicProgram
         public string? PartNo { get; set; }
         public string? MatColor { get; set; }
         public string? Material { get; set; }
-        public string? Submaterial { get; set; }
+        public string? SubMaterial { get; set; }
         public string? Supplier { get; set; }
         public string? Width { get; set; }
 
