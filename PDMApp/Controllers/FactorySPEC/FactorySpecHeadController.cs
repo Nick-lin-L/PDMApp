@@ -57,7 +57,15 @@ namespace PDMApp.Controllers.FactorySPEC
                 //if (!string.IsNullOrWhiteSpace(value.SpecMId))
                 //    filters.Add(ph => ph.SpecMId == value.SpecMId);
                 if (!string.IsNullOrWhiteSpace(value.Factory))
-                    filters.Add(ph => ph.Factory == value.Factory);
+                {
+                    var factoryKeywords = value.Factory
+                        .TrimEnd(',')
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(f => f.Trim())
+                        .ToList(); // 確保轉為 List 以防止轉換問題
+
+                    query = query.Where(ph => factoryKeywords.Contains(ph.Factory));
+                }
                 if (!string.IsNullOrWhiteSpace(value.EntryMode))
                     filters.Add(ph => ph.EntryMode == value.EntryMode);
                 if (!string.IsNullOrWhiteSpace(value.Season))
@@ -65,7 +73,7 @@ namespace PDMApp.Controllers.FactorySPEC
                 if (!string.IsNullOrWhiteSpace(value.Year))
                     filters.Add(ph => ph.Year == value.Year);
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                    filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
+                    filters.Add(ph => ph.ItemNo == value.ItemNo);
                 if (!string.IsNullOrWhiteSpace(value.ColorNo))
                     filters.Add(ph => ph.ColorNo == value.ColorNo);
                 if (!string.IsNullOrWhiteSpace(value.DevNo))
