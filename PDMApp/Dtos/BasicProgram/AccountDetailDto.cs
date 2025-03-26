@@ -13,7 +13,7 @@ namespace PDMApp.Dtos.BasicProgram
         public string DevFactoryNo { get; set; }
         public string CreatedBy { get; set; }
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
-        public DateTime CreatedAt { get; set; } 
+        public DateTime? CreatedAt { get; set; } 
     }
 
     public class DevelopmentNoDto
