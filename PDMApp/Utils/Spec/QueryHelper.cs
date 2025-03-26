@@ -12,7 +12,7 @@ namespace PDMApp.Utils
 {
     public static class QueryHelper
     {
-        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext,SpecSearchParameter searchParams)
+        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecSearchParameter searchParams)
         {
             // 基礎查詢
             var query = from ph in _pcms_Pdm_TestContext.pdm_product_head
@@ -45,7 +45,7 @@ namespace PDMApp.Utils
                             ProductDId = pi.product_d_id,
                             CustomerKbn = ph.customer_kbn,
                             Mode = ph.mode_name,
-                            LastNo = string.Join(",", new[] {ph.last_no1,ph.last_no2,ph.last_no3 }.Where(ln => !string.IsNullOrEmpty(ln))),
+                            LastNo = string.Join(",", new[] { ph.last_no1, ph.last_no2, ph.last_no3 }.Where(ln => !string.IsNullOrEmpty(ln))),
                             LastNo1 = ph.last_no1,
                             LastNo2 = ph.last_no2,
                             LastNo3 = ph.last_no3,
@@ -132,7 +132,6 @@ namespace PDMApp.Utils
                         .ThenBy(ph => ph.Stage);
         }
 
-
         public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             // 使用多表 Join 查詢來組合所需欄位
@@ -156,6 +155,13 @@ namespace PDMApp.Utils
                         Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
                         ItemNameEng = ph.item_name_eng,
                         ItemNameJpn = ph.item_name_jpn,
+                        PartName = si.parts,
+                        PartNo = si.act_no,
+                        MatColor = si.colors,
+                        Material = si.material,
+                        SubMaterial = si.submaterial,
+                        Supplier = si.supplier,
+                        Width = si.width,
                         ItemNo = ph.item_no,
                         DevNo = ph.dev_no,
                         DevColorDispName = pi.dev_color_disp_name,
@@ -169,6 +175,7 @@ namespace PDMApp.Utils
                         LastNo1 = ph.last_no1,
                         LastNo2 = ph.last_no2,
                         LastNo3 = ph.last_no3,
+                        HeelHeight = sh.heelheight.ToString(),
                         pdm_Spec_ItemDtos = new List<pdm_spec_itemDto>(), // 初始化空的 Spec_ItemDtos 列表
                     });
         }

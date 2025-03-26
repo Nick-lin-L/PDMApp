@@ -157,70 +157,104 @@ namespace PDMApp.Utils.PGTSPEC
 
 
 
-        public static IQueryable<PGTSPECHeaderDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, bool latestVerOnly, PGTSPECSearchParameter value, string pccuid, string name)
+        public static async Task<(bool, string, IQueryable<PGTSPECHeaderDto>)> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, bool latestVerOnly, PGTSPECSearchParameter value, string pccuid, string name)
         {
-            var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
-                             join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                             join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
-                             join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
-                             join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
-                             where n_stage.group_key == "stage"
-                             join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
-                             where n_brand.group_key == "brand"
-                             select new
-                             {
-                                 SpecMId = sh.spec_m_id, // 加入 SpecMId
-                                 Brand = n_brand.text,
-                                 DevelopmentNo = ph.development_no,
-                                 DevelopmentColorNo = pi.development_color_no,
-                                 ColorCode = pi.color_code,
-                                 Colorway = pi.colorway,
-                                 Stage = n_stage.text,
-                                 ModelName = ph.working_name,
-                                 Ver = sh.ver,
-                                 CheckoutMk = sh.checkoutmk,
-                                 CheckoutUser = sh.checkoutuser,
-                                 SpecLockMk = sh.speclockmk,
-                                 UpdateDate = sh.update_date,
-                                 UpdateUser = sh.update_user_nm
-                             }).Distinct();
-
-            // **WHERE 過濾條件**
-            if (!string.IsNullOrWhiteSpace(value.Brand))
-                baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
-            if (!string.IsNullOrWhiteSpace(value.ModelName))
-                baseQuery = baseQuery.Where(ph => ph.ModelName == value.ModelName);
-            if (!string.IsNullOrWhiteSpace(value.Colorway))
-                baseQuery = baseQuery.Where(ph => ph.Colorway == value.Colorway);
-            if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
-                baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
-            if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
-                baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
-            if (!string.IsNullOrWhiteSpace(value.Stage))
-                baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
-
-            if (latestVerOnly)
+            try
             {
-                // **先計算最大版本**
-                var maxVerQuery = baseQuery
-                    .GroupBy(x => new { x.DevelopmentNo, x.DevelopmentColorNo, x.Stage })
-                    .Select(g => new
+                // 檢查除了 Brand 之外，是否至少有一個欄位被填寫
+                if (string.IsNullOrWhiteSpace(value.ModelName) &&
+                    string.IsNullOrWhiteSpace(value.Colorway) &&
+                    string.IsNullOrWhiteSpace(value.DevelopmentNo) &&
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) &&
+                    string.IsNullOrWhiteSpace(value.Stage))
+                {
+                    return (false, "除了 Brand 和 Ver之外，至少必須填寫一個欄位！", null);
+                }
+
+                var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
+                                 join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                                 join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
+                                 join si in _pcms_Pdm_TestContext.pcg_spec_item on sh.spec_m_id equals si.spec_m_id
+                                 join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
+                                 where n_stage.group_key == "stage"
+                                 join n_brand in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n_brand.value_desc
+                                 where n_brand.group_key == "brand"
+                                 select new
+                                 {
+                                     SpecMId = sh.spec_m_id, // 加入 SpecMId
+                                     Brand = n_brand.text,
+                                     DevelopmentNo = ph.development_no,
+                                     DevelopmentColorNo = pi.development_color_no,
+                                     ColorCode = pi.color_code,
+                                     Colorway = pi.colorway,
+                                     Stage = n_stage.text,
+                                     ModelName = ph.working_name,
+                                     Ver = sh.ver,
+                                     CheckoutMk = sh.checkoutmk,
+                                     CheckoutUser = sh.checkoutuser,
+                                     SpecLockMk = sh.speclockmk,
+                                     UpdateDate = sh.update_date,
+                                     UpdateUser = sh.update_user_nm
+                                 }).Distinct();
+
+                // **WHERE 過濾條件**
+                if (!string.IsNullOrWhiteSpace(value.Brand))
+                    baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
+                if (!string.IsNullOrWhiteSpace(value.ModelName))
+                    baseQuery = baseQuery.Where(ph => ph.ModelName == value.ModelName);
+                if (!string.IsNullOrWhiteSpace(value.Colorway))
+                    baseQuery = baseQuery.Where(ph => ph.Colorway == value.Colorway);
+                if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
+                if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
+                if (!string.IsNullOrWhiteSpace(value.Stage))
+                    baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
+
+                if (latestVerOnly)
+                {
+                    // **先計算最大版本**
+                    var maxVerQuery = baseQuery
+                        .GroupBy(x => new { x.DevelopmentNo, x.DevelopmentColorNo, x.Stage })
+                        .Select(g => new
+                        {
+                            g.Key.DevelopmentNo,
+                            g.Key.DevelopmentColorNo,
+                            g.Key.Stage,
+                            MaxVer = g.Max(x => x.Ver)
+                        });
+
+                    // **篩選最新版本**
+                    var latestQuery = from q in baseQuery
+                                      join maxVer in maxVerQuery
+                                      on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
+                                      equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
+                                      select q;
+
+                    var resultQuery = latestQuery.Select(q => new PGTSPECHeaderDto
                     {
-                        g.Key.DevelopmentNo,
-                        g.Key.DevelopmentColorNo,
-                        g.Key.Stage,
-                        MaxVer = g.Max(x => x.Ver)
+                        SpecMId = q.SpecMId,
+                        Brand = q.Brand,
+                        DevelopmentNo = q.DevelopmentNo,
+                        DevelopmentColorNo = q.DevelopmentColorNo,
+                        ColorCode = q.ColorCode,
+                        Colorway = q.Colorway,
+                        Stage = q.Stage,
+                        ModelName = q.ModelName,
+                        Ver = q.Ver,
+                        CheckoutMk = q.CheckoutMk,
+                        CheckoutUser = q.CheckoutUser,
+                        SpecLockMk = q.SpecLockMk,
+                        UpdateDate = q.UpdateDate,
+                        UpdateUser = q.UpdateUser,
+                        EditMk = (q.CheckoutUser == name && q.CheckoutMk == "Y") ? "Y" : "N"
                     });
 
-                // **篩選最新版本**
-                var latestQuery = from q in baseQuery
-                                  join maxVer in maxVerQuery
-                                  on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
-                                  equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
-                                  select q;
+                    return (true, "Query successful", resultQuery);
+                }
 
-
-                return latestQuery.Select(q => new PGTSPECHeaderDto
+                // 如果不篩選最新版本
+                var baseResultQuery = baseQuery.Select(q => new PGTSPECHeaderDto
                 {
                     SpecMId = q.SpecMId,
                     Brand = q.Brand,
@@ -238,27 +272,15 @@ namespace PDMApp.Utils.PGTSPEC
                     UpdateUser = q.UpdateUser,
                     EditMk = (q.CheckoutUser == name && q.CheckoutMk == "Y") ? "Y" : "N"
                 });
-            }
 
-            return baseQuery.Select(q => new PGTSPECHeaderDto
+                return (true, "Query successful", baseResultQuery);
+            }
+            catch (Exception ex)
             {
-                SpecMId = q.SpecMId,
-                Brand = q.Brand,
-                DevelopmentNo = q.DevelopmentNo,
-                DevelopmentColorNo = q.DevelopmentColorNo,
-                ColorCode = q.ColorCode,
-                Colorway = q.Colorway,
-                Stage = q.Stage,
-                ModelName = q.ModelName,
-                Ver = q.Ver,
-                CheckoutMk = q.CheckoutMk,
-                CheckoutUser = q.CheckoutUser,
-                SpecLockMk = q.SpecLockMk,
-                UpdateDate = q.UpdateDate,
-                UpdateUser = q.UpdateUser,
-                EditMk = (q.CheckoutUser == name && q.CheckoutMk == "Y") ? "Y" : "N"
-            });
+                return (false, $"Database error: {ex.Message}", null);
+            }
         }
+
 
         public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_pdm_testContext)
         {
