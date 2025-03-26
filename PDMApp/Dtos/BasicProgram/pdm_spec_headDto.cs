@@ -28,9 +28,6 @@ namespace PDMApp.Dtos.BasicProgram
         public string? ItemNameJpn { get; set; }
 
 
-
-
-
         public string? Cbdlockmk { get; set; }
         public string? ProductMId { get; set; }
         public string? HeelHeight { get; set; }

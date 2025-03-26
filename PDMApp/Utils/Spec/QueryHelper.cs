@@ -12,7 +12,7 @@ namespace PDMApp.Utils
 {
     public static class QueryHelper
     {
-        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecSearchParameter searchParams)
+        public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext,SpecSearchParameter searchParams)
         {
             // 基礎查詢
             var query = from ph in _pcms_Pdm_TestContext.pdm_product_head
@@ -45,7 +45,7 @@ namespace PDMApp.Utils
                             ProductDId = pi.product_d_id,
                             CustomerKbn = ph.customer_kbn,
                             Mode = ph.mode_name,
-                            LastNo = string.Join(",", new[] { ph.last_no1, ph.last_no2, ph.last_no3 }.Where(ln => !string.IsNullOrEmpty(ln))),
+                            LastNo = string.Join(",", new[] {ph.last_no1,ph.last_no2,ph.last_no3 }.Where(ln => !string.IsNullOrEmpty(ln))),
                             LastNo1 = ph.last_no1,
                             LastNo2 = ph.last_no2,
                             LastNo3 = ph.last_no3,
@@ -69,34 +69,34 @@ namespace PDMApp.Utils
                 query = query.Where(ph => ph.Season == searchParams.Season);
             if (!string.IsNullOrWhiteSpace(searchParams.Year))
                 query = query.Where(ph => ph.Year == searchParams.Year);
+            if (!string.IsNullOrWhiteSpace(searchParams.ColorNo))
+                query = query.Where(ph => ph.ColorNo == searchParams.ColorNo);
+            if (!string.IsNullOrWhiteSpace(searchParams.DevNo))
+                query = query.Where(ph => ph.DevNo == searchParams.DevNo);
             if (!string.IsNullOrWhiteSpace(searchParams.Stage))
                 query = query.Where(ph => ph.Stage == searchParams.Stage);
-            if (!string.IsNullOrWhiteSpace(searchParams.CustomerKbn))
-                query = query.Where(ph => ph.CustomerKbn == searchParams.CustomerKbn);
-            if (!string.IsNullOrWhiteSpace(searchParams.ModeName))
-                query = query.Where(ph => ph.Mode == searchParams.ModeName);
+            if (!string.IsNullOrWhiteSpace(searchParams.Width))
+                query = query.Where(ph => ph.Width == searchParams.Width);
+            if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
+                query = query.Where(ph => ph.HeelHeight == searchParams.HeelHeight);
 
             // 模糊匹配條件
             if (!string.IsNullOrWhiteSpace(searchParams.ItemNo))
                 query = query.Where(ph => ph.ItemNo != null && EF.Functions.Like(ph.ItemNo, $"%{searchParams.ItemNo}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.ColorNo))
-                query = query.Where(ph => ph.ColorNo != null && EF.Functions.Like(ph.ColorNo, $"%{searchParams.ColorNo}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.DevNo))
-                query = query.Where(ph => ph.DevNo != null && EF.Functions.Like(ph.DevNo, $"%{searchParams.DevNo}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.Devcolorno))
                 query = query.Where(ph => ph.DevColorDispName != null && EF.Functions.Like(ph.DevColorDispName, $"%{searchParams.Devcolorno}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.CustomerKbn))
+                query = query.Where(ph => ph.CustomerKbn != null && EF.Functions.Like(ph.CustomerKbn, $"%{searchParams.CustomerKbn}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.ModeName))
+                query = query.Where(ph => ph.Mode != null && EF.Functions.Like(ph.Mode, $"%{searchParams.ModeName}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.OutMoldNo))
                 query = query.Where(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{searchParams.OutMoldNo}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.LastNo))
-                query = query.Where(ph => ph.LastNo != null && EF.Functions.Like(ph.LastNo, $"%{searchParams.LastNo}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.ItemNameENG))
                 query = query.Where(ph => ph.ItemNameEng != null && EF.Functions.Like(ph.ItemNameEng, $"%{searchParams.ItemNameENG}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.ItemNameJPN))
                 query = query.Where(ph => ph.ItemNameJpn != null && EF.Functions.Like(ph.ItemNameJpn, $"%{searchParams.ItemNameJPN}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.PartName))
-                query = query.Where(ph => ph.PartName != null && EF.Functions.Like(ph.PartName, $"%{searchParams.PartName}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
-                query = query.Where(ph => ph.PartNo != null && EF.Functions.Like(ph.PartNo, $"%{searchParams.PartNo}%"));
+                query = query.Where(ph => ph.PartNo != null && EF.Functions.Like(ph.PartNo, $"%{searchParams.PartName}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.MatColor))
                 query = query.Where(ph => ph.MatColor != null && EF.Functions.Like(ph.MatColor, $"%{searchParams.MatColor}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.Material))
@@ -105,32 +105,29 @@ namespace PDMApp.Utils
                 query = query.Where(ph => ph.SubMaterial != null && EF.Functions.Like(ph.SubMaterial, $"%{searchParams.SubMaterial}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.Supplier))
                 query = query.Where(ph => ph.Supplier != null && EF.Functions.Like(ph.Supplier, $"%{searchParams.Supplier}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.Width))
-                query = query.Where(ph => ph.Width != null && EF.Functions.Like(ph.Width, $"%{searchParams.Width}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
-                query = query.Where(ph => ph.HeelHeight != null && EF.Functions.Like(ph.HeelHeight, $"%{searchParams.HeelHeight}%"));
-            /*
+
             // LastNo 特殊處理
             if (!string.IsNullOrWhiteSpace(searchParams.LastNo))
-            {
+            {/*
                 query = query.Where(ph =>
                     (ph.LastNo1 != null && EF.Functions.Like(ph.LastNo1, $"%{searchParams.LastNo}%")) ||
                     (ph.LastNo2 != null && EF.Functions.Like(ph.LastNo2, $"%{searchParams.LastNo}%")) ||
                     (ph.LastNo3 != null && EF.Functions.Like(ph.LastNo3, $"%{searchParams.LastNo}%"))
-                );
+                );*/
 
                 query = query.Where(ph =>
                     (!string.IsNullOrEmpty(ph.LastNo1) && ph.LastNo1.Contains(searchParams.LastNo)) ||
                     (!string.IsNullOrEmpty(ph.LastNo2) && ph.LastNo2.Contains(searchParams.LastNo)) ||
                     (!string.IsNullOrEmpty(ph.LastNo3) && ph.LastNo3.Contains(searchParams.LastNo))
                 );
-            }*/
+            }
 
             // 預設排序
             return query.OrderBy(ph => ph.DevNo)
                         .ThenBy(ph => ph.DevColorDispName)
                         .ThenBy(ph => ph.Stage);
         }
+
 
         public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {

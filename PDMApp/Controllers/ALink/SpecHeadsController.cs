@@ -107,17 +107,6 @@ namespace PDMApp.Controllers.ALink
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
                 // 動態篩選條件
                 var filters = new List<Expression<Func<pdm_spec_headDto, bool>>>();
-                // 定義精確匹配的屬性
-                var exactMatchProperties = new Dictionary<string, Expression<Func<pdm_spec_headDto, string>>>
-                {
-                    { value.Factory, ph => ph.Factory },
-                    { value.EntryMode, ph => ph.EntryMode },
-                    { value.Season, ph => ph.Season },
-                    { value.Year, ph => ph.Year },
-                    { value.Stage, ph => ph.Stage },
-                    { value.CustomerKbn, ph => ph.CustomerKbn },
-                    { value.ModeName, ph => ph.Mode }
-                };
 
                 if (!string.IsNullOrWhiteSpace(value.SpecMId))
                     filters.Add(ph => ph.SpecMId == value.SpecMId);
@@ -132,56 +121,22 @@ namespace PDMApp.Controllers.ALink
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
                     filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
                 if (!string.IsNullOrWhiteSpace(value.ColorNo))
-                    filters.Add(ph => ph.ColorNo.Contains(value.ColorNo));
+                    filters.Add(ph => ph.ColorNo == value.ColorNo);
                 if (!string.IsNullOrWhiteSpace(value.DevNo))
-                    filters.Add(ph => ph.DevNo.Contains(value.DevNo));
+                    filters.Add(ph => ph.DevNo == value.DevNo);
                 if (!string.IsNullOrWhiteSpace(value.Devcolorno))
                     filters.Add(ph => ph.DevColorDispName.Contains(value.Devcolorno));
                 if (!string.IsNullOrWhiteSpace(value.Stage))
-                    filters.Add(ph => ph.Stage == value.Stage);
+                    filters.Add(ph => ph.Stage.Equals(value.Stage));
                 if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
-                    filters.Add(ph => ph.CustomerKbn == value.CustomerKbn);
+                    filters.Add(ph => ph.CustomerKbn.Contains(value.CustomerKbn));
                 if (!string.IsNullOrWhiteSpace(value.ModeName))
-                    filters.Add(ph => ph.Mode == value.ModeName);
+                    filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
-                if (!string.IsNullOrWhiteSpace(value.LastNo))
-                    filters.Add(ph => ph.LastNo1.Contains(value.LastNo) || ph.LastNo2.Contains(value.LastNo) || ph.LastNo3.Contains(value.LastNo));
-                if (!string.IsNullOrWhiteSpace(value.ItemNameENG))
-                    filters.Add(ph => ph.ItemNameEng.Contains(value.ItemNameENG));
-                if (!string.IsNullOrWhiteSpace(value.ItemNameJPN))
-                    filters.Add(ph => ph.ItemNameJpn.Contains(value.ItemNameJPN));
-                if (!string.IsNullOrWhiteSpace(value.PartName))
-                    filters.Add(ph => ph.PartName.Contains(value.PartName));
-                if (!string.IsNullOrWhiteSpace(value.PartNo))
-                    filters.Add(ph => ph.PartNo.Contains(value.PartNo));
-                if (!string.IsNullOrWhiteSpace(value.MatColor))
-                    filters.Add(ph => ph.MatColor.Contains(value.MatColor));
-                if (!string.IsNullOrWhiteSpace(value.Material))
-                    filters.Add(ph => ph.Material.Contains(value.Material));
-                if (!string.IsNullOrWhiteSpace(value.SubMaterial))
-                    filters.Add(ph => ph.SubMaterial.Contains(value.SubMaterial));
-                if (!string.IsNullOrWhiteSpace(value.Supplier))
-                    filters.Add(ph => ph.Supplier.Contains(value.Supplier));
-                if (!string.IsNullOrWhiteSpace(value.Width))
-                    filters.Add(ph => ph.Width.Contains(value.Width));
-                if (!string.IsNullOrWhiteSpace(value.HeelHeight))
-                    filters.Add(ph => ph.HeelHeight.Contains(value.HeelHeight));
+                //filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(ph.OutMoldNo, $"%{value.OutMoldNo}%"));
+                
 
-
-                // 處理模糊匹配
-                foreach (var prop in containsMatchProperties)
-                {
-                    if (!string.IsNullOrWhiteSpace(prop.Key))
-                    {
-                        var valueContians = prop.Key;
-                        var selector = prop.Value;
-                        filters.Add(ph => ph.OutMoldNo != null && EF.Functions.Like(
-                            Expression.Invoke(selector, Expression.Parameter(typeof(pdm_spec_headDto), "ph")).ToString(),
-                            $"%{value}%"
-                        ));
-                    }
-                }
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
                 {
