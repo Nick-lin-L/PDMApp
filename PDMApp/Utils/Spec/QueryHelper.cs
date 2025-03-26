@@ -44,12 +44,12 @@ namespace PDMApp.Utils
                             ProductMId = ph.product_m_id,
                             ProductDId = pi.product_d_id,
                             CustomerKbn = ph.customer_kbn,
-                            Mode = ph.mode_name
-                            /*
+                            Mode = ph.mode_name,
                             LastNo1 = ph.last_no1,
                             LastNo2 = ph.last_no2,
                             LastNo3 = ph.last_no3,
-                            HeelHeight = sh.heelheight.ToString(),
+                            HeelHeight = sh.heelheight.ToString()
+                            /*
                             Material = si.material,
                             SubMaterial = si.submaterial,
                             Supplier = si.supplier,
@@ -109,6 +109,7 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.ItemNameEng ?? "", $"%{searchParams.ItemNameENG}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.ItemNameJPN))
                 query = query.Where(ph => EF.Functions.Like(ph.ItemNameJpn ?? "", $"%{searchParams.ItemNameJPN}%"));
+            /*
             if (!string.IsNullOrWhiteSpace(searchParams.PartName))
                 query = query.Where(ph => EF.Functions.Like(ph.PartName ?? "", $"%{searchParams.PartName}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
@@ -123,9 +124,9 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.Supplier ?? "", $"%{searchParams.Supplier}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.Width))
                 query = query.Where(ph => EF.Functions.Like(ph.Width ?? "", $"%{searchParams.Width}%"));
+            */
             if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
                 query = query.Where(ph => EF.Functions.Like(ph.HeelHeight ?? "", $"%{searchParams.HeelHeight}%"));
-
             // 預設排序
             return query.OrderBy(ph => ph.DevNo)
                         .ThenBy(ph => ph.DevColorDispName)
