@@ -33,6 +33,9 @@ namespace PDMApp.Utils
                             OutMoldNo = ph.out_mold_no,
                             Shfactory = sh.factory,
                             Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
+                            Factory1 = ph.factory1,
+                            Factory2 = ph.factory2,
+                            Factory3 = ph.factory3,
                             ItemNameEng = ph.item_name_eng,
                             ItemNameJpn = ph.item_name_jpn,
                             ItemNo = ph.item_no,
@@ -64,7 +67,14 @@ namespace PDMApp.Utils
             if (!string.IsNullOrWhiteSpace(searchParams.SpecMId))
                 query = query.Where(ph => ph.SpecMId == searchParams.SpecMId);
             if (!string.IsNullOrWhiteSpace(searchParams.Factory))
-                query = query.Where(ph => ph.Factory == searchParams.Factory);
+            {
+                string inputFactory = searchParams.Factory.Trim();
+                query = query.Where(ph =>
+                    ph.Factory1 == inputFactory ||
+                    ph.Factory2 == inputFactory ||
+                    ph.Factory3 == inputFactory
+                );
+            }
             if (!string.IsNullOrWhiteSpace(searchParams.EntryMode))
                 query = query.Where(ph => ph.EntryMode == searchParams.EntryMode);
             if (!string.IsNullOrWhiteSpace(searchParams.Season))
