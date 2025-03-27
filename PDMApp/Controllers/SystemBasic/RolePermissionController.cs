@@ -217,11 +217,25 @@ namespace PDMApp.Controllers
                     if (role == null)
                     {
                         // 驗證必要欄位
-                        if (string.IsNullOrWhiteSpace(request.RoleName) || string.IsNullOrWhiteSpace(request.DevFactoryNo))
+                        if (string.IsNullOrWhiteSpace(request.RoleName) || string.IsNullOrWhiteSpace(request.Description) || string.IsNullOrWhiteSpace(request.DevFactoryNo))
                         {
                             return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
                                 errorCode: "40001",
-                                message: "角色名稱和廠別代號不能為空。",
+                                message: "RoleName,Description,DevFactoryNo must not be empty.",
+                                data: null
+                            );
+                        }
+
+                        // 檢查相同廠別下是否已存在相同角色名稱
+                        var existingRole = await _pcms_Pdm_TestContext.pdm_roles
+                            .FirstOrDefaultAsync(r => r.role_name == request.RoleName &&
+                                                     r.dev_factory_no == request.DevFactoryNo);
+
+                        if (existingRole != null)
+                        {
+                            return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                errorCode: "40002",
+                                message: $"角色名稱 '{request.RoleName}' 在廠別 '{request.DevFactoryNo}' 已存在。",
                                 data: null
                             );
                         }
@@ -243,6 +257,24 @@ namespace PDMApp.Controllers
                     }
                     else
                     {
+                        // 更新角色時檢查重複名稱（排除自己）
+                        if (request.RoleName != role.role_name)
+                        {
+                            var existingRole = await _pcms_Pdm_TestContext.pdm_roles
+                                .FirstOrDefaultAsync(r => r.role_name == request.RoleName &&
+                                                         r.dev_factory_no == request.DevFactoryNo &&
+                                                         r.role_id != role.role_id);
+
+                            if (existingRole != null)
+                            {
+                                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                                    errorCode: "40002",
+                                    message: $"角色名稱 '{request.RoleName}' 在廠別 '{request.DevFactoryNo}' 已存在。",
+                                    data: null
+                                );
+                            }
+                        }
+
                         // 更新角色
                         role.role_name = request.RoleName ?? role.role_name;
                         role.description = request.Description ?? role.description;
