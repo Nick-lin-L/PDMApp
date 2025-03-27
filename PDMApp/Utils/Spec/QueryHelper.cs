@@ -32,7 +32,7 @@ namespace PDMApp.Utils
                             MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
                             OutMoldNo = ph.out_mold_no,
                             Shfactory = sh.factory,
-                            Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
+                            //Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
                             Factory1 = ph.factory1,
                             Factory2 = ph.factory2,
                             Factory3 = ph.factory3,
