@@ -109,7 +109,6 @@ namespace PDMApp.Controllers
         }
 
         // POST api/accountmaintenance/CreateUserRole
-        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CreateUserRole")]
         public async Task<ActionResult<APIStatusResponse<object>>> CreateUserRole([FromBody] CreateUserRoleParameter userRoleParam)
         {
@@ -128,9 +127,6 @@ namespace PDMApp.Controllers
 
             try
             {
-                // 取得當前登入者資訊
-                var currentUser = CurrentUserUtils.Get(HttpContext);
-                var pccuid = currentUser.Pccuid;  // 從 currentUser 取得 pccuid
 
                 // 先檢查是否已經存在相同的 user_id 和 role_id
                 bool isExist = await _pcms_Pdm_TestContext.pdm_user_roles
@@ -149,9 +145,7 @@ namespace PDMApp.Controllers
                 var newUserRole = new pdm_user_roles
                 {
                     user_id = userRoleParam.UserId,
-                    role_id = userRoleParam.RoleId,
-                    created_by = pccuid,  // 操作人 ID
-                    created_at = DateTime.UtcNow
+                    role_id = userRoleParam.RoleId
                 };
 
                 _pcms_Pdm_TestContext.pdm_user_roles.Add(newUserRole);
