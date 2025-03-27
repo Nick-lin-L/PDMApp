@@ -46,12 +46,10 @@ namespace PDMApp.Controllers.ALink
 
         // POST api/<SpecHeadsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
-        [HttpPost("post2")]
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post2([FromBody] SpecSearchParameter value)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try
             {
-                // 加入輸入驗證
                 if (!ValidateSearchParams(value))
                 {
                     return Ok(new APIStatusResponse<object>
@@ -61,40 +59,34 @@ namespace PDMApp.Controllers.ALink
                     });
                 }
 
-                // permissions 查詢
-                var result = QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value);
-                var pagedResult = await result.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+                // Step 1：查詢 + 分頁（EF 查 DB）
+                var pagedResult = await QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value)
+                                                   .Distinct()
+                                                   .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+
+                // Step 2：在記憶體中組合 Factory 字串
+                foreach (var item in pagedResult.Results)
+                {
+                    item.Factory = string.Join(",", new[] { item.Factory1, item.Factory2, item.Factory3 }
+                                                .Where(f => !string.IsNullOrWhiteSpace(f)));
+                }
 
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
             catch (Exception ex)
             {
-                /*
-                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
-                    errorCode: "10001",
-                    message: $"查詢過程中發生錯誤: {ex.Message}",
-                    data: null
-                )); 不確認型別的寫法，也可以但可能轉型會出現CS0029
-                return APIResponseHelper.HandleApiError<IDictionary<string, object>>(
+                return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
                     errorCode: "50001",
                     message: $"權限查詢過程中發生錯誤: {ex.Message}",
                     data: null
-                );*/
-                return StatusCode(500, new
-                {
-                    ErrorCode = "Server_ERROR",
-                    Message = "ServerError",
-                    Details = ex.Message,
-                    ex.StackTrace,
-                    InnerException = ex.InnerException?.Message
-                });
+                );
             }
         }
 
         // POST api/<SpecHeadsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
-        [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
+        [HttpPost("post2")]
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post2([FromBody] SpecSearchParameter value)
         {
             // 使用反射來檢查所有字串屬性
             var searchProperties = typeof(SpecSearchParameter)
