@@ -21,6 +21,7 @@ using PDMApp.Models;
 using PDMApp.Service;
 using Microsoft.AspNetCore.Authorization;
 using PDMApp.Utils;
+using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Controllers
 {
@@ -64,78 +65,71 @@ namespace PDMApp.Controllers
 
 
         /// <summary>
-        /// 取得目前登入的用戶資訊 (含Token) 
+        /// 取得用戶詳細資訊
         /// </summary>
-        [Authorize]
-        [HttpGet("me")]
-        public async Task<IActionResult> GetUserInfo()
-        {
-            // 驗證使用者是否已登入
-            if (!User.Identity.IsAuthenticated)
-            {
-                return Unauthorized(new { error = "User not authenticated" });
-            }
-
-            // 從 Claim 中取出使用者唯一識別 pccuid
-            var pccuidClaim = User.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
-            if (string.IsNullOrEmpty(pccuidClaim))
-            {
-                return BadRequest(new { error = "User identifier (pccuid) not found" });
-            }
-
-            if (!decimal.TryParse(pccuidClaim, out decimal pccuid))
-            {
-                return BadRequest(new { error = "Invalid pccuid format" });
-            }
-
-            // 利用 Repository 查詢 DB 中的使用者資料
-            var user = await _pdmUsersRepository.GetByPccuid(pccuid);
-            if (user == null)
-            {
-                return NotFound(new { error = "User not found in database" });
-            }
-
-            // 選擇性：建立一個 DTO 來過濾不必要或敏感的欄位
-            var userDto = new
-            {
-                Pccuid = user.pccuid,
-                //Username = user.username,
-                LocalName = user.username + "(" + user.sso_acct + ")",
-            };
-
-            return Ok(new { data = userDto });
-        }
-
-        //[Authorize]
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-        [HttpGet("me-info")]
-        public async Task<IActionResult> GetUserInfo2()
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserProfile()
         {
             try
             {
-                // 取得 PDMToken（後端自訂 Token）與 access_token（SSO）
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                if (currentUser?.UserId == null)
+                {
+                    return APIResponseHelper.HandleApiError<object>("401", "未登入或Token無效").Result;
+                }
+
+                // 從資料庫獲取完整用戶資訊
+                var user = await _pdmUsersRepository.GetByPccuid(currentUser.Pccuid);
+                if (user == null)
+                {
+                    return APIResponseHelper.HandleApiError<object>("404", "找不到用戶資料").Result;
+                }
+
+                var userProfile = new
+                {
+                    UserId = user.user_id,
+                    Pccuid = user.pccuid,
+                    Username = user.username,
+                    LocalName = user.local_name,
+                    Email = user.email,
+                    LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
+                    IsActive = true // 如果能夠取得資料，代表用戶是活躍的
+                };
+
+                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userProfile).Result;
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>("500", $"取得用戶資料時發生錯誤：{ex.Message}").Result;
+            }
+        }
+
+        /// <summary>
+        /// 檢查用戶登入狀態
+        /// </summary>
+        [HttpGet("status")]
+        public async Task<IActionResult> CheckAuthStatus()
+        {
+            try
+            {
                 var pdmToken = HttpContext.Request.Cookies["PDMToken"];
                 var accessToken = await HttpContext.GetTokenAsync("access_token");
 
-                // 確認至少有一個 Token 存在
+                // 如果兩個 token 都不存在
                 if (string.IsNullOrEmpty(pdmToken) && string.IsNullOrEmpty(accessToken))
                 {
-                    return APIResponseHelper.HandleApiError<object>("401", "未找到登入令牌，請登入").Result;
+                    return APIResponseHelper.HandleApiError<object>("401", "未登入").Result;
                 }
 
-                // 驗證 PDMToken（JWT），給預設值
-                bool isPdmTokenValid = false;
-                string pccuid = null;
-                string email = null;
-
+                // 驗證 PDMToken
                 if (!string.IsNullOrEmpty(pdmToken))
                 {
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var key = Encoding.UTF8.GetBytes(_jwtSecret);
-
                     try
                     {
-                        // 解析並驗證 JWT Token
+                        var tokenHandler = new JwtSecurityTokenHandler();
+                        var key = Encoding.UTF8.GetBytes(_jwtSecret);
+                        
                         tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
                         {
                             ValidateIssuer = true,
@@ -148,63 +142,59 @@ namespace PDMApp.Controllers
                         }, out SecurityToken validatedToken);
 
                         var jwtToken = (JwtSecurityToken)validatedToken;
-                        pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
-                        email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
+                        
+                        // 返回基本身份資訊
+                        var authInfo = new
+                        {
+                            IsAuthenticated = true,
+                            TokenType = "PDM",
+                            Pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
+                            Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value,
+                            ExpiresAt = validatedToken.ValidTo.ToLocalTime()
+                        };
 
-                        isPdmTokenValid = true;
+                        return APIResponseHelper.GenerateApiResponse("OK", "已登入", authInfo).Result;
                     }
                     catch (SecurityTokenExpiredException)
                     {
-                        return APIResponseHelper.HandleApiError<object>("10002", "PDMToken 已過期").Result;
+                        return APIResponseHelper.HandleApiError<object>("401", "登入已過期").Result;
                     }
-                    catch (SecurityTokenValidationException)
+                    catch (Exception)
                     {
-                        return APIResponseHelper.HandleApiError<object>("401", "PDMToken 驗證失敗").Result;
+                        // PDMToken 無效，繼續檢查 SSO Token
                     }
                 }
 
-                // 如果 PDMToken 不存在或無效，則嘗試驗證 SSO (access_token)
-                bool isAccessTokenValid = false;
-                if (!isPdmTokenValid && !string.IsNullOrEmpty(accessToken))
+                // 檢查 SSO Token
+                if (!string.IsNullOrEmpty(accessToken))
                 {
                     using var httpClient = new HttpClient();
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                     var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
                     var response = await httpClient.GetAsync(userInfoEndpoint);
-                    var responseBody = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var userInfo = JsonSerializer.Deserialize<UserInfo>(responseBody);
-                        pccuid = userInfo.pccuid;
-                        email = userInfo.email;
-                        isAccessTokenValid = true;
-                    }
-                    else
-                    {
-                        return APIResponseHelper.HandleApiError<object>("401", "無法驗證 IAM 身分").Result;
+                        var userInfo = JsonSerializer.Deserialize<UserInfo>(await response.Content.ReadAsStringAsync());
+                        var authInfo = new
+                        {
+                            IsAuthenticated = true,
+                            TokenType = "SSO",
+                            Pccuid = userInfo.pccuid,
+                            Email = userInfo.email
+                        };
+
+                        return APIResponseHelper.GenerateApiResponse("OK", "已登入(SSO)", authInfo).Result;
                     }
                 }
 
-                // 如果至少一個 Token 有效，回傳成功
-                if (isPdmTokenValid || isAccessTokenValid)
-                {
-                    var userInfoResponse = new
-                    {
-                        Pccuid = pccuid,
-                        Email = email,
-                        Status = "authenticated"
-                    };
-                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", "").Result;
-                }
+                return APIResponseHelper.HandleApiError<object>("401", "登入狀態無效").Result;
             }
             catch (Exception ex)
             {
-                return APIResponseHelper.HandleApiError<object>("500", "server error：" + ex.Message).Result;
+                return APIResponseHelper.HandleApiError<object>("500", $"檢查登入狀態時發生錯誤：{ex.Message}").Result;
             }
-
-            return APIResponseHelper.HandleApiError<object>("401", "請登入").Result;
         }
         /*
         [Authorize]
