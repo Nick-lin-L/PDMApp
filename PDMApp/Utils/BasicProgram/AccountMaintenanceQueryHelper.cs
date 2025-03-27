@@ -96,13 +96,16 @@ public class AccountMaintenanceQueryHelper
                         UserId = u.user_id,
                         PccUid = (decimal)u.pccuid,
                         UserName = u.username,
-                        RoleId = r.role_id,    
+                        RoleId = r.role_id,
                         RoleName = r.role_name,
-                        DevFactoryNo = r.dev_factory_no
-                    };      
+                        DevFactoryNo = r.dev_factory_no,
+                        CreatedBy = u.username, // 直接取 username
+                        CreatedAt = ur.created_at
+                    };
 
         return query;
     }
+
 
 
 }

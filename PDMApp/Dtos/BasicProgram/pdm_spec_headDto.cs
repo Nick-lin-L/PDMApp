@@ -38,6 +38,9 @@ namespace PDMApp.Dtos.BasicProgram
         public string? LastNo1 { get; set; }
         public string? LastNo2 { get; set; }
         public string? LastNo3 { get; set; }
+        public string? Factory1 { get; set; }
+        public string? Factory2 { get; set; }
+        public string? Factory3 { get; set; }
         public string? PartName { get; set; }
         public string? PartNo { get; set; }
         public string? MatColor { get; set; }

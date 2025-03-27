@@ -67,7 +67,14 @@ namespace PDMApp.Utils
             if (!string.IsNullOrWhiteSpace(searchParams.SpecMId))
                 query = query.Where(ph => ph.SpecMId == searchParams.SpecMId);
             if (!string.IsNullOrWhiteSpace(searchParams.Factory))
-                query = query.Where(ph => ph.Factory == searchParams.Factory);
+            {
+                string inputFactory = searchParams.Factory.Trim();
+                query = query.Where(ph =>
+                    ph.Factory1 == inputFactory ||
+                    ph.Factory2 == inputFactory ||
+                    ph.Factory3 == inputFactory
+                );
+            }
             if (!string.IsNullOrWhiteSpace(searchParams.EntryMode))
                 query = query.Where(ph => ph.EntryMode == searchParams.EntryMode);
             if (!string.IsNullOrWhiteSpace(searchParams.Season))
@@ -135,6 +142,7 @@ namespace PDMApp.Utils
                         .ThenBy(ph => ph.DevColorDispName)
                         .ThenBy(ph => ph.Stage);
         }
+
 
         public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {

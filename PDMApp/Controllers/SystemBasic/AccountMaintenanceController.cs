@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.Basic;
 using PDMApp.Utils;
+using PDMApp.Utils.BasicProgram;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,6 +109,7 @@ namespace PDMApp.Controllers
         }
 
         // POST api/accountmaintenance/CreateUserRole
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CreateUserRole")]
         public async Task<ActionResult<APIStatusResponse<object>>> CreateUserRole([FromBody] CreateUserRoleParameter userRoleParam)
         {
@@ -125,6 +128,10 @@ namespace PDMApp.Controllers
 
             try
             {
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid;  // 從 currentUser 取得 pccuid
+
                 // 先檢查是否已經存在相同的 user_id 和 role_id
                 bool isExist = await _pcms_Pdm_TestContext.pdm_user_roles
                     .AnyAsync(ur => ur.user_id == userRoleParam.UserId && ur.role_id == userRoleParam.RoleId);
@@ -143,7 +150,7 @@ namespace PDMApp.Controllers
                 {
                     user_id = userRoleParam.UserId,
                     role_id = userRoleParam.RoleId,
-                    created_by = null,  // 操作人 ID
+                    created_by = pccuid,  // 操作人 ID
                     created_at = DateTime.UtcNow
                 };
 

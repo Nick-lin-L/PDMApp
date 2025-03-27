@@ -128,17 +128,17 @@ namespace PDMApp.Controllers.ALink
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
                     filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
                 if (!string.IsNullOrWhiteSpace(value.ColorNo))
-                    filters.Add(ph => ph.ColorNo.Contains(value.ColorNo));
+                    filters.Add(ph => ph.ColorNo == value.ColorNo);
                 if (!string.IsNullOrWhiteSpace(value.DevNo))
-                    filters.Add(ph => ph.DevNo.Contains(value.DevNo));
+                    filters.Add(ph => ph.DevNo == value.DevNo);
                 if (!string.IsNullOrWhiteSpace(value.Devcolorno))
                     filters.Add(ph => ph.DevColorDispName.Contains(value.Devcolorno));
                 if (!string.IsNullOrWhiteSpace(value.Stage))
-                    filters.Add(ph => ph.Stage == value.Stage);
+                    filters.Add(ph => ph.Stage.Equals(value.Stage));
                 if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
-                    filters.Add(ph => ph.CustomerKbn == value.CustomerKbn);
+                    filters.Add(ph => ph.CustomerKbn.Contains(value.CustomerKbn));
                 if (!string.IsNullOrWhiteSpace(value.ModeName))
-                    filters.Add(ph => ph.Mode == value.ModeName);
+                    filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
                 if (!string.IsNullOrWhiteSpace(value.LastNo))
