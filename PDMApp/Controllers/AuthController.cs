@@ -90,7 +90,6 @@ namespace PDMApp.Controllers
 
                 var userProfile = new
                 {
-                    UserId = user.user_id,
                     Pccuid = user.pccuid,
                     LocalName = user.local_name,
                     //LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
