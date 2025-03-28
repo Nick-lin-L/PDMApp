@@ -148,9 +148,9 @@ namespace PDMApp.Controllers
                         var authInfo = new
                         {
                             IsAuthenticated = true,
-                            TokenType = "PDM",
-                            Pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
-                            Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value,
+                            //TokenType = "PDM",
+                            //Pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
+                            //Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value,
                             ExpiresAt = validatedToken.ValidTo.ToLocalTime(),
                             RemainingMinutes = Math.Round(remainingMinutes, 0),
                             WillExpireSoon = remainingMinutes <= 10
