@@ -59,7 +59,7 @@ namespace PDMApp
             services.AddMiniProfiler(options =>
             {
                 options.RouteBasePath = "/profiler";
-                options.EnableDebugMode = true; // 显示完整 SQL 参数
+                options.EnableDebugMode = true; // ?示完整 SQL ??
                 options.TrackConnectionOpenClose = false;
                 options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
                 // options.Storage = new oidcDemo.Model.PostgreSqlStorage(connectionString, "miniprofiler", "miniprofiler_timings", "miniprofiler_client_timings");
@@ -109,6 +109,14 @@ namespace PDMApp
             });
             //services.AddAuthorization(); // 啟用授權
             services.AddControllersWithViews();
+            // 添加記憶體快取
+            services.AddMemoryCache();
+            // 添加 HttpClient 工廠
+            services.AddHttpClient("SSOValidation", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+                // 可以在這裡配置其他 HttpClient 的預設值
+            });
             /*
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 

@@ -22,6 +22,8 @@ using PDMApp.Service;
 using Microsoft.AspNetCore.Authorization;
 using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Http;
 
 namespace PDMApp.Controllers
 {
@@ -32,11 +34,15 @@ namespace PDMApp.Controllers
         private readonly OAuthConfig _config;
         private readonly string _jwtSecret;
         private readonly PdmUsersRepository _pdmUsersRepository;
-        public AuthController(IOptions<OAuthConfig> config, IConfiguration configuration, PdmUsersRepository pdmUsersRepository)
+        private readonly IMemoryCache _cache;
+        private readonly IHttpClientFactory _httpClientFactory;
+        public AuthController(IOptions<OAuthConfig> config, IConfiguration configuration, PdmUsersRepository pdmUsersRepository, IMemoryCache cache, IHttpClientFactory httpClientFactory)
         {
             _config = config.Value;
             _jwtSecret = configuration["Authentication:PCG:ClientSecret"];
             _pdmUsersRepository = pdmUsersRepository; // 初始化 Repository
+            _cache = cache;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -54,13 +60,6 @@ namespace PDMApp.Controllers
             };
             // 傳回登入 URL，供前端重定向
             return Challenge(authProperties, OpenIdConnectDefaults.AuthenticationScheme);
-            /*/
-            var redirectUri = Url.Action("Callback", "Auth", null, Request.Scheme);
-            var loginUrl = $"{_config.Authority}/protocol/openid-connect/auth?client_id={_config.ClientId}&redirect_uri={redirectUri}&response_type=code&scope=openid profile email";
-
-            return Ok(new { loginUrl });
-            //*/
-
         }
 
 
@@ -88,12 +87,9 @@ namespace PDMApp.Controllers
 
                 var userProfile = new
                 {
-                    UserId = user.user_id,
                     Pccuid = user.pccuid,
-                    Username = user.username,
                     LocalName = user.local_name,
-                    Email = user.email,
-                    LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
+                    //LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
                     IsActive = true // 如果能夠取得資料，代表用戶是活躍的
                 };
 
@@ -114,170 +110,77 @@ namespace PDMApp.Controllers
             try
             {
                 var pdmToken = HttpContext.Request.Cookies["PDMToken"];
-                var accessToken = await HttpContext.GetTokenAsync("access_token");
+                var accessTokenTask = HttpContext.GetTokenAsync("access_token");
+                var accessToken = await accessTokenTask;  // 修正：等待 Task 完成並獲取結果
 
-                // 如果兩個 token 都不存在
                 if (string.IsNullOrEmpty(pdmToken) && string.IsNullOrEmpty(accessToken))
                 {
-                    return APIResponseHelper.HandleApiError<object>("401", "未登入").Result;
+                    return APIResponseHelper.HandleApiError<object>(
+                        ((int)AuthenticationStatus.NotAuthenticated).ToString(),
+                        "未登入").Result;
                 }
 
-                // 驗證 PDMToken
+                // 如果有 PDM Token，先驗證它
                 if (!string.IsNullOrEmpty(pdmToken))
                 {
-                    try
+                    var validationTask = ValidateTokenWithCache(pdmToken);
+
+                    var (isValid, token, _) = await validationTask;
+
+                    if (!isValid || token == null)
                     {
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var key = Encoding.UTF8.GetBytes(_jwtSecret);
-                        
-                        tokenHandler.ValidateToken(pdmToken, new TokenValidationParameters
+                        return APIResponseHelper.HandleApiError<object>(
+                            ((int)AuthenticationStatus.NotAuthenticated).ToString(),
+                            "未登入").Result;
+                    }
+
+                    var remainingTime = token.ValidTo - DateTime.UtcNow;
+                    /*
+                    // 檢查 Token 是否即將過期（例如：剩餘 10 分鐘以內）
+                    if (remainingTime.TotalMinutes <= 10)
+                    {
+                        return APIResponseHelper.GenerateApiResponse(
+                            ((int)AuthenticationStatus.TokenNearExpiry).ToString(),  // 保持警告狀態使用數字
+                            "Token 即將過期，請更新",
+                            new
+                            {
+                                RemainingMinutes = Math.Round(remainingTime.TotalMinutes, 0),
+                                ExpiresAt = token.ValidTo.ToLocalTime()
+                            }).Result;
+                    }*/
+
+                    // Token 有效
+                    return APIResponseHelper.GenerateApiResponse(
+                        "OK",  // 使用 "OK" 而不是數字
+                        "已登入",
+                        new
                         {
-                            ValidateIssuer = true,
-                            ValidateAudience = true,
-                            ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(key),
-                            ClockSkew = TimeSpan.Zero,
-                            ValidIssuer = "PDMAppissu",
-                            ValidAudience = "testclient"
-                        }, out SecurityToken validatedToken);
-
-                        var jwtToken = (JwtSecurityToken)validatedToken;
-
-                        var remainingMinutes = (validatedToken.ValidTo - DateTime.UtcNow).TotalMinutes;
-                        // 返回基本身份資訊
-                        var authInfo = new
-                        {
-                            IsAuthenticated = true,
-                            //TokenType = "PDM",
-                            //Pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
-                            //Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value,
-                            ExpiresAt = validatedToken.ValidTo.ToLocalTime(),
-                            RemainingMinutes = Math.Round(remainingMinutes, 0),
-                            WillExpireSoon = remainingMinutes <= 10
-                        };
-
-                        return APIResponseHelper.GenerateApiResponse("OK", "已登入", authInfo).Result;
-                    }
-                    catch (SecurityTokenExpiredException)
-                    {
-                        return APIResponseHelper.HandleApiError<object>("401", "登入已過期").Result;
-                    }
-                    catch (Exception)
-                    {
-                        // PDMToken 無效，繼續檢查 SSO Token
-                    }
+                            RemainingMinutes = Math.Round(remainingTime.TotalMinutes, 0),
+                            ExpiresAt = token.ValidTo.ToLocalTime()
+                        }).Result;
                 }
 
                 // 檢查 SSO Token
                 if (!string.IsNullOrEmpty(accessToken))
                 {
-                    using var httpClient = new HttpClient();
-                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-                    var userInfoEndpoint = "https://iamlab.pouchen.com/auth/realms/pcg/protocol/openid-connect/userinfo";
-                    var response = await httpClient.GetAsync(userInfoEndpoint);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var userInfo = JsonSerializer.Deserialize<UserInfo>(await response.Content.ReadAsStringAsync());
-                        var authInfo = new
-                        {
-                            IsAuthenticated = true,
-                            TokenType = "SSO",
-                            Pccuid = userInfo.pccuid,
-                            Email = userInfo.email
-                        };
-
-                        return APIResponseHelper.GenerateApiResponse("OK", "已登入(SSO)", authInfo).Result;
-                    }
+                    var ssoValidationResult = await ValidateSSOToken(accessToken);
+                    return APIResponseHelper.GenerateApiResponse(
+                        ssoValidationResult.ErrorCode,
+                        ssoValidationResult.Message,
+                        ssoValidationResult.Data).Result;
                 }
 
-                return APIResponseHelper.HandleApiError<object>("401", "登入狀態無效").Result;
+                return APIResponseHelper.HandleApiError<object>(
+                    AuthenticationStatus.NotAuthenticated.ToString(),
+                    "無有效的登入狀態").Result;
             }
             catch (Exception ex)
             {
-                return APIResponseHelper.HandleApiError<object>("500", $"檢查登入狀態時發生錯誤：{ex.Message}").Result;
+                return APIResponseHelper.HandleApiError<object>(
+                    "50001",
+                    $"檢查登入狀態時發生錯誤：{ex.Message}").Result;
             }
         }
-        /*
-        [Authorize]
-        [HttpGet("login-status")]
-        public async Task<IActionResult> LoginStatus() 
-        {
-            // 1. Check if the user is authenticated
-            if (!User.Identity.IsAuthenticated)
-            {
-                // No valid authentication (no cookie or invalid token)
-                return Unauthorized(new { authenticated = false });
-            }
-
-            // 2. User is authenticated, retrieve current access token and refresh token
-            var accessToken = await HttpContext.GetTokenAsync("access_token");
-            var refreshToken = await HttpContext.GetTokenAsync("refresh_token");
-            var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");  // stored as a string if SaveTokens = true
-            DateTimeOffset? expiresAt = null;
-            if (!string.IsNullOrEmpty(expiresAtStr))
-                expiresAt = DateTimeOffset.Parse(expiresAtStr);
-
-            string username = User.Identity.Name ?? User.FindFirst("preferred_username")?.Value;
-
-            // 3. Validate access token expiration
-            bool tokenExpired = false;
-            if (expiresAt.HasValue)
-            {
-                tokenExpired = DateTimeOffset.UtcNow >= expiresAt.Value;
-            }
-            else
-            {
-                // If we don't have an "expires_at", we could fall back to introspecting the token or checking JWT exp claim.
-                // e.g., decode JWT and check its 'exp' claim against current time.
-            }
-
-            if (!tokenExpired)
-            {
-                // Access token is still valid
-                return Ok(new { authenticated = true, username = username });
-            }
-
-            // 4. If access token is expired, attempt to use the refresh token
-            if (!string.IsNullOrEmpty(refreshToken))
-            {
-                // Call Keycloak token endpoint to refresh the access token
-                // (grant_type=refresh_token, using client credentials and the refresh token)
-                var newTokenResponse = await KeycloakTokenService.RefreshAsync(refreshToken);
-                if (newTokenResponse.IsSuccess)
-                {
-                    // Extract the new tokens from Keycloak's response
-                    string newAccessToken = newTokenResponse.AccessToken;
-                    string newRefreshToken = newTokenResponse.RefreshToken;
-                    int newExpiresIn = newTokenResponse.ExpiresIn; // e.g., seconds until expiration
-
-                    // (Optional) Update the authentication cookie with new tokens so future requests use the new access token
-                    var authInfo = await HttpContext.AuthenticateAsync();
-                    authInfo.Properties.UpdateTokenValue("access_token", newAccessToken);
-                    authInfo.Properties.UpdateTokenValue("refresh_token", newRefreshToken);
-                    var newExpiresAt = DateTimeOffset.UtcNow.AddSeconds(newExpiresIn).ToString("o");
-                    authInfo.Properties.UpdateTokenValue("expires_at", newExpiresAt);
-                    await HttpContext.SignInAsync(authInfo.Principal, authInfo.Properties);
-
-                    // Return the new access token to the client (if the client needs to know it)
-                    return Ok(new
-                    {
-                        authenticated = true,
-                        username = username,
-                        accessToken = newAccessToken
-                    });
-                }
-            }
-
-            // 5. If we cannot refresh (no refresh token or refresh token also expired/invalid)
-            return Unauthorized(new
-            {
-                authenticated = false,
-                error = "Access token expired"
-            });
-        }
-        */
 
         /// <summary>
         /// 登入資料回拋，交換Token、並返回用戶資料
@@ -454,6 +357,165 @@ namespace PDMApp.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        // 1. 首先定義登入狀態枚舉
+        public enum AuthenticationStatus
+        {
+            NotAuthenticated = 40001,    // 未登入
+            TokenExpired = 40002,        // Token 過期
+            InvalidToken = 40003,        // Token 無效
+            TokenNearExpiry = 40004,     // Token 即將過期
+            Authenticated = 0        // 已登入
+        }
+
+        // 2. 建立統一的狀態處理類
+        public class AuthenticationResult
+        {
+            public AuthenticationStatus Status { get; set; }
+            public string Message { get; set; }
+            public object Data { get; set; }
+            public string ErrorCode => ((int)Status).ToString();
+        }
+
+        // 4. Token 驗證輔助方法
+        private async Task<(bool isValid, JwtSecurityToken token, AuthenticationResult validationResult)> ValidateTokenWithCache(string token)
+        {
+            var cacheKey = $"token_validation_{token}";
+
+            // 嘗試從快取中獲取
+            if (_cache.TryGetValue(cacheKey, out var cachedResult))
+            {
+                return ((ValueTuple<bool, JwtSecurityToken, AuthenticationResult>)cachedResult);
+            }
+
+            // 執行實際驗證
+            var result = ValidateToken(token);
+
+            // 如果驗證成功，存入快取
+            if (result.isValid)
+            {
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
+                _cache.Set(cacheKey, result, cacheEntryOptions);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 驗證 SSO Token
+        /// </summary>
+        private async Task<AuthenticationResult> ValidateSSOToken(string accessToken)
+        {
+            try
+            {
+                // 使用 HttpClientFactory 而不是直接 new HttpClient
+                var httpClient = _httpClientFactory.CreateClient("SSOValidation");
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                // 使用 Keycloak 的 userinfo 端點驗證 token
+                var userInfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
+                var response = await httpClient.GetAsync(userInfoEndpoint);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var userInfo = await JsonSerializer.DeserializeAsync<UserInfo>(
+                        await response.Content.ReadAsStreamAsync());
+
+                    // 檢查是否成功獲取用戶信息
+                    if (userInfo != null)
+                    {
+                        return new AuthenticationResult
+                        {
+                            Status = AuthenticationStatus.Authenticated,
+                            Message = "SSO 驗證成功",
+                            Data = new
+                            {
+                                TokenType = "SSO",
+                                Pccuid = userInfo.pccuid,
+                                Email = userInfo.email
+                            }
+                        };
+                    }
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return new AuthenticationResult
+                    {
+                        Status = AuthenticationStatus.TokenExpired,
+                        Message = "SSO Token 已過期",
+                        Data = null
+                    };
+                }
+
+                return new AuthenticationResult
+                {
+                    Status = AuthenticationStatus.InvalidToken,
+                    Message = "SSO Token 無效",
+                    Data = null
+                };
+            }
+            catch (HttpRequestException ex)
+            {
+                return new AuthenticationResult
+                {
+                    Status = AuthenticationStatus.InvalidToken,
+                    Message = $"SSO 驗證請求失敗: {ex.Message}",
+                    Data = null
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AuthenticationResult
+                {
+                    Status = AuthenticationStatus.InvalidToken,
+                    Message = $"SSO Token 驗證過程發生錯誤: {ex.Message}",
+                    Data = null
+                };
+            }
+        }
+
+        // 添加 ValidateToken 方法
+        private (bool isValid, JwtSecurityToken token, AuthenticationResult validationResult) ValidateToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_jwtSecret);
+
+            try
+            {
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero,
+                    ValidIssuer = "PDMAppissu",
+                    ValidAudience = "testclient"
+                };
+
+                tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                return (true, (JwtSecurityToken)validatedToken, null);
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return (false, null, new AuthenticationResult
+                {
+                    Status = AuthenticationStatus.TokenExpired,
+                    Message = "Token 已過期"
+                });
+            }
+            catch (Exception)
+            {
+                return (false, null, new AuthenticationResult
+                {
+                    Status = AuthenticationStatus.InvalidToken,
+                    Message = "Token 無效"
+                });
+            }
         }
     }
 
