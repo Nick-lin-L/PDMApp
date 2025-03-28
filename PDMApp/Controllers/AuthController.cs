@@ -142,7 +142,8 @@ namespace PDMApp.Controllers
                         }, out SecurityToken validatedToken);
 
                         var jwtToken = (JwtSecurityToken)validatedToken;
-                        
+
+                        var remainingMinutes = (validatedToken.ValidTo - DateTime.UtcNow).TotalMinutes;
                         // 返回基本身份資訊
                         var authInfo = new
                         {
@@ -150,7 +151,9 @@ namespace PDMApp.Controllers
                             TokenType = "PDM",
                             Pccuid = jwtToken.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
                             Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value,
-                            ExpiresAt = validatedToken.ValidTo.ToLocalTime()
+                            ExpiresAt = validatedToken.ValidTo.ToLocalTime(),
+                            RemainingMinutes = Math.Round(remainingMinutes, 0),
+                            WillExpireSoon = remainingMinutes <= 10
                         };
 
                         return APIResponseHelper.GenerateApiResponse("OK", "已登入", authInfo).Result;
