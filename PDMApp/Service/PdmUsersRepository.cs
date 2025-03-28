@@ -17,7 +17,7 @@ namespace PDMApp.Service
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
-        public async Task<pdm_users> GetByPccuid(decimal pccuid)
+        public async Task<pdm_users> GetByPccuid(decimal? pccuid)
         {
             return await _pcms_Pdm_TestContext.pdm_users.FirstOrDefaultAsync(u => u.pccuid == pccuid);
         }

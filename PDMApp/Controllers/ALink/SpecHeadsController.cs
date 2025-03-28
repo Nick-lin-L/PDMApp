@@ -50,15 +50,6 @@ namespace PDMApp.Controllers.ALink
         {
             try
             {
-                if (!ValidateSearchParams(value))
-                {
-                    return Ok(new APIStatusResponse<object>
-                    {
-                        ErrorCode = "50001",
-                        Message = "Please enter at least one search condition."
-                    });
-                }
-
                 // Step 1：查詢 + 分頁（EF 查 DB）
                 var pagedResult = await QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value)
                                                    .Distinct()

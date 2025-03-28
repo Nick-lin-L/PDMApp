@@ -26,7 +26,7 @@ namespace PDMApp.Utils.BasicProgram
 
             var claims = httpContext.User.Claims;
 
-            long.TryParse(claims.FirstOrDefault(c => c.Type == "pccuid")?.Value, out var pccuid);
+            long.TryParse(claims.FirstOrDefault(c => c.Type == "pccuid")?.Value, out var pccuid);//decimal.TryParse(claims.FirstOrDefault(c => c.Type == "pccuid")?.Value, out var pccuid);
             long.TryParse(claims.FirstOrDefault(c => c.Type == "user_id")?.Value, out var userId);
             var email = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
             var name = claims.FirstOrDefault(c => c.Type == "name")?.Value;
