@@ -56,9 +56,18 @@ public class AccountMaintenanceQueryHelper
     public static IQueryable<pdm_usersDto> QueryFilteredAccounts(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountSearchParameter value)
     {
         var query = from u in _pcms_Pdm_TestContext.pdm_users
+                        // 進行 LEFT JOIN (Group Join)
+                    join createdUser in _pcms_Pdm_TestContext.pdm_users
+                        on u.created_by equals createdUser.user_id into createdUserGroup
+                    from createdUser in createdUserGroup.DefaultIfEmpty() // 允許 NULL
+
+                    join updatedUser in _pcms_Pdm_TestContext.pdm_users
+                        on u.updated_by equals updatedUser.user_id into updatedUserGroup
+                    from updatedUser in updatedUserGroup.DefaultIfEmpty() // 允許 NULL
+
                     select new pdm_usersDto
                     {
-                        UserId = u.user_id,  
+                        UserId = u.user_id,
                         PccUid = (decimal)u.pccuid,
                         UserName = u.username,
                         LocalName = u.local_name,
@@ -67,9 +76,9 @@ public class AccountMaintenanceQueryHelper
                         IsSso = u.is_sso,
                         IsActive = u.is_active,
                         LastLogin = u.last_login,
-                        CreatedBy = u.created_by,
+                        CreatedBy = createdUser != null ? createdUser.local_name : "", // 防止 NULL
                         CreatedAt = u.created_at,
-                        UpdatedBy = u.updated_by,
+                        UpdatedBy = updatedUser != null ? updatedUser.local_name : "", // 防止 NULL
                         UpdatedAt = u.updated_at
                     };
 
@@ -84,6 +93,8 @@ public class AccountMaintenanceQueryHelper
 
         return query;
     }
+
+
 
     public static IQueryable<AccountDetailDto> QueryAccountDetails(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountDetailSearchParameter value)
     {
