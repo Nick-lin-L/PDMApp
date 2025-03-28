@@ -201,13 +201,13 @@ namespace PDMApp.Utils.PGTSPEC
                 if (!string.IsNullOrWhiteSpace(value.Brand))
                     baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
                 if (!string.IsNullOrWhiteSpace(value.ModelName))
-                    baseQuery = baseQuery.Where(ph => ph.ModelName == value.ModelName);
+                    baseQuery = baseQuery.Where(ph => ph.ModelName.Contains(value.ModelName));
                 if (!string.IsNullOrWhiteSpace(value.Colorway))
-                    baseQuery = baseQuery.Where(ph => ph.Colorway == value.Colorway);
+                    baseQuery = baseQuery.Where(ph => ph.Colorway.Contains(value.Colorway));
                 if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
-                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo.Contains(value.DevelopmentNo));
                 if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
-                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo.Contains(value.DevelopmentColorNo));
                 if (!string.IsNullOrWhiteSpace(value.Stage))
                     baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
 

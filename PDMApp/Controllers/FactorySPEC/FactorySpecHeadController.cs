@@ -51,67 +51,69 @@ namespace PDMApp.Controllers.FactorySPEC
             try
             {
                 var query = Utils.FactorySpec.FactorySpecQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
-                // 動態篩選條件
                 var filters = new List<Expression<Func<FactorySpecHeaderDto, bool>>>();
 
-                //if (!string.IsNullOrWhiteSpace(value.SpecMId))
-                //    filters.Add(ph => ph.SpecMId == value.SpecMId);
+                // Factory（完全匹配）
                 if (!string.IsNullOrWhiteSpace(value.Factory))
                 {
                     var factoryKeywords = value.Factory
                         .TrimEnd(',')
                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(f => f.Trim())
-                        .ToList(); // 確保轉為 List 以防止轉換問題
+                        .ToList();
 
                     query = query.Where(ph => factoryKeywords.Contains(ph.Factory));
                 }
+
+                // EntryMode（完全匹配）
                 if (!string.IsNullOrWhiteSpace(value.EntryMode))
                     filters.Add(ph => ph.EntryMode == value.EntryMode);
+
+                // Season（完全匹配）
                 if (!string.IsNullOrWhiteSpace(value.Season))
                     filters.Add(ph => ph.Season == value.Season);
+
+                // Year（LIKE）
                 if (!string.IsNullOrWhiteSpace(value.Year))
-                    filters.Add(ph => ph.Year == value.Year);
+                    filters.Add(ph => ph.Year.Contains(value.Year));
+
+                // Item No（LIKE）
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                    filters.Add(ph => ph.ItemNo == value.ItemNo);
-                if (!string.IsNullOrWhiteSpace(value.ColorNo))
-                    filters.Add(ph => ph.ColorNo == value.ColorNo);
+                    filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
+
+                // Dev No（LIKE）
                 if (!string.IsNullOrWhiteSpace(value.DevNo))
-                    filters.Add(ph => ph.DevNo == value.DevNo);
+                    filters.Add(ph => ph.DevNo.Contains(value.DevNo));
+
+                // Dev Color（LIKE）
                 if (!string.IsNullOrWhiteSpace(value.Devcolorno))
                     filters.Add(ph => ph.DevColorDispName.Contains(value.Devcolorno));
-                if (!string.IsNullOrWhiteSpace(value.Stage))
-                    filters.Add(ph => ph.Stage.Equals(value.Stage));
-                //if (!string.IsNullOrWhiteSpace(value.CustomerKbn))
-                //    filters.Add(ph => ph.CustomerKbn.Contains(value.CustomerKbn));
-                //if (!string.IsNullOrWhiteSpace(value.ModeName))
-                //    filters.Add(ph => ph.Mode.Contains(value.ModeName));
-                //if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
-                //    filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
 
-                // 加上上面所有的篩選條件
+                // Stage（完全匹配）
+                if (!string.IsNullOrWhiteSpace(value.Stage))
+                    filters.Add(ph => ph.Stage == value.Stage);
+
+                // Color No（LIKE）
+                if (!string.IsNullOrWhiteSpace(value.ColorNo))
+                    filters.Add(ph => ph.ColorNo.Contains(value.ColorNo));
+
+                // 加入所有篩選條件
                 foreach (var filter in filters)
                 {
                     query = query.Where(filter);
                 }
 
-
-
-                // 排序,如果需要多重排序的話後面接.ThenBy(條件)即可
                 // 排序：DevNo -> DevColorDispName -> Stage
                 query = query
-                    .OrderBy(ph => ph.DevNo)              // 先根據 DevNo 升序排列
-                    .ThenBy(ph => ph.DevColorDispName)    // 接著根據 DevColorDispName 升序排列
-                    .ThenBy(ph => ph.Stage);              // 最後根據 Stage 升序排列
-
+                    .OrderBy(ph => ph.DevNo)
+                    .ThenBy(ph => ph.DevColorDispName)
+                    .ThenBy(ph => ph.Stage);
 
                 // 分頁
-                //var pagedResult = await query.Distinct().ToPagedResultAsync(value.paginationParameter);
                 var pagedResult = await query.Distinct().ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
                 // 回傳分頁+網頁識別碼結果
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
-
             }
             catch (DbException ex)
             {
@@ -121,9 +123,9 @@ namespace PDMApp.Controllers.FactorySPEC
                     Message = "ServerError",
                     Details = ex.Message
                 });
-
             }
         }
+
 
 
         // PUT api/<FactorySpecHeadController>/5

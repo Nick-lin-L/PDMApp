@@ -71,27 +71,27 @@ namespace PDMApp.Utils.SPEC
                 if (!string.IsNullOrWhiteSpace(value.Season))
                     baseQuery = baseQuery.Where(ph => ph.Season == value.Season);
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
-                    baseQuery = baseQuery.Where(ph => ph.ItemNo == value.ItemNo);
+                    baseQuery = baseQuery.Where(ph => ph.ItemNo.Contains(value.ItemNo));
                 if (!string.IsNullOrWhiteSpace(value.DevelopmentNo))
-                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo == value.DevelopmentNo);
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentNo.Contains(value.DevelopmentNo));
                 if (!string.IsNullOrWhiteSpace(value.ColorCode))
-                    baseQuery = baseQuery.Where(ph => ph.ColorCode == value.ColorCode);
+                    baseQuery = baseQuery.Where(ph => ph.ColorCode.Contains(value.ColorCode));
                 if (!string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
-                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo == value.DevelopmentColorNo);
+                    baseQuery = baseQuery.Where(ph => ph.DevelopmentColorNo.Contains(value.DevelopmentColorNo));
                 if (!string.IsNullOrWhiteSpace(value.Stage))
                     baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
                 if (!string.IsNullOrWhiteSpace(value.LastNo))
-                    baseQuery = baseQuery.Where(ph => ph.LastNo == value.LastNo);
+                    baseQuery = baseQuery.Where(ph => ph.LastNo.Contains(value.LastNo));
                 if (!string.IsNullOrWhiteSpace(value.PartName))
-                    baseQuery = baseQuery.Where(ph => ph.PartName == value.PartName);
+                    baseQuery = baseQuery.Where(ph => ph.PartName.Contains(value.PartName));
                 if (!string.IsNullOrWhiteSpace(value.Material))
-                    baseQuery = baseQuery.Where(ph => ph.Material == value.Material);
+                    baseQuery = baseQuery.Where(ph => ph.Material.Contains(value.Material));
                 if (!string.IsNullOrWhiteSpace(value.MaterialColor))
-                    baseQuery = baseQuery.Where(ph => ph.MaterialColor == value.MaterialColor);
+                    baseQuery = baseQuery.Where(ph => ph.MaterialColor.Contains(value.MaterialColor));
                 if (!string.IsNullOrWhiteSpace(value.Supplier))
-                    baseQuery = baseQuery.Where(ph => ph.Supplier == value.Supplier);
+                    baseQuery = baseQuery.Where(ph => ph.Supplier.Contains(value.Supplier));
                 if (!string.IsNullOrWhiteSpace(value.HeelHeight))
-                    baseQuery = baseQuery.Where(ph => ph.HeelHeight == value.HeelHeight);
+                    baseQuery = baseQuery.Where(ph => ph.HeelHeight.Contains(value.HeelHeight));
 
                 // **先計算最大版本**
                 var maxVerQuery = baseQuery

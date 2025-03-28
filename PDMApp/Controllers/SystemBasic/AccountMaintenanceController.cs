@@ -127,6 +127,9 @@ namespace PDMApp.Controllers
 
             try
             {
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var userid = currentUser.UserId;  // 取得當前操作人的 UserId
 
                 // 先檢查是否已經存在相同的 user_id 和 role_id
                 bool isExist = await _pcms_Pdm_TestContext.pdm_user_roles
@@ -149,6 +152,15 @@ namespace PDMApp.Controllers
                 };
 
                 _pcms_Pdm_TestContext.pdm_user_roles.Add(newUserRole);
+
+                // **更新 pdm_users 表的 updated_by 和 updated_at 欄位**
+                var user = await _pcms_Pdm_TestContext.pdm_users.FirstOrDefaultAsync(u => u.user_id == userRoleParam.UserId);
+                if (user != null)
+                {
+                    user.updated_by = userid;
+                    user.updated_at = DateTime.Now;
+                }
+
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
 
                 return StatusCode(200, new
@@ -178,13 +190,17 @@ namespace PDMApp.Controllers
         }
 
 
-
         // DELETE api/accountmaintenance/DeleteRole
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpDelete("DeleteUserRole/{userId}/{roleId}")]
         public async Task<ActionResult<APIStatusResponse<object>>> DeleteUserRole(long userId, int roleId)
         {
             try
             {
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var userid = currentUser.UserId;  // 從 currentUser 取得 UserId
+
                 var userRole = await _pcms_Pdm_TestContext.pdm_user_roles
                     .FirstOrDefaultAsync(ur => ur.user_id == userId && ur.role_id == roleId);
 
@@ -198,6 +214,15 @@ namespace PDMApp.Controllers
                 }
 
                 _pcms_Pdm_TestContext.pdm_user_roles.Remove(userRole);
+
+                // 更新 pdm_users 表的 updated_by 和 updated_at 欄位
+                var user = await _pcms_Pdm_TestContext.pdm_users.FirstOrDefaultAsync(u => u.user_id == userId);
+                if (user != null)
+                {
+                    user.updated_by = userid;
+                    user.updated_at = DateTime.Now;
+                }
+
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
 
                 return StatusCode(200, new
