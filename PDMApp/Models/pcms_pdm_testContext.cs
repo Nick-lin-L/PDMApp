@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -413,6 +414,9 @@ namespace PDMApp.Models
                 entity.HasIndex(e => e.spec_m_id, "idx_pcg_spec_head_spec_m_id");
 
                 entity.HasIndex(e => e.stage_code, "idx_pcg_spec_head_stage_code");
+
+                entity.HasIndex(e => new { e.stage_code, e.ver }, "idx_pcg_spec_head_stage_ver")
+                    .HasSortOrder(new[] { SortOrder.Ascending, SortOrder.Descending });
 
                 entity.HasIndex(e => e.ver, "idx_pcg_spec_head_ver");
 
@@ -2758,6 +2762,8 @@ namespace PDMApp.Models
                 entity.ToTable("plm_product_head", "asics_pdm");
 
                 entity.HasIndex(e => e.brand_no, "idx_plm_product_head_brand_no");
+
+                entity.HasIndex(e => e.development_no, "idx_plm_product_head_dev_no");
 
                 entity.HasIndex(e => new { e.development_no, e.stage_code }, "idx_plm_product_head_dev_no_color_no_stage");
 
