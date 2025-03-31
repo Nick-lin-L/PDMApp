@@ -85,12 +85,17 @@ namespace PDMApp.Controllers
                     return APIResponseHelper.HandleApiError<object>("404", "找不到用戶資料").Result;
                 }
 
+                // 獲取用戶的廠區權限
+                var factories = await _pdmUsersRepository.GetUserFactories(user.user_id);
+
                 var userProfile = new
                 {
+                    UserId = user.user_id,
                     Pccuid = user.pccuid,
                     LocalName = user.local_name,
                     //LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
-                    IsActive = true // 如果能夠取得資料，代表用戶是活躍的
+                    IsActive = true, // 如果能夠取得資料，代表用戶是活躍的
+                    Factories = factories // 添加廠區列表
                 };
 
                 return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userProfile).Result;
