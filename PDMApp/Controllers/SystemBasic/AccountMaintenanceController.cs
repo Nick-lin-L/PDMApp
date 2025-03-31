@@ -110,6 +110,7 @@ namespace PDMApp.Controllers
 
         // POST api/accountmaintenance/CreateUserRole
         [HttpPost("CreateUserRole")]
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         public async Task<ActionResult<APIStatusResponse<object>>> CreateUserRole([FromBody] CreateUserRoleParameter userRoleParam)
         {
             if (!ModelState.IsValid)
