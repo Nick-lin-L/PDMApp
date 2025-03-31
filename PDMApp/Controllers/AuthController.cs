@@ -110,6 +110,17 @@ namespace PDMApp.Controllers
             try
             {
                 var pdmToken = HttpContext.Request.Cookies["PDMToken"];
+
+                // 2. 如果 Cookie 中沒有，則檢查 Authorization Header
+                if (string.IsNullOrEmpty(pdmToken))
+                {
+                    var authHeader = HttpContext.Request.Headers["Authorization"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pdmToken = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                }
+
                 var accessTokenTask = HttpContext.GetTokenAsync("access_token");
                 var accessToken = await accessTokenTask;  // 修正：等待 Task 完成並獲取結果
 
@@ -124,7 +135,6 @@ namespace PDMApp.Controllers
                 if (!string.IsNullOrEmpty(pdmToken))
                 {
                     var validationTask = ValidateTokenWithCache(pdmToken);
-
                     var (isValid, token, _) = await validationTask;
 
                     if (!isValid || token == null)
@@ -135,19 +145,47 @@ namespace PDMApp.Controllers
                     }
 
                     var remainingTime = token.ValidTo - DateTime.UtcNow;
-                    /*
+
                     // 檢查 Token 是否即將過期（例如：剩餘 10 分鐘以內）
                     if (remainingTime.TotalMinutes <= 10)
                     {
-                        return APIResponseHelper.GenerateApiResponse(
-                            ((int)AuthenticationStatus.TokenNearExpiry).ToString(),  // 保持警告狀態使用數字
-                            "Token 即將過期，請更新",
-                            new
+                        try
+                        {
+                            // 從 Token 中獲取用戶信息
+                            var userInfo = new UserInfo
                             {
-                                RemainingMinutes = Math.Round(remainingTime.TotalMinutes, 0),
-                                ExpiresAt = token.ValidTo.ToLocalTime()
-                            }).Result;
-                    }*/
+                                family_name = token.Claims.FirstOrDefault(c => c.Type == "name")?.Value,
+                                uid = token.Claims.FirstOrDefault(c => c.Type == "name_en")?.Value,
+                                pccuid = token.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
+                                sub = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value,
+                                email = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value
+                            };
+
+                            // 自動更新 Token
+                            var newToken = await RefreshToken(pdmToken, userInfo);
+
+                            return APIResponseHelper.GenerateApiResponse(
+                                "OK",
+                                "Token 已自動更新",
+                                new
+                                {
+                                    NewToken = newToken,
+                                    ExpiresAt = DateTime.UtcNow.AddHours(1).ToLocalTime()
+                                }).Result;
+                        }
+                        catch
+                        {
+                            // 如果自動更新失敗，返回即將過期的警告
+                            return APIResponseHelper.GenerateApiResponse(
+                                ((int)AuthenticationStatus.TokenNearExpiry).ToString(),
+                                "Token 即將過期，請手動更新",
+                                new
+                                {
+                                    RemainingMinutes = Math.Round(remainingTime.TotalMinutes, 0),
+                                    ExpiresAt = token.ValidTo.ToLocalTime()
+                                }).Result;
+                        }
+                    }
 
                     // Token 有效
                     return APIResponseHelper.GenerateApiResponse(
@@ -515,6 +553,96 @@ namespace PDMApp.Controllers
                     Status = AuthenticationStatus.InvalidToken,
                     Message = "Token 無效"
                 });
+            }
+        }
+
+        // 添加 Token 更新方法
+        private async Task<string> RefreshToken(string oldToken, UserInfo userInfo)
+        {
+            try
+            {
+                // 解析舊的 Token 以獲取必要信息
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(oldToken);
+
+                // 從 Token 中獲取用戶 ID
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "user_id");
+                if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+                {
+                    throw new Exception("無法從 Token 中獲取用戶 ID");
+                }
+
+                // 獲取新的過期時間
+                var expiresAt = DateTime.UtcNow.AddHours(1).ToString("o");
+
+                // 生成新的 Token
+                var newToken = GenerateJwtToken(userInfo, expiresAt, userId);
+
+                // 更新 Cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTimeOffset.UtcNow.AddHours(1)
+                };
+                HttpContext.Response.Cookies.Delete("PDMToken");
+                HttpContext.Response.Cookies.Append("PDMToken", newToken, cookieOptions);
+
+                return newToken;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"更新 Token 時發生錯誤: {ex.Message}");
+            }
+        }
+
+        // 可以呼叫的 更新Token的API
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshTokenEndpoint()
+        {
+            try
+            {
+                var currentToken = HttpContext.Request.Cookies["PDMToken"];
+                if (string.IsNullOrEmpty(currentToken))
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        ((int)AuthenticationStatus.NotAuthenticated).ToString(),
+                        "未找到 Token").Result;
+                }
+
+                // 驗證當前 Token
+                var (isValid, token, validationResult) = await ValidateTokenWithCache(currentToken);
+                if (!isValid)
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        ((int)AuthenticationStatus.InvalidToken).ToString(),
+                        "Token 無效").Result;
+                }
+
+                // 從 Token 中獲取用戶信息
+                var userInfo = new UserInfo
+                {
+                    family_name = token.Claims.FirstOrDefault(c => c.Type == "name")?.Value,
+                    uid = token.Claims.FirstOrDefault(c => c.Type == "name_en")?.Value,
+                    pccuid = token.Claims.FirstOrDefault(c => c.Type == "pccuid")?.Value,
+                    sub = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value,
+                    email = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value
+                };
+
+                // 更新 Token
+                var newToken = await RefreshToken(currentToken, userInfo);
+
+                return APIResponseHelper.GenerateApiResponse(
+                    "OK",
+                    "Token 已更新",
+                    new { token = newToken }).Result;
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>(
+                    "50001",
+                    $"更新 Token 時發生錯誤：{ex.Message}").Result;
             }
         }
     }
