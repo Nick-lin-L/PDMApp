@@ -415,8 +415,7 @@ namespace PDMApp.Models
 
                 entity.HasIndex(e => e.stage_code, "idx_pcg_spec_head_stage_code");
 
-                entity.HasIndex(e => new { e.stage_code, e.ver }, "idx_pcg_spec_head_stage_ver")
-                    .HasSortOrder(new[] { SortOrder.Ascending, SortOrder.Descending });
+                entity.HasIndex(e => new { e.stage_code, e.ver }, "idx_pcg_spec_head_stage_ver");
 
                 entity.HasIndex(e => e.ver, "idx_pcg_spec_head_ver");
 
