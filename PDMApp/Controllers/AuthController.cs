@@ -50,13 +50,13 @@ namespace PDMApp.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("login")]
-        public IActionResult Login()
+        public IActionResult Login([FromQuery] string mode = "redirect")
         {
             //*
             var authProperties = new AuthenticationProperties
             {
-                //RedirectUri = _config.RedirectUri
-                RedirectUri = Url.Action("Callback", "Auth", null, Request.Scheme) // 動態設定 Callback
+                //RedirectUri = Url.Action("Callback", "Auth", null, Request.Scheme) // 動態設定 Callback //RedirectUri = _config.RedirectUri
+                RedirectUri = Url.Action("Callback", "Auth", new { mode = mode }, Request.Scheme)
             };
             // 傳回登入 URL，供前端重定向
             return Challenge(authProperties, OpenIdConnectDefaults.AuthenticationScheme);
@@ -94,7 +94,7 @@ namespace PDMApp.Controllers
                     LocalName = user.local_name,
                     //LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
                     IsActive = true, // 如果能夠取得資料，代表用戶是活躍的
-                    Factories = factories // 添加廠區列表
+                    DveFactoryNo = factories // 添加廠區列表
                 };
 
                 return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userProfile).Result;
@@ -230,7 +230,7 @@ namespace PDMApp.Controllers
         [AllowAnonymous]
         [HttpGet("callback")]
         //public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
-        public async Task<IActionResult> Callback()
+        public async Task<IActionResult> Callback([FromQuery] string mode = "redirect")
         {
             var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
             var accessToken = await HttpContext.GetTokenAsync("access_token");
@@ -313,20 +313,34 @@ namespace PDMApp.Controllers
             });*/
             //return Redirect("/api/auth/close-window");轉址導向別的API
             // 回傳 HTML 給前端，並執行 window.close()
+            if (mode == "close-window")
+            {
+                return Content(@"
+                    <!DOCTYPE html>
+                    <html>
+                        <head><meta charset='UTF-8'></head>
+                        <body>
+                            <script>
+                                window.opener.postMessage('login_success', '*');
+                                window.close();
+                            </script>
+                        </body>
+                    </html>
+                ", "text/html");
+            }
 
-            return Content($@"
-                                <!DOCTYPE html>
-                                <html lang='zh'>
-                                <head>
-                                    <meta charset='UTF-8'>
-                                </head>
-                                <body>
-                                    <script>
-                                        window.location.replace('https://pcms-mif-test01.pouchen.com/PDM/');
-                                    </script>
-                                </body>
-                                </html>
-                                ", "text/html", System.Text.Encoding.UTF8);
+            // 一般轉址模式
+            return Content(@"
+                <!DOCTYPE html>
+                <html>
+                    <head><meta charset='UTF-8'></head>
+                    <body>
+                        <script>
+                            window.location.replace('https://pcms-mif-test01.pouchen.com/PDM/');
+                        </script>
+                    </body>
+                </html>
+            ", "text/html");
 
         }
 
