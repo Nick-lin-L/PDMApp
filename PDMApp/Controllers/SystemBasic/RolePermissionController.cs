@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
@@ -591,6 +592,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="languageCode">語言國別完整代號</param>
         /// <returns>選單的樹狀結構</returns>
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpGet("user-menu")]
         public async Task<ActionResult<APIStatusResponse<IEnumerable<MenuTreeDto>>>> GetUserMenu([FromQuery] string languageCode = "zh-TW")
         {
@@ -622,8 +624,7 @@ namespace PDMApp.Controllers
                 // 4. 獲取選單樹
                 var menus = await _pcms_Pdm_TestContext.sys_menus
                     .Include(m => m.sys_menu_i18n)
-                    .Where(m => m.is_active == "Y" &&
-                           permissionKeys.Contains(m.permission_key))
+                    .Where(m => m.is_active == "Y") //permissionKeys.Contains(m.permission_key))
                     .OrderBy(m => m.sort_order)
                     .Select(m => new MenuTreeDto
                     {
