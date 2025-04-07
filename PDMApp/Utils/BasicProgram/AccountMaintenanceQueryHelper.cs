@@ -76,9 +76,9 @@ public class AccountMaintenanceQueryHelper
                         IsSso = u.is_sso,
                         IsActive = u.is_active,
                         LastLogin = u.last_login,
-                        CreatedBy = createdUser != null ? createdUser.local_name : "", // 防止 NULL
+                        CreatedBy = createdUser != null ? createdUser.username : "", // 改為 username
                         CreatedAt = u.created_at,
-                        UpdatedBy = updatedUser != null ? updatedUser.local_name : "", // 防止 NULL
+                        UpdatedBy = updatedUser != null ? updatedUser.username : "", // 改為 username
                         UpdatedAt = u.updated_at
                     };
 
@@ -93,6 +93,7 @@ public class AccountMaintenanceQueryHelper
 
         return query;
     }
+
 
 
 
