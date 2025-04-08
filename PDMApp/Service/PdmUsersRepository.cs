@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MoreLinq;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using System;
@@ -72,7 +73,7 @@ namespace PDMApp.Service
             public HashSet<string> PermissionKeys { get; set; } = new(); // optional: 按鈕權限
         }
 
-        public async Task<UserPermissionResultDto> GetUserPermissionTreeAsync(long userId, string devFactoryNo)
+        public async Task<UserPermissionResultDto> GetUserPermissionTreeAsync(long userId, string devFactoryNo, string langCode="zh-TW")
         {
             var result = new UserPermissionResultDto();
 
@@ -104,16 +105,34 @@ namespace PDMApp.Service
                 .Distinct()
                 .ToList();
 
-            // 3.查出對應 sys_menus（使用 permission_id）
-            var menus = await _pcms_Pdm_TestContext.sys_menus
+            // 3.查出對應 sys_menus（使用 permission_id）包含其父節點
+            var accessibleMenus = await _pcms_Pdm_TestContext.sys_menus
                 .Where(m => m.permission_id.HasValue &&
                             permissionIds.Contains(m.permission_id.Value) &&
                             m.is_active == "Y")
-                .OrderBy(m => m.sort_order)
                 .ToListAsync();
 
-            // 將 menus 轉為 DTO
-            var menuDtoList = menus.Select(m => new MenuTreeNodeDto
+            var accessibleMenuIds = accessibleMenus.Select(m => m.menu_id).ToList();
+
+            // 找出 parentId
+            var parentIds = accessibleMenus
+                .Where(m => m.parent_id != null)
+                .Select(m => m.parent_id.Value)
+                .Distinct()
+                .ToList();
+
+            var parentMenus = await _pcms_Pdm_TestContext.sys_menus
+                .Where(m => parentIds.Contains(m.menu_id) && m.is_active == "Y")
+                .ToListAsync();
+
+            // 合併主選單與父選單，避免重複
+            var allMenus = accessibleMenus.Concat(parentMenus)
+                .DistinctBy(m => m.menu_id)
+                .OrderBy(m => m.sort_order)
+                .ToList();
+
+            // 將 menu 轉為 DTO（需包含 ParentId 才能建樹）
+            var menuDtoList = allMenus.Select(m => new MenuTreeNodeDto
             {
                 MenuId = m.menu_id,
                 MenuName = m.menu_name,
@@ -123,6 +142,7 @@ namespace PDMApp.Service
                 MenuType = m.menu_type,
                 PermissionKey = m.permission_key,
                 SortOrder = m.sort_order,
+                ParentId = m.parent_id
             }).ToList();
 
             // 4.組 Tree 結構（根據 parent_id）
@@ -159,7 +179,7 @@ namespace PDMApp.Service
                 }
             }
 
-            // 7 可選：撈按鈕權限 key（如果有需要）
+            // 7.可選：撈按鈕權限 key
             var permissionKeys = await _pcms_Pdm_TestContext.pdm_role_permission_details
                 .Where(d => roleIds.Contains(d.role_id.Value)
                             && d.dev_factory_no == devFactoryNo
@@ -176,7 +196,7 @@ namespace PDMApp.Service
         private List<MenuTreeNodeDto> BuildMenuTree(List<MenuTreeNodeDto> allMenus, int? parentId)
         {
             return allMenus
-                .Where(m => (m.MenuId != m.MenuId) && ((parentId == null && m.MenuId == m.MenuId) || m.MenuId == parentId))
+                .Where(m => m.ParentId == parentId)
                 .OrderBy(m => m.SortOrder)
                 .Select(m => new MenuTreeNodeDto
                 {
@@ -188,8 +208,10 @@ namespace PDMApp.Service
                     MenuType = m.MenuType,
                     PermissionKey = m.PermissionKey,
                     SortOrder = m.SortOrder,
-                    Children = BuildMenuTree(allMenus, m.MenuId) // 遞迴找子節點
+                    ParentId = m.ParentId,
+                    Children = BuildMenuTree(allMenus, m.MenuId)
                 }).ToList();
         }
+
     }
 }

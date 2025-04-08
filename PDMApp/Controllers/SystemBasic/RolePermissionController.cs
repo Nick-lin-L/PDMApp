@@ -602,24 +602,42 @@ namespace PDMApp.Controllers
         [HttpPost("menu-permissions")]
         public async Task<IActionResult> GetUserPermissions([FromBody] MenuPermissionParameter request)
         {
-            if (string.IsNullOrEmpty(request.FactoryNo))
-                return APIResponseHelper.HandleApiError<object>("40001", "廠別不可為空").Result;
-
-            if (_currentUser.UserId == null)
-                return APIResponseHelper.HandleApiError<object>("401", "尚未登入").Result;
-
-            var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.FactoryNo}";
-            if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
-                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
-
-            var result = await _repository.GetUserPermissionTreeAsync(_currentUser.UserId.Value, request.FactoryNo);
-
-            _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-            });
+                if (string.IsNullOrEmpty(request.FactoryNo))
+                    return APIResponseHelper.HandleApiError<object>("40001", "廠別不可為空").Result;
 
-            return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", result).Result;
+                if (_currentUser.UserId == null)
+                    return APIResponseHelper.HandleApiError<object>("401", "尚未登入").Result;
+
+                // 加入語系到快取鍵中
+                var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.FactoryNo}_{request.LangCode}";
+
+                if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
+                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
+
+                // 傳入語系參數
+                var result = await _repository.GetUserPermissionTreeAsync(
+                    _currentUser.UserId.Value,
+                    request.FactoryNo,
+                    request.LangCode
+                );
+
+                _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+
+                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", result).Result;
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>(
+                    "50001",
+                    $"取得選單權限時發生錯誤：{ex.Message}",
+                    null
+                ).Result;
+            }
         }
 
 
