@@ -9,6 +9,7 @@ namespace PDMApp.Dtos.BasicProgram
     {
         public int MenuId { get; set; }
         public int? ParentId { get; set; }
+        public int? PermissionId { get; set; }
         public string MenuName { get; set; }
         public string MenuPath { get; set; }
         public string ComponentPath { get; set; }

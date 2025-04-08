@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.Basic;
+using PDMApp.Parameters.SystemBasic;
+using PDMApp.Service;
+using PDMApp.Service.Basic;
 using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
 using System;
@@ -13,6 +17,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Transactions;
+using static PDMApp.Service.PdmUsersRepository;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -24,10 +29,16 @@ namespace PDMApp.Controllers
     {
         // GET: api/<RolePermissionController>
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
+        private readonly PdmUsersRepository _repository;
+        private readonly IMemoryCache _cache;
+        private readonly ICurrentUserService _currentUser;
 
-        public RolePermissionController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public RolePermissionController(pcms_pdm_testContext pcms_Pdm_testContext, PdmUsersRepository repository, IMemoryCache cache, ICurrentUserService currentUser)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
+            _repository = repository;
+            _cache = cache;
+            _currentUser = currentUser;
         }
 
         // 0. Pageload 下拉查詢列表
@@ -319,17 +330,17 @@ namespace PDMApp.Controllers
                             {
                                 role_id = roleIdt,
                                 permission_id = perm.PermissionId,
-                                is_active = perm.IsActive ?? "N",
-                                createp = perm.CreateP ?? "N",
-                                readp = perm.ReadP ?? "N",
-                                updatep = perm.UpdateP ?? "N",
-                                deletep = perm.DeleteP ?? "N",
-                                exportp = perm.ExportP ?? "N",
-                                importp = perm.ImportP ?? "N",
-                                permission1 = perm.Permission1 ?? "N",
-                                permission2 = perm.Permission2 ?? "N",
-                                permission3 = perm.Permission3 ?? "N",
-                                permission4 = perm.Permission4 ?? "N",
+                                is_active = perm.IsActive ?? "Y",
+                                createp = perm.CreateP ?? "Y",
+                                readp = perm.ReadP ?? "Y",
+                                updatep = perm.UpdateP ?? "Y",
+                                deletep = perm.DeleteP ?? "Y",
+                                exportp = perm.ExportP ?? "Y",
+                                importp = perm.ImportP ?? "Y",
+                                permission1 = perm.Permission1 ?? "Y",
+                                permission2 = perm.Permission2 ?? "Y",
+                                permission3 = perm.Permission3 ?? "Y",
+                                permission4 = perm.Permission4 ?? "Y",
                                 dev_factory_no = request.DevFactoryNo,
                                 created_by = updatedBy,
                                 created_at = DateTime.UtcNow
@@ -586,6 +597,33 @@ namespace PDMApp.Controllers
             }
         }
 
+
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpPost("menu-permissions")]
+        public async Task<IActionResult> GetUserPermissions([FromBody] MenuPermissionParameter request)
+        {
+            if (string.IsNullOrEmpty(request.FactoryNo))
+                return APIResponseHelper.HandleApiError<object>("40001", "廠別不可為空").Result;
+
+            if (_currentUser.UserId == null)
+                return APIResponseHelper.HandleApiError<object>("401", "尚未登入").Result;
+
+            var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.FactoryNo}";
+            if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
+                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
+
+            var result = await _repository.GetUserPermissionTreeAsync(_currentUser.UserId.Value, request.FactoryNo);
+
+            _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            });
+
+            return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", result).Result;
+        }
+
+
+
         // 5. 取得user tree menu
         /// <summary>
         /// 取得user選單
@@ -630,11 +668,10 @@ namespace PDMApp.Controllers
                     {
                         MenuId = m.menu_id,
                         ParentId = m.parent_id,
-                        MenuName = m.sys_menu_i18n
-                            .Where(i => i.language_code == languageCode)
-                            .Select(i => i.menu_name)
-                            .DefaultIfEmpty(m.menu_name)
-                            .First(),
+                        PermissionId = m.permission_id,
+                        MenuName = m.sys_menu_i18n.Any(i => i.language_code == languageCode)
+                        ? m.sys_menu_i18n.First(i => i.language_code == languageCode).menu_name
+                        : m.menu_name,
                         MenuPath = m.menu_path,
                         ComponentPath = m.component_path,
                         Icon = m.menu_icon,
@@ -647,8 +684,9 @@ namespace PDMApp.Controllers
             }
             catch (Exception ex)
             {
+                var innerException = ex.InnerException != null ? $" Inner exception: {ex.InnerException.Message}" : "";
                 return APIResponseHelper.HandleApiError<IEnumerable<MenuTreeDto>>(
-                    "50001", $"獲取選單失敗: {ex.Message}", null);
+                    "50001", $"獲取選單失敗: {ex.Message}{innerException}", null);
             }
         }
 
@@ -661,6 +699,7 @@ namespace PDMApp.Controllers
                 {
                     MenuId = m.MenuId,
                     ParentId = m.ParentId,
+                    PermissionId = m.PermissionId,
                     MenuName = m.MenuName,
                     MenuPath = m.MenuPath,
                     ComponentPath = m.ComponentPath,
