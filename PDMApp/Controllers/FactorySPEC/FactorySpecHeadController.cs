@@ -9,6 +9,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using PDMApp.Service.FactorySpec;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,7 +19,6 @@ namespace PDMApp.Controllers.FactorySPEC
     [ApiController]
     public class FactorySpecHeadController : ControllerBase
     {
-
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
 
         public FactorySpecHeadController(pcms_pdm_testContext pcms_Pdm_testContext)
@@ -50,7 +50,7 @@ namespace PDMApp.Controllers.FactorySPEC
 
             try
             {
-                var query = Utils.FactorySpec.FactorySpecQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
+                var query = FactorySpecQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
                 var filters = new List<Expression<Func<FactorySpecHeaderDto, bool>>>();
 
                 // Factory（完全匹配）
@@ -125,8 +125,6 @@ namespace PDMApp.Controllers.FactorySPEC
                 });
             }
         }
-
-
 
         // PUT api/<FactorySpecHeadController>/5
         [HttpPut("{id}")]

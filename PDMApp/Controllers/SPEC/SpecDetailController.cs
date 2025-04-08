@@ -33,7 +33,7 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // **將篩選條件直接傳遞到 QuerySpecDetail**
-                var query = Utils.SPEC.SPECQueryHelper.QuerySpecDetail(_pcms_Pdm_TestContext, value);
+                var query = Service.SPEC.SPECQueryHelper.QuerySpecDetail(_pcms_Pdm_TestContext, value);
 
                 // 分頁
                 var pagedResult = await query.ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
@@ -59,7 +59,7 @@ namespace PDMApp.Controllers.SPEC
 
             try
             {
-                var data = await Utils.SPEC.SPECQueryHelper.QuerySpecExport(_pcms_Pdm_TestContext, value).ToListAsync();
+                var data = await Service.SPEC.SPECQueryHelper.QuerySpecExport(_pcms_Pdm_TestContext, value).ToListAsync();
 
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("SPEC Export");

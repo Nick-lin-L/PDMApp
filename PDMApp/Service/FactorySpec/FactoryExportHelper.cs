@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Utils.FactorySpec
+namespace PDMApp.Service.FactorySpec
 {
     public static class FactoryExportHelper
     {

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Utils.PGTSPEC.SheetGenerators
+namespace Service.PGTSPEC.SheetGenerators
 {
     public class ItemSheetGenerator<T>
     {
