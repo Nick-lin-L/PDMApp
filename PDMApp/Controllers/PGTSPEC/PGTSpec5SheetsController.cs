@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
-using Utils.PGTSPEC;
+using Service.PGTSPEC;
 using System.Data.Common;
 using Microsoft.AspNetCore.Authorization;
 using PDMApp.Utils.BasicProgram;
@@ -35,17 +35,17 @@ namespace PDMApp.Controllers.SPEC
                 var resultData = new MultiPageResultDTO();
 
                 // BasicData 查詢
-                var basicQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
+                var basicQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
                 resultData.BasicData = await basicQuery.Distinct().ToListAsync();
 
                 // Head 查詢
-                var headQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext)
+                var headQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext)
                     .Where(h => string.IsNullOrWhiteSpace(value.SpecMId) || h.SpecMId.Equals(value.SpecMId));
                 resultData.HeadData = await headQuery.Distinct().ToListAsync();
 
                 // Upper, Sole, Other 查詢
-                var upperQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
+                var upperQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
                     .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
 
                 // 先轉成 List 再做排序（避免運算式樹的限制）
@@ -144,7 +144,7 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // ItemSheet 查詢
-                var itemSheetData = Utils.PGTSPEC.PGTSPECQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
+                var itemSheetData = Service.PGTSPEC.PGTSPECQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
                     .ToList(); // 執行查詢，轉為 List
 

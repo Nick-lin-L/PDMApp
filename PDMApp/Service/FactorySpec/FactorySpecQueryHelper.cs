@@ -1,14 +1,11 @@
 ﻿
 using Dtos.FactorySpec;
 using PDMApp.Models;
-using PDMApp.Parameters.FactorySpec;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 
-namespace PDMApp.Utils.FactorySpec
+namespace PDMApp.Service.FactorySpec
 {
     public static class FactorySpecQueryHelper
     {

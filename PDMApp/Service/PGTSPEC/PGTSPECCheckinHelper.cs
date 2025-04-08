@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PDMApp.Utils.PGTSPEC
+namespace PDMApp.Service.PGTSPEC
 {
     public class PGTSPECCheckinHelper
     {

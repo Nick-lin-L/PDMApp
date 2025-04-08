@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-public class AccountMaintenanceQueryHelper
+namespace PDMApp.Service.Basic
+{
+ public class AccountMaintenanceQueryHelper
 {
     public static IQueryable<DevFactoryNoDto> QueryDevFactoryNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
     {
@@ -120,4 +122,5 @@ public class AccountMaintenanceQueryHelper
 
 
 
+}
 }
