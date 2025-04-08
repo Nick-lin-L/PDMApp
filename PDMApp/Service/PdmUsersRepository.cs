@@ -106,11 +106,26 @@ namespace PDMApp.Service
                 .ToList();
 
             // 3.查出對應 sys_menus（使用 permission_id）包含其父節點
-            var accessibleMenus = await _pcms_Pdm_TestContext.sys_menus
-                .Where(m => m.permission_id.HasValue &&
-                            permissionIds.Contains(m.permission_id.Value) &&
-                            m.is_active == "Y")
-                .ToListAsync();
+            var accessibleMenus = await (
+                from m in _pcms_Pdm_TestContext.sys_menus
+                join i18n in _pcms_Pdm_TestContext.sys_menu_i18n
+                    on new { m.menu_id, language_code = langCode } equals new { i18n.menu_id, i18n.language_code } into mi18n
+                from i18n in mi18n.DefaultIfEmpty()
+                where m.permission_id.HasValue
+                      && permissionIds.Contains(m.permission_id.Value)
+                      && m.is_active == "Y"
+                select new
+                {
+                    m.menu_id,
+                    m.parent_id,
+                    m.menu_path,
+                    m.component_path,
+                    m.menu_icon,
+                    m.menu_type,
+                    m.permission_key,
+                    m.sort_order,
+                    menu_name = i18n.menu_name ?? m.menu_name
+                }).ToListAsync();
 
             var accessibleMenuIds = accessibleMenus.Select(m => m.menu_id).ToList();
 
@@ -121,9 +136,25 @@ namespace PDMApp.Service
                 .Distinct()
                 .ToList();
 
-            var parentMenus = await _pcms_Pdm_TestContext.sys_menus
-                .Where(m => parentIds.Contains(m.menu_id) && m.is_active == "Y")
-                .ToListAsync();
+            var parentMenus = await (
+                from m in _pcms_Pdm_TestContext.sys_menus
+                join i18n in _pcms_Pdm_TestContext.sys_menu_i18n
+                    on new { m.menu_id, language_code = langCode } equals new { i18n.menu_id, i18n.language_code } into mi18n
+                from i18n in mi18n.DefaultIfEmpty()
+                where parentIds.Contains(m.menu_id)
+                      && m.is_active == "Y"
+                select new
+                {
+                    m.menu_id,
+                    m.parent_id,
+                    m.menu_path,
+                    m.component_path,
+                    m.menu_icon,
+                    m.menu_type,
+                    m.permission_key,
+                    m.sort_order,
+                    menu_name = i18n.menu_name ?? m.menu_name
+                }).ToListAsync();
 
             // 合併主選單與父選單，避免重複
             var allMenus = accessibleMenus.Concat(parentMenus)
