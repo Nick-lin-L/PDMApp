@@ -31,9 +31,11 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
+        public int? permission_id { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
         public virtual sys_menus parent { get; set; }
+        public virtual pdm_permissions permission { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
         public virtual ICollection<sys_menus> Inverseparent { get; set; }
         public virtual ICollection<sys_menu_i18n> sys_menu_i18n { get; set; }

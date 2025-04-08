@@ -6,24 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using PDMApp.Configurations;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Configuration;
+using PDMApp.Utils;
 using PDMApp.Models;
 using PDMApp.Service;
-using Microsoft.AspNetCore.Authorization;
-using PDMApp.Utils;
+using System.Net.Http;
+using System.Text.Json;
+using PDMApp.Service.Basic;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Net.Http.Headers;
 using PDMApp.Utils.BasicProgram;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Http;
 
 namespace PDMApp.Controllers
 {
@@ -36,13 +35,22 @@ namespace PDMApp.Controllers
         private readonly PdmUsersRepository _pdmUsersRepository;
         private readonly IMemoryCache _cache;
         private readonly IHttpClientFactory _httpClientFactory;
-        public AuthController(IOptions<OAuthConfig> config, IConfiguration configuration, PdmUsersRepository pdmUsersRepository, IMemoryCache cache, IHttpClientFactory httpClientFactory)
+        private readonly ICurrentUserService _currentUser;
+
+        public AuthController(
+            IOptions<OAuthConfig> config,
+            IConfiguration configuration,
+            PdmUsersRepository pdmUsersRepository,
+            IMemoryCache cache,
+            IHttpClientFactory httpClientFactory,
+            ICurrentUserService currentUser) //加上ICurrentUserService
         {
             _config = config.Value;
             _jwtSecret = configuration["Authentication:PCG:ClientSecret"];
-            _pdmUsersRepository = pdmUsersRepository; // 初始化 Repository
+            _pdmUsersRepository = pdmUsersRepository;
             _cache = cache;
             _httpClientFactory = httpClientFactory;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -72,6 +80,7 @@ namespace PDMApp.Controllers
         {
             try
             {
+                var tttid = _currentUser.UserId;
                 var currentUser = CurrentUserUtils.Get(HttpContext);
                 if (currentUser?.UserId == null)
                 {

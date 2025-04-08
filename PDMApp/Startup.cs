@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Middleware;
 using System.IdentityModel.Tokens.Jwt;
+using PDMApp.Service.Basic;
 
 namespace PDMApp
 {
@@ -77,6 +78,8 @@ namespace PDMApp
             });
             AddScopedServices(services);
             //services.AddControllers();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddControllers().ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>

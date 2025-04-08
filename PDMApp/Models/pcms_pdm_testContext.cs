@@ -324,7 +324,7 @@ namespace PDMApp.Models
                     .HasComment("物料說明");
 
                 entity.Property(e => e.mat_no)
-                    .HasMaxLength(30)
+                    .HasMaxLength(20)
                     .HasComment("PDM料號");
 
                 entity.Property(e => e.matnr)
@@ -3384,6 +3384,12 @@ namespace PDMApp.Models
                     .WithMany(p => p.Inverseparent)
                     .HasForeignKey(d => d.parent_id)
                     .HasConstraintName("sys_menus_parent_id_fkey");
+
+                entity.HasOne(d => d.permission)
+                    .WithMany(p => p.sys_menus)
+                    .HasForeignKey(d => d.permission_id)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("fk_sys_menus_permission_id");
 
                 entity.HasOne(d => d.updated_byNavigation)
                     .WithMany(p => p.sys_menusupdated_byNavigation)
