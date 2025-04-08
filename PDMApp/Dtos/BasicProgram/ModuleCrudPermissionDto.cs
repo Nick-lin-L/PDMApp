@@ -7,16 +7,16 @@ namespace PDMApp.Dtos.BasicProgram
 {
     public class ModuleCrudPermissionDto
     {
-        public bool Create { get; set; }
-        public bool Read { get; set; }
-        public bool Update { get; set; }
-        public bool Delete { get; set; }
-        public bool Export { get; set; }
-        public bool Import { get; set; }
-        public bool Permission1 { get; set; }
-        public bool Permission2 { get; set; }
-        public bool Permission3 { get; set; }
-        public bool Permission4 { get; set; }
+        public string Create { get; set; }
+        public string Read { get; set; }
+        public string Update { get; set; }
+        public string Delete { get; set; }
+        public string Export { get; set; }
+        public string Import { get; set; }
+        public string Permission1 { get; set; }
+        public string Permission2 { get; set; }
+        public string Permission3 { get; set; }
+        public string Permission4 { get; set; }
 
     }
 }

@@ -156,12 +156,12 @@ namespace PDMApp.Service
                 {
                     return new ModuleCrudPermissionDto
                     {
-                        Create = g.Any(x => x.createp == "Y"),
-                        Read = g.Any(x => x.readp == "Y"),
-                        Update = g.Any(x => x.updatep == "Y"),
-                        Delete = g.Any(x => x.deletep == "Y"),
-                        Export = g.Any(x => x.exportp == "Y"),
-                        Import = g.Any(x => x.importp == "Y")
+                        Create = g.Any(x => x.createp == "Y") ? "Y" : "N",
+                        Read = g.Any(x => x.readp == "Y") ? "Y" : "N",
+                        Update = g.Any(x => x.updatep == "Y") ? "Y" : "N",
+                        Delete = g.Any(x => x.deletep == "Y") ? "Y" : "N",
+                        Export = g.Any(x => x.exportp == "Y") ? "Y" : "N",
+                        Import = g.Any(x => x.importp == "Y") ? "Y" : "N"
                     };
                 });
 
