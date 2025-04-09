@@ -212,7 +212,7 @@ namespace PDMApp.Utils.BasicProgram
                                        RolePermissionId = Prp != null ? Prp.role_permission_id : 0,
                                        RoleId = parameters.RoleId,
                                        DevFactoryNo = Prp.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
-                                       IsActive = Prp.is_active ?? "N",
+                                       IsActive = Prp.is_active ?? "Y", // 因為前端沒有接收，但抓取tree menu會判斷此值。故給Y
                                        Createp = Prp.createp ?? "N",
                                        Readp = Prp.readp ?? "N",
                                        Updatep = Prp.updatep ?? "N",
