@@ -103,7 +103,7 @@ namespace PDMApp.Controllers
                     LocalName = user.local_name,
                     //LastLogin = user.last_login?.ToLocalTime(), // 轉換為本地時間
                     IsActive = true, // 如果能夠取得資料，代表用戶是活躍的
-                    DveFactoryNo = factories // 添加廠區列表
+                    DevFactoryNo = factories // 添加廠區列表
                 };
 
                 return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", userProfile).Result;
