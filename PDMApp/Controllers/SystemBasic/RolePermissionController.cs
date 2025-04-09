@@ -616,10 +616,10 @@ namespace PDMApp.Controllers
                     return APIResponseHelper.HandleApiError<object>("401", "尚未登入").Result;
 
                 // 加入語系到快取鍵中
-                var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.DevFactoryNo}_{request.LangCode}";
+                //var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.DevFactoryNo}_{request.LangCode}";
 
-                if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
-                    return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
+                //if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
+                    //return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
 
                 // 傳入語系參數
                 var result = await _repository.GetUserPermissionTreeAsync(
@@ -628,10 +628,10 @@ namespace PDMApp.Controllers
                     request.LangCode
                 );
 
-                _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-                });
+                //_cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                //{
+                //    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                //});
 
                 return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", result).Result;
             }
