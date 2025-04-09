@@ -16,6 +16,7 @@ namespace PDMApp.Dtos.BasicProgram
         public string PermissionKey { get; set; }
         public int? SortOrder { get; set; }
         public int? ParentId { get; set; }
+        public int? MFrontendId { get; set; }
         public List<MenuTreeNodeDto> Children { get; set; } = new(); // 遞迴用
     }
 }

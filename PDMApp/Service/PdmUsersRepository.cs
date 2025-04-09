@@ -124,7 +124,8 @@ namespace PDMApp.Service
                     m.menu_type,
                     m.permission_key,
                     m.sort_order,
-                    menu_name = i18n.menu_name ?? m.menu_name
+                    menu_name = i18n.menu_name ?? m.menu_name,
+                    m.m_frontend_id
                 }).ToListAsync();
 
             var accessibleMenuIds = accessibleMenus.Select(m => m.menu_id).ToList();
@@ -153,7 +154,8 @@ namespace PDMApp.Service
                     m.menu_type,
                     m.permission_key,
                     m.sort_order,
-                    menu_name = i18n.menu_name ?? m.menu_name
+                    menu_name = i18n.menu_name ?? m.menu_name,
+                    m.m_frontend_id
                 }).ToListAsync();
 
             // 合併主選單與父選單，避免重複
@@ -173,7 +175,8 @@ namespace PDMApp.Service
                 MenuType = m.menu_type,
                 PermissionKey = m.permission_key,
                 SortOrder = m.sort_order,
-                ParentId = m.parent_id
+                ParentId = m.parent_id,
+                MFrontendId =m.m_frontend_id
             }).ToList();
 
             // 4.組 Tree 結構（根據 parent_id）
@@ -240,6 +243,7 @@ namespace PDMApp.Service
                     PermissionKey = m.PermissionKey,
                     SortOrder = m.SortOrder,
                     ParentId = m.ParentId,
+                    MFrontendId = m.MFrontendId,
                     Children = BuildMenuTree(allMenus, m.MenuId)
                 }).ToList();
         }
