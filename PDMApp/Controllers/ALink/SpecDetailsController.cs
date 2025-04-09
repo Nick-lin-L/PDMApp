@@ -63,7 +63,10 @@ namespace PDMApp.Controllers.ALink
 
                 // 查詢所有資料
                 var query = _pcms_Pdm_TestContext.pdm_spec_item
-                    .Where(si => si.spec_m_id == value.SpecMId) // 過濾 SpecMId
+                    .Where(si => si.spec_m_id == value.SpecMId || si.parts == value.PartNo ||
+                    si.parts == value.PartName || si.material == value.MatColor ||
+                    si.material == value.Material || si.submaterial == value.SubMaterial ||
+                    si.supplier == value.Supplier || si.width == value.Width) // 過濾 SpecMId
                     .OrderBy(si => Convert.ToInt32(si.act_no))
                     .ThenBy(si => si.seqno)
                     .Select(si => new pdm_spec_itemDto
