@@ -609,14 +609,14 @@ namespace PDMApp.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(request.FactoryNo))
+                if (string.IsNullOrEmpty(request.DevFactoryNo))
                     return APIResponseHelper.HandleApiError<object>("40001", "廠別不可為空").Result;
 
                 if (_currentUser.UserId == null)
                     return APIResponseHelper.HandleApiError<object>("401", "尚未登入").Result;
 
                 // 加入語系到快取鍵中
-                var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.FactoryNo}_{request.LangCode}";
+                var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.DevFactoryNo}_{request.LangCode}";
 
                 if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
                     return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
@@ -624,7 +624,7 @@ namespace PDMApp.Controllers
                 // 傳入語系參數
                 var result = await _repository.GetUserPermissionTreeAsync(
                     _currentUser.UserId.Value,
-                    request.FactoryNo,
+                    request.DevFactoryNo,
                     request.LangCode
                 );
 

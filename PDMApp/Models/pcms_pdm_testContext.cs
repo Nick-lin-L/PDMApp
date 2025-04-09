@@ -3361,7 +3361,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.menu_code)
                     .IsRequired()
-                    .HasMaxLength(50);
+                    .HasMaxLength(50)
+                    .HasComment("Vue 路由的key or功能代號");
 
                 entity.Property(e => e.menu_icon).HasMaxLength(50);
 
