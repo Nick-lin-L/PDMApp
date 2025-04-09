@@ -597,7 +597,12 @@ namespace PDMApp.Controllers
             }
         }
 
-
+        // 5. 取得user選單權限
+        /// <summary>
+        /// 取得user選單權限
+        /// </summary>
+        /// <param name="request">選單權限參數</param>
+        /// <returns>選單權限結果</returns>
         [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("menu-permissions")]
         public async Task<IActionResult> GetUserPermissions([FromBody] MenuPermissionParameter request)
