@@ -150,7 +150,8 @@ namespace PDMApp.Controllers
                 var newUserRole = new pdm_user_roles
                 {
                     user_id = userRoleParam.UserId,
-                    role_id = userRoleParam.RoleId
+                    role_id = userRoleParam.RoleId,
+                    created_by = userid // 加入 created_by
                 };
 
                 _pcms_Pdm_TestContext.pdm_user_roles.Add(newUserRole);
