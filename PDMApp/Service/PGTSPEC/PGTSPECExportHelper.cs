@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Utils.PGTSPEC
+namespace Service.PGTSPEC
 {
     public static class PGTSPECExportHelper
     {

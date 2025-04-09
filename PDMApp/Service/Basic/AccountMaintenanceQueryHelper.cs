@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-public class AccountMaintenanceQueryHelper
+namespace PDMApp.Service.Basic
+{
+ public class AccountMaintenanceQueryHelper
 {
     public static IQueryable<DevFactoryNoDto> QueryDevFactoryNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
     {
@@ -76,9 +78,9 @@ public class AccountMaintenanceQueryHelper
                         IsSso = u.is_sso,
                         IsActive = u.is_active,
                         LastLogin = u.last_login,
-                        CreatedBy = createdUser != null ? createdUser.local_name : "", // 防止 NULL
+                        CreatedBy = createdUser != null ? createdUser.username : "", // 改為 username
                         CreatedAt = u.created_at,
-                        UpdatedBy = updatedUser != null ? updatedUser.local_name : "", // 防止 NULL
+                        UpdatedBy = updatedUser != null ? updatedUser.username : "", // 改為 username
                         UpdatedAt = u.updated_at
                     };
 
@@ -96,27 +98,32 @@ public class AccountMaintenanceQueryHelper
 
 
 
-    public static IQueryable<AccountDetailDto> QueryAccountDetails(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountDetailSearchParameter value)
-    {
-        var query = from u in _pcms_Pdm_TestContext.pdm_users
-                    join ur in _pcms_Pdm_TestContext.pdm_user_roles on u.user_id equals ur.user_id
-                    join r in _pcms_Pdm_TestContext.pdm_roles on ur.role_id equals r.role_id
-                    where u.user_id == value.UserId
-                    select new AccountDetailDto
-                    {
-                        UserId = u.user_id,
-                        PccUid = (decimal)u.pccuid,
-                        UserName = u.username,
-                        RoleId = r.role_id,
-                        RoleName = r.role_name,
-                        DevFactoryNo = r.dev_factory_no,
-                        CreatedBy = u.username, // 直接取 username
-                        CreatedAt = ur.created_at
-                    };
 
-        return query;
+        public static IQueryable<AccountDetailDto> QueryAccountDetails(pcms_pdm_testContext _pcms_Pdm_TestContext, AccountDetailSearchParameter value)
+        {
+            var query = from u in _pcms_Pdm_TestContext.pdm_users
+                        join ur in _pcms_Pdm_TestContext.pdm_user_roles on u.user_id equals ur.user_id
+                        join r in _pcms_Pdm_TestContext.pdm_roles on ur.role_id equals r.role_id
+                        join cu in _pcms_Pdm_TestContext.pdm_users on ur.created_by equals cu.user_id into createdByUser
+                        from cu in createdByUser.DefaultIfEmpty() // 左外部連接，避免 null crash
+                        where u.user_id == value.UserId
+                        select new AccountDetailDto
+                        {
+                            UserId = u.user_id,
+                            PccUid = (decimal)u.pccuid,
+                            UserName = u.username,
+                            RoleId = r.role_id,
+                            RoleName = r.role_name,
+                            DevFactoryNo = r.dev_factory_no,
+                            CreatedBy = cu != null ? cu.username : null, // 從 ur.created_by 對應 cu.username
+                            CreatedAt = ur.created_at
+                        };
+
+            return query;
+        }
+
+
+
+
     }
-
-
-
 }

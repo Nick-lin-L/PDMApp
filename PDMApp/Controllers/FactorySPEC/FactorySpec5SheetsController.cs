@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
-using Utils.FactorySpec;
 using System;
+using PDMApp.Service.FactorySpec;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -25,7 +26,6 @@ namespace PDMApp.Controllers.SPEC
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
-
         // POST api/<GetSpec5SheetRequestController>
         [HttpPost]
         public async Task<ActionResult<Utils.APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] FactorySpec5SheetsSearchParameter value)
@@ -36,13 +36,13 @@ namespace PDMApp.Controllers.SPEC
                 var resultData = new MultiPageResultDTO();
 
                 // BasicData 查詢
-                var basic_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
+                var basic_query = FactorySpecQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
                 var resultBasic = await basic_query.Distinct().ToListAsync();
                 resultData.BasicData = resultBasic;
 
                 // Upper, Sole, Other 查詢
-                var upper_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
+                var upper_query = FactorySpecQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
                     .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
 
                 var allUpperData = await upper_query.ToListAsync();
@@ -64,7 +64,7 @@ namespace PDMApp.Controllers.SPEC
                     .ToList();
 
                 // StandardData 查詢
-                var standard_query = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext)
+                var standard_query = FactorySpecQueryHelper.GetSpecStandardResponse(_pcms_Pdm_TestContext)
                     .Where(st => string.IsNullOrWhiteSpace(value.SpecMId) || st.SpecMId.Equals(value.SpecMId));
                 resultData.StandardData = await standard_query.Distinct().ToListAsync();
 
@@ -91,7 +91,6 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
-
         // POST: api/v1/FactorySpec5Sheets/Export
         [HttpPost("Export")]
         public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] FactorySpec5SheetsSearchParameter value)
@@ -102,12 +101,12 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // ItemSheet 查詢
-                var itemSheetData = Utils.FactorySpec.FactorySpecQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
+                var itemSheetData = FactorySpecQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
                     .ToList(); // 執行查詢，轉為 List
 
                 // standardSheet 查詢
-                var standardSheetData = Utils.FactorySpec.FactorySpecQueryHelper.GetSpecStandardSheetResponse(_pcms_Pdm_TestContext)
+                var standardSheetData = FactorySpecQueryHelper.GetSpecStandardSheetResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
                     .ToList(); // 執行查詢，轉為 List
 
@@ -144,6 +143,5 @@ namespace PDMApp.Controllers.SPEC
             }
 
         }
-       
     }
 }

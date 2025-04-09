@@ -32,7 +32,7 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // **將篩選條件直接傳遞到 QuerySpecHead**
-                var (isSuccess, message, query) = await Utils.SPEC.SPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
+                var (isSuccess, message, query) = await Service.SPEC.SPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, value);
 
                 // 檢查是否成功
                 if (!isSuccess)
@@ -77,12 +77,12 @@ namespace PDMApp.Controllers.SPEC
                 var resultData = new Dictionary<string, object>();
 
                 // 依序執行查詢，確保每次只有一個查詢在執行
-                resultData["BrandCombo"] = await Utils.SPEC.SPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["StageCombo"] = await Utils.SPEC.SPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["DevelopmentNoCombo"] = await Utils.SPEC.SPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
-                resultData["DevelopmentColorNoCombo"] = await Utils.SPEC.SPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
-                resultData["EntryModeCombo"] = await Utils.SPEC.SPECQueryHelper.QueryEntryMode(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["SeasonCombo"] = await Utils.SPEC.SPECQueryHelper.QuerySeason(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["BrandCombo"] = await Service.SPEC.SPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["StageCombo"] = await Service.SPEC.SPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["DevelopmentNoCombo"] = await Service.SPEC.SPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
+                resultData["DevelopmentColorNoCombo"] = await Service.SPEC.SPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
+                resultData["EntryModeCombo"] = await Service.SPEC.SPECQueryHelper.QueryEntryMode(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["SeasonCombo"] = await Service.SPEC.SPECQueryHelper.QuerySeason(_pcms_Pdm_TestContext, value).ToListAsync();
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);

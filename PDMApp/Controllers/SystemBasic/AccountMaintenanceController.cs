@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.Basic;
+using PDMApp.Service.Basic;
 using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
 using System;
@@ -149,7 +150,8 @@ namespace PDMApp.Controllers
                 var newUserRole = new pdm_user_roles
                 {
                     user_id = userRoleParam.UserId,
-                    role_id = userRoleParam.RoleId
+                    role_id = userRoleParam.RoleId,
+                    created_by = userid // 加入 created_by
                 };
 
                 _pcms_Pdm_TestContext.pdm_user_roles.Add(newUserRole);

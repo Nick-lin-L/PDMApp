@@ -44,7 +44,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 bool latestVerOnly = string.IsNullOrWhiteSpace(value.Ver) || value.Ver == "Latest Ver";
 
                 // 將篩選條件直接傳遞到 QuerySpecHead
-                var (isSuccess, message, query) = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
+                var (isSuccess, message, query) = await Service.PGTSPEC.PGTSPECQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext, latestVerOnly, value, pccuid, nameEn);
 
                 // 檢查是否成功
                 if (!isSuccess)
@@ -91,8 +91,8 @@ namespace PDMApp.Controllers.PGTSPEC
                 var currentUser = CurrentUserUtils.Get(HttpContext);
                 var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
-           
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
+
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECInsertHelper.InsertSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -132,7 +132,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECCopyToHelper.CopyToSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -175,7 +175,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
                 var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
 
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
                 if (!isSuccess)
                 {
@@ -216,7 +216,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
                 var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
 
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECCheckinHelper.CheckinSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECCheckinHelper.CheckinSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
                 if (!isSuccess)
                 {
@@ -256,7 +256,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true, pccuid, name);
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: true, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -296,7 +296,7 @@ namespace PDMApp.Controllers.PGTSPEC
                 var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
                 var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
 
-                var (isSuccess, message) = await Utils.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false, pccuid, name);
+                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECLockHelper.LockSpecAsync(_pcms_Pdm_TestContext, value, isLock: false, pccuid, name);
 
                 if (!isSuccess)
                 {
@@ -332,13 +332,13 @@ namespace PDMApp.Controllers.PGTSPEC
             {
                 // 創建字典來儲存查詢結果
                 var resultData = new Dictionary<string, object>();
-          
+
                 // 依序執行查詢，確保每次只有一個查詢在執行
-                resultData["BrandCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["SpecSourceCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QuerySpecSource(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["StageCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["DevelopmentNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
-                resultData["DevelopmentColorNoCombo"] = await Utils.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
+                resultData["BrandCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryBrand(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["SpecSourceCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QuerySpecSource(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["StageCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["DevelopmentNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
+                resultData["DevelopmentColorNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);

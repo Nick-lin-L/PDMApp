@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Utils.FactorySpec.SheetGenerators
+namespace PDMApp.Service.FactorySpec.SheetGenerators
 {
     public class ItemSheetGenerator<T>
     {
