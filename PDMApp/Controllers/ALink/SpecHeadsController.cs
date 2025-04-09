@@ -46,6 +46,11 @@ namespace PDMApp.Controllers.ALink
 
         // POST api/<SpecHeadsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
+        /// <summary>
+        /// 查詢SpecHeads
+        /// </summary>
+        /// <param name="value">SpecSearchParameter</param>
+        /// <returns>pdm_spec_headDto</returns>
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try
@@ -190,6 +195,12 @@ namespace PDMApp.Controllers.ALink
             }
         }
 
+        // 上傳Excel
+        /// <summary>
+        /// 上傳Excel
+        /// </summary>
+        /// <param name="file">IFormFile</param>
+        /// <returns>IActionResult</returns>
         [HttpPost("Upload")]
         public IActionResult UploadExcel([FromForm] IFormFile file)
         {
