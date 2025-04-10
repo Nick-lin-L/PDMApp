@@ -42,7 +42,7 @@ namespace PDMApp.Controllers.ALink
             return "value";
         }
 
-        [HttpPost("post")]
+        [HttpPost]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try
