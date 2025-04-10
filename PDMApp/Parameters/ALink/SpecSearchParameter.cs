@@ -12,10 +12,10 @@ namespace PDMApp.Parameters.ALink
         //接收user查詢的參數
 #nullable enable
         public string? SpecMId { get; set; }
-        [Required]
+        //[Required]
         public string? Factory { get; set; }
         public string? EntryMode { get; set; }
-        [Required]
+        //[Required]
         public string? Season { get; set; }
         public string? Year { get; set; }
         public string? ItemNo { get; set; }
