@@ -101,6 +101,8 @@ namespace PDMApp.Controllers.Cbd
                 {
                     EnableWriteNullValueCell = false, // Default value.
                     IgnoreTemplateParameterMissing = false,
+                    BufferSize = 8192 * 4
+
                 };
 
                 MemoryStream memoryStream = new MemoryStream();
@@ -156,7 +158,7 @@ namespace PDMApp.Controllers.Cbd
         {
             try
             {
-                var query = _icbdqueryService.CbdSearchDetail(parameter.DataMId);
+                var query = _icbdqueryService.CbdSearchDetail(parameter);
                 var data = await query.ToPagedResultAsync(parameter.Pagination.PageNumber, parameter.Pagination.PageSize);
                 return APIResponseHelper.HandlePagedApiResponse(data);
             }
