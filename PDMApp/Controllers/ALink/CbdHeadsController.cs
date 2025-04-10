@@ -42,9 +42,38 @@ namespace PDMApp.Controllers.ALink
             return "value";
         }
 
+        [HttpPost("post")]
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
+        {
+            try
+            {
+                // Step 1：查詢 + 分頁（EF 查 DB）
+                var pagedResult = await QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value)
+                                                   .Distinct()
+                                                   .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
+
+                // Step 2：在記憶體中組合 Factory 字串
+                foreach (var item in pagedResult.Results)
+                {
+                    item.Factory = string.Join(",", new[] { item.Factory1, item.Factory2, item.Factory3 }
+                                                .Where(f => !string.IsNullOrWhiteSpace(f)));
+                }
+
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
+                    errorCode: "50001",
+                    message: $"權限查詢過程中發生錯誤: {ex.Message}",
+                    data: null
+                );
+            }
+        }
+
         // POST api/v1/<CbdHeadsController>
-        [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] CbdSearchParameter value)
+        [HttpPost("post2")]
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post2([FromBody] CbdSearchParameter value)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);

@@ -32,7 +32,6 @@ namespace PDMApp.Utils
                             MoldNo = (ph.out_mold_no + "/" + ph.mid_mold_no + "/" + ph.etc_mold_no).Trim('/'),
                             OutMoldNo = ph.out_mold_no,
                             Shfactory = sh.factory,
-                            //Factory = (ph.factory1 + "," + ph.factory2 + "," + ph.factory3).Replace(",,", ","),
                             Factory1 = ph.factory1,
                             Factory2 = ph.factory2,
                             Factory3 = ph.factory3,
@@ -52,15 +51,6 @@ namespace PDMApp.Utils
                             LastNo2 = ph.last_no2,
                             LastNo3 = ph.last_no3,
                             HeelHeight = sh.heelheight.ToString()
-                            /*
-                            Material = si.material,
-                            SubMaterial = si.submaterial,
-                            Supplier = si.supplier,
-                            Width = si.width,
-                            PartNo = si.act_no,
-                            PartName = si.parts,
-                            MatColor = si.colors
-                            */
                         };
 
             // 精確匹配條件
@@ -119,22 +109,6 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.ItemNameEng ?? "", $"%{searchParams.ItemNameENG}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.ItemNameJPN))
                 query = query.Where(ph => EF.Functions.Like(ph.ItemNameJpn ?? "", $"%{searchParams.ItemNameJPN}%"));
-            /*
-            if (!string.IsNullOrWhiteSpace(searchParams.PartName))
-                query = query.Where(ph => EF.Functions.Like(ph.PartName ?? "", $"%{searchParams.PartName}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
-                query = query.Where(ph => EF.Functions.Like(ph.PartNo ?? "", $"%{searchParams.PartNo}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.MatColor))
-                query = query.Where(ph => EF.Functions.Like(ph.MatColor ?? "", $"%{searchParams.MatColor}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.Material))
-                query = query.Where(ph => EF.Functions.Like(ph.Material ?? "", $"%{searchParams.Material}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.SubMaterial))
-                query = query.Where(ph => EF.Functions.Like(ph.SubMaterial ?? "", $"%{searchParams.SubMaterial}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.Supplier))
-                query = query.Where(ph => EF.Functions.Like(ph.Supplier ?? "", $"%{searchParams.Supplier}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.Width))
-                query = query.Where(ph => EF.Functions.Like(ph.Width ?? "", $"%{searchParams.Width}%"));
-            */
             if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
                 query = query.Where(ph => EF.Functions.Like(ph.HeelHeight ?? "", $"%{searchParams.HeelHeight}%"));
             // 預設排序
