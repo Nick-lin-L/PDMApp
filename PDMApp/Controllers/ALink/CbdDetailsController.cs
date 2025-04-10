@@ -62,6 +62,13 @@ namespace PDMApp.Controllers.ALink
                 // 查詢子表資料 (使用 IQueryable 支持分頁查詢)
                 var query = _pcms_Pdm_TestContext.pdm_spec_item
                     .Where(si => si.spec_m_id == value.SpecMId)
+                    .Where(si => string.IsNullOrEmpty(value.PartNo) || si.act_no.Contains(value.PartNo))
+                    .Where(si => string.IsNullOrEmpty(value.PartName) || si.parts.Contains(value.PartName))
+                    .Where(si => string.IsNullOrEmpty(value.MatColor) || si.colors.Contains(value.MatColor))
+                    .Where(si => string.IsNullOrEmpty(value.Material) || si.material.Contains(value.Material))
+                    .Where(si => string.IsNullOrEmpty(value.SubMaterial) || si.submaterial.Contains(value.SubMaterial))
+                    .Where(si => string.IsNullOrEmpty(value.Supplier) || si.supplier.Contains(value.Supplier))
+                    .Where(si => string.IsNullOrEmpty(value.Width) || si.width.Contains(value.Width))
                     .OrderBy(si => Convert.ToInt32(si.act_no))
                     .ThenBy(si => si.seqno)
                     .AsQueryable();
