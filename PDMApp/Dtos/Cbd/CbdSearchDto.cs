@@ -73,6 +73,8 @@ namespace PDMApp.Dtos.Cbd
             public decimal? UnitPrice { get; set; }
             public decimal? Cost { get; set; }
             public string? DataMId { get; set; }
+            public string? PartClass { get; set; }
+            public int? Seqno { get; set; }
         }
     }
 }

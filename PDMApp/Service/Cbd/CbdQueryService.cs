@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DocumentFormat.OpenXml.Math;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
@@ -17,6 +18,7 @@ using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
 using PDMApp.Parameters.Cbd;
+using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Service.Cbd
 {
@@ -24,11 +26,12 @@ namespace PDMApp.Service.Cbd
     {
         private readonly pcms_pdm_testContext _context;
         private readonly ILogger<CbdQueryService> _logger;
-
-        public CbdQueryService(pcms_pdm_testContext context, ILogger<CbdQueryService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public CbdQueryService(pcms_pdm_testContext context, ILogger<CbdQueryService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<dynamic> ExcelImport(Parameters.Cbd.CbdQueryParameter.CbdExcel value)
@@ -37,6 +40,7 @@ namespace PDMApp.Service.Cbd
             {
                 var stageList = await GetStages(value.DevFactoryNo);
                 var stage = stageList.Where(x => string.Equals(x.text, value.Stage, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var currentUser = CurrentUserUtils.Get(_httpContextAccessor.HttpContext);
 
                 if (String.IsNullOrWhiteSpace(value?.DevelopmentNo))
                 {
@@ -118,9 +122,9 @@ namespace PDMApp.Service.Cbd
                 _plm_cbd_head.speclockmk = "N";
                 _plm_cbd_head.cbdlockmk = "N";
                 _plm_cbd_head.stage = stage.value_desc;
-                _plm_cbd_head.create_user = "TEST";
+                // _plm_cbd_head.create_user = currentUser.UserId?.ToString();
                 _plm_cbd_head.create_date = DateTime.Now;
-                _plm_cbd_head.update_user = "TEST";
+                // _plm_cbd_head.update_user = currentUser.UserId?.ToString();
                 _plm_cbd_head.update_date = DateTime.Now;
                 _plm_cbd_head.product_d_id = product_d_id;
                 _plm_cbd_head.ver = ver;
@@ -509,9 +513,14 @@ namespace PDMApp.Service.Cbd
                         on pi.product_d_id equals ch.product_d_id
                         join ci in _context.plm_cbd_item
                         on ch.data_m_id equals ci.data_m_id
-                        where (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                        join pnv in _context.pdm_namevalue_new
+                        on ph.factory equals pnv.fact_no
+                        where (pnv.text == value.Brand) &&
+                              (pnv.group_key == "brand") &&
+                              (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
                               (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
-                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.Stage)) &&
+                              (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
                               (ph.item_trading_code == value.ItemNo || string.IsNullOrWhiteSpace(value.ItemNo)) &&
                               (ph.development_no == value.DevelopmentNo || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
                               (pi.color_code == value.ColorCode || string.IsNullOrWhiteSpace(value.ColorCode)) &&
@@ -561,20 +570,19 @@ namespace PDMApp.Service.Cbd
                         on ph.product_m_id equals pi.product_m_id
                         join ch in _context.plm_cbd_head
                         on pi.product_d_id equals ch.product_d_id
-                        join ci in _context.plm_cbd_item
-                        on ch.data_m_id equals ci.data_m_id
-                        where (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                        join pnv in _context.pdm_namevalue_new
+                        on ph.factory equals pnv.fact_no
+                        where (pnv.text == value.Brand) &&
+                              (pnv.group_key == "brand") &&
+                              (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
                               (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
                               (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.Stage)) &&
-                              (ph.item_trading_code == value.ItemNo || string.IsNullOrWhiteSpace(value.ItemNo)) &&
-                              (ph.development_no == value.DevelopmentNo || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
-                              (pi.color_code == value.ColorCode || string.IsNullOrWhiteSpace(value.ColorCode)) &&
-                              (ci.parts == value.Parts || string.IsNullOrWhiteSpace(value.Parts)) &&
-                              (ci.material == value.Material || string.IsNullOrWhiteSpace(value.Material)) &&
-                              (ci.colors == value.MaterialColor || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
-                              (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
-                              (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
-                              (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
+                              (ph.item_trading_code.Contains(value.ItemNo) || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no.Contains(value.DevelopmentNo) || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code.Contains(value.ColorCode) || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ph.working_name.Contains(value.WorkingName) || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last))
                         group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
                            by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
                            into g
@@ -595,7 +603,7 @@ namespace PDMApp.Service.Cbd
             return query.Distinct();
         }
 
-        public IQueryable<CbdSearchDto.DetailsDto> CbdSearchDetail(String DataMId)
+        public IQueryable<CbdSearchDto.DetailsDto> CbdSearchDetail(Parameters.Cbd.CbdSearchParameter.QueryDetailParameter value)
         {
             var query = from ph in _context.plm_product_head
                         join pi in _context.plm_product_item
@@ -604,7 +612,11 @@ namespace PDMApp.Service.Cbd
                         on pi.product_d_id equals ch.product_d_id
                         join ci in _context.plm_cbd_item
                         on ch.data_m_id equals ci.data_m_id
-                        where ci.data_m_id == DataMId
+                        where ci.data_m_id == value.DataMId &&
+                              (EF.Functions.Like(ci.parts, value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (EF.Functions.Like(ci.material, value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (EF.Functions.Like(ci.colors, value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (EF.Functions.Like(ci.supplier, value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
                         orderby ci.data_m_id, ci.partclass, ci.seqno ascending
                         select new CbdSearchDto.DetailsDto
                         {
@@ -628,6 +640,8 @@ namespace PDMApp.Service.Cbd
                             Usage2 = ci.usage2,
                             UnitPrice = ci.unitprice,
                             Cost = ci.cost,
+                            Seqno = ci.seqno,
+                            PartClass = ci.partclass,
                             DataMId = ch.data_m_id
                         };
 
