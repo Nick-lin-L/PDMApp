@@ -503,9 +503,8 @@ namespace PDMApp.Service.Cbd
 
         }
 
-        public async Task<IEnumerable<CbdSearchDto.ExcelData>> ExcelExport(CbdSearchParameter.QueryParameter value)
+        public IEnumerable<CbdSearchDto.ExcelData> ExcelExport(CbdSearchParameter.QueryParameter value)
         {
-
             var query = from ph in _context.plm_product_head
                         join pi in _context.plm_product_item
                         on ph.product_m_id equals pi.product_m_id
@@ -519,17 +518,17 @@ namespace PDMApp.Service.Cbd
                               (pnv.group_key == "brand") &&
                               (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
                               (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
-                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.Stage)) &&
                               (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
-                              (ph.item_trading_code == value.ItemNo || string.IsNullOrWhiteSpace(value.ItemNo)) &&
-                              (ph.development_no == value.DevelopmentNo || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
-                              (pi.color_code == value.ColorCode || string.IsNullOrWhiteSpace(value.ColorCode)) &&
-                              (ci.parts == value.Parts || string.IsNullOrWhiteSpace(value.Parts)) &&
-                              (ci.material == value.Material || string.IsNullOrWhiteSpace(value.Material)) &&
-                              (ci.colors == value.MaterialColor || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
-                              (ci.supplier == value.Supplier || string.IsNullOrWhiteSpace(value.Supplier)) &&
-                              (ph.working_name == value.WorkingName || string.IsNullOrWhiteSpace(value.WorkingName)) &&
-                              (ph.last1 == value.Last || string.IsNullOrWhiteSpace(value.Last))
+                              (string.IsNullOrWhiteSpace(value.Stage) || ph.stage == (value.Stage == null ? string.Empty : value.Stage.ToUpper())) &&
+                              (ph.item_trading_code.Contains(value.ItemNo) || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no.Contains(value.DevelopmentNo) || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code.Contains(value.ColorCode) || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ph.working_name.Contains(value.WorkingName) || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last)) &&
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
                         orderby ci.data_m_id, ci.partclass, ci.seqno ascending
                         select new CbdSearchDto.ExcelData
                         {
@@ -559,8 +558,7 @@ namespace PDMApp.Service.Cbd
                             Price = ci.unitprice,
                             Cost = ci.cost,
                         };
-
-            return await query.ToListAsync();
+            return query.AsEnumerable();
         }
 
         public IQueryable<CbdSearchDto.QueryDto> CbdSearch(CbdSearchParameter.QueryParameter value)
@@ -570,6 +568,8 @@ namespace PDMApp.Service.Cbd
                         on ph.product_m_id equals pi.product_m_id
                         join ch in _context.plm_cbd_head
                         on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
                         join pnv in _context.pdm_namevalue_new
                         on ph.factory equals pnv.fact_no
                         where (pnv.text == value.Brand) &&
@@ -577,12 +577,16 @@ namespace PDMApp.Service.Cbd
                               (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
                               (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
                               (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
-                              (ph.stage == value.Stage || string.IsNullOrWhiteSpace(value.Stage)) &&
+                              (string.IsNullOrWhiteSpace(value.Stage) || ph.stage == (value.Stage == null ? string.Empty : value.Stage.ToUpper())) &&
                               (ph.item_trading_code.Contains(value.ItemNo) || string.IsNullOrWhiteSpace(value.ItemNo)) &&
                               (ph.development_no.Contains(value.DevelopmentNo) || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
                               (pi.color_code.Contains(value.ColorCode) || string.IsNullOrWhiteSpace(value.ColorCode)) &&
                               (ph.working_name.Contains(value.WorkingName) || string.IsNullOrWhiteSpace(value.WorkingName)) &&
-                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last))
+                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last)) &&
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
                         group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
                            by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
                            into g
@@ -613,10 +617,10 @@ namespace PDMApp.Service.Cbd
                         join ci in _context.plm_cbd_item
                         on ch.data_m_id equals ci.data_m_id
                         where ci.data_m_id == value.DataMId &&
-                              (EF.Functions.Like(ci.parts, value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
-                              (EF.Functions.Like(ci.material, value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
-                              (EF.Functions.Like(ci.colors, value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
-                              (EF.Functions.Like(ci.supplier, value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
                         orderby ci.data_m_id, ci.partclass, ci.seqno ascending
                         select new CbdSearchDto.DetailsDto
                         {
@@ -645,7 +649,7 @@ namespace PDMApp.Service.Cbd
                             DataMId = ch.data_m_id
                         };
 
-            return query.Distinct();
+            return query;
         }
     }
 }
