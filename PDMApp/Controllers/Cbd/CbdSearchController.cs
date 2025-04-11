@@ -95,14 +95,18 @@ namespace PDMApp.Controllers.Cbd
                 {
                     throw new Exception("查詢條件不可以都為空");
                 }
-                var data = await _icbdqueryService.ExcelExport(parameter);
-
+                var data = _icbdqueryService.ExcelExport(parameter);
+                var count = data.Count();
+                if (count >= 5000)
+                {
+                    throw new Exception("資料超過五千筆，請增加查詢條件");
+                }
                 OpenXmlConfiguration configuration = new OpenXmlConfiguration()
                 {
                     EnableWriteNullValueCell = false, // Default value.
                     IgnoreTemplateParameterMissing = false,
+                    EnableSharedStringCache = true,
                     BufferSize = 8192 * 4
-
                 };
 
                 MemoryStream memoryStream = new MemoryStream();
@@ -110,7 +114,7 @@ namespace PDMApp.Controllers.Cbd
                 {
                     ["ExcelData"] = data
                 };
-                var mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                // var mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 var fileName = "cbddata.xlsx";
                 fileName = Uri.EscapeDataString(fileName);
                 Response.Headers.Add("Content-Disposition", $"attachment; filename*=UTF-8''{fileName}");
