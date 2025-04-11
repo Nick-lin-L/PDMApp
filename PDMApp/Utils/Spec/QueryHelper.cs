@@ -50,7 +50,15 @@ namespace PDMApp.Utils
                             LastNo1 = ph.last_no1,
                             LastNo2 = ph.last_no2,
                             LastNo3 = ph.last_no3,
-                            HeelHeight = sh.heelheight.ToString()
+                            HeelHeight = sh.heelheight.ToString(),
+                            //以下為SpecItem的欄位
+                            Material = si.material,
+                            SubMaterial = si.submaterial,
+                            Supplier = si.supplier,
+                            Width = si.width,
+                            PartNo = si.act_no,
+                            PartName = si.parts,
+                            MatColor = si.colors
                         };
 
             // 精確匹配條件
@@ -111,6 +119,28 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.ItemNameJpn ?? "", $"%{searchParams.ItemNameJPN}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.HeelHeight))
                 query = query.Where(ph => EF.Functions.Like(ph.HeelHeight ?? "", $"%{searchParams.HeelHeight}%"));
+
+            //if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
+            //    query = query.Where(ph => EF.Functions.Like(ph.PartNo ?? "", $"%{searchParams.PartNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.PartName))
+                query = query.Where(ph => EF.Functions.Like(ph.PartName ?? "", $"%{searchParams.PartName}%"));
+
+            // 加入子檔條件判斷
+            if (!string.IsNullOrWhiteSpace(searchParams.PartNo))
+                query = query.Where(ph => EF.Functions.Like(ph.PartNo ?? "", $"%{searchParams.PartNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.PartName))
+                query = query.Where(ph => EF.Functions.Like(ph.PartName ?? "", $"%{searchParams.PartName}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.MatColor))
+                query = query.Where(ph => EF.Functions.Like(ph.MatColor ?? "", $"%{searchParams.MatColor}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Material))
+                query = query.Where(ph => EF.Functions.Like(ph.Material ?? "", $"%{searchParams.Material}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.SubMaterial))
+                query = query.Where(ph => EF.Functions.Like(ph.SubMaterial ?? "", $"%{searchParams.SubMaterial}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Supplier))
+                query = query.Where(ph => EF.Functions.Like(ph.Supplier ?? "", $"%{searchParams.Supplier}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Width))
+                query = query.Where(ph => EF.Functions.Like(ph.Width ?? "", $"%{searchParams.Width}%"));
+
             // 預設排序
             return query.OrderBy(ph => ph.DevNo)
                         .ThenBy(ph => ph.DevColorDispName)

@@ -23,5 +23,8 @@ namespace PDMApp.Dtos.BasicProgram
         public string? Hcha { get; set; }
         public string? Sec { get; set; }
         public string? Width { get; set; }
+        public decimal? Usage { get; set; } // for cbd export
+        public decimal? Price { get; set; } // for cbd export
+        public decimal? CostUS { get; set; } // for cbd export
     }
 }
