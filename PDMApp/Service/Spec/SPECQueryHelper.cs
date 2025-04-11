@@ -158,8 +158,24 @@ namespace PDMApp.Service.SPEC
                                 Memo = si.memo
                             };
 
+            if (!string.IsNullOrWhiteSpace(value.PartName))
+                baseQuery = baseQuery.Where(x => x.Parts != null && x.Parts.Contains(value.PartName));
+
+            if (!string.IsNullOrWhiteSpace(value.Material))
+                baseQuery = baseQuery.Where(x => x.Material != null && x.Material.Contains(value.Material));
+
+            if (!string.IsNullOrWhiteSpace(value.MaterialColor))
+                baseQuery = baseQuery.Where(x => x.MatColor != null && x.MatColor.Contains(value.MaterialColor));
+
+            if (!string.IsNullOrWhiteSpace(value.Supplier))
+                baseQuery = baseQuery.Where(x => x.Supplier != null && x.Supplier.Contains(value.Supplier));
+
+            if (!string.IsNullOrWhiteSpace(value.HeelHeight))
+                baseQuery = baseQuery.Where(x => x.Detail != null && x.Detail.Contains(value.HeelHeight));
+
             return baseQuery;
         }
+
 
         public static IQueryable<SPECExportDto> QuerySpecExport(pcms_pdm_testContext _pcms_Pdm_TestContext, SPECExportSearchParameter value)
         {
