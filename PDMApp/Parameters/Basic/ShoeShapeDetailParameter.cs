@@ -6,14 +6,10 @@ using System.Threading.Tasks;
 
 namespace PDMApp.Parameters.Basic
 {
-    public class ShoeShapeParameter
+    public class ShoeShapeDetailParameter
     {
         public string? ProductMId { get; set; }
-        public string? Season { get; set; }
-        public string? WorkingName { get; set; }
-        public string? DevelopmentNo { get; set; }
-        //public string? Colorway { get; set; }
-        public int? LastUpdate { get; set; }
+        public string? Colorway { get; set; }
 
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
 
@@ -31,3 +27,4 @@ namespace PDMApp.Parameters.Basic
         }
     }
 }
+

@@ -24,9 +24,13 @@ namespace PDMApp.Dtos.Basic
         public string? Last3 { get; set; }
         public string? SizeRange { get; set; }
         public string? SizeRun { get; set; }
-        public DateTime? LastUpdate { get; set; }
+        public DateTime? LastUpdate { get; set; }        
+    }
 
+    public class ShoeShapeDetailsDto
+    {
         //子檔查詢結果
+        public string? ProductMId { get; set; }
         public string? Active { get; set; }
         public string? DevelopmentColorNo { get; set; }
         public string? ColorCode { get; set; }
