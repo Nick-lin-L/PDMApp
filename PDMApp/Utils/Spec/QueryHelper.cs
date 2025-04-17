@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
+using PDMApp.Dtos.Basic;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.ALink;
+using PDMApp.Parameters.Basic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -422,5 +424,90 @@ namespace PDMApp.Utils
                     });
         }
 
+        public static IQueryable<ShoeShapeDto> QueryShoeShapeHead(pcms_pdm_testContext _pcms_Pdm_TestContext, ShoeShapeParameter searchParams)
+        {
+            // 基礎查詢
+            var query = from ph in _pcms_Pdm_TestContext.plm_product_head
+                        join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                        join pn in _pcms_Pdm_TestContext.pdm_namevalue on ph.stage equals pn.text
+                        where pn.group_key == "stage"
+                        select new ShoeShapeDto
+                        {
+                            ProductMId = ph.product_m_id,
+                            DevelopmentNo = ph.development_no,
+                            //DevelopmentColorNo = pi.development_color_no,
+                            ItemNo = ph.item_trading_code,
+                            Season = ph.season,
+                            Stage = pn.text,
+                            WorkingName = ph.working_name,
+                            Factory = ph.assigned_agents,
+                            Gender = ph.gender,
+                            SampleSize = ph.default_size,
+                            Width = ph.width,
+                            Last1 = ph.last1,
+                            Last2 = ph.last2,
+                            Last3 = ph.last3,
+                            SizeRange = ph.size_range,
+                            SizeRun = ph.size_run,
+                            LastUpdate = ph.update_date,
+                            //Colorway = pi.colorway
+                        };
+
+            // 精確匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.ProductMId))
+                query = query.Where(ph => ph.ProductMId == searchParams.ProductMId);
+
+            // 模糊匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.Season))
+                query = query.Where(ph => EF.Functions.Like(ph.Season ?? "", $"%{searchParams.Season}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.WorkingName))
+                query = query.Where(ph => EF.Functions.Like(ph.WorkingName ?? "", $"%{searchParams.WorkingName}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.DevelopmentNo))
+                query = query.Where(ph => EF.Functions.Like(ph.DevelopmentNo ?? "", $"%{searchParams.DevelopmentNo}%"));
+            
+            if (searchParams.LastUpdate.HasValue)
+            {
+                var targetDate = DateTime.Now.AddDays(-searchParams.LastUpdate.Value);
+                query = query.Where(ph => ph.LastUpdate >= targetDate);
+            }
+
+            // 加入子檔條件判斷
+            //if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
+            //    query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
+
+            // 預設排序
+            return query.OrderBy(ph => ph.DevelopmentNo);
+
+        }
+
+        public static IQueryable<ShoeShapeDetailsDto> QueryShoeShapeDetails(pcms_pdm_testContext _pcms_Pdm_TestContext, ShoeShapeDetailParameter searchParams)
+        {
+            // 基礎查詢
+            var query = from ph in _pcms_Pdm_TestContext.plm_product_head
+                        join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                        join pn in _pcms_Pdm_TestContext.pdm_namevalue on ph.stage equals pn.text
+                        where pn.group_key == "stage"
+                        select new ShoeShapeDetailsDto
+                        {
+                            ProductMId = ph.product_m_id,
+                            Active = pi.active,
+                            DevelopmentColorNo = pi.development_color_no,
+                            ColorCode = pi.color_code,
+                            Colorway = pi.colorway,
+                            MainColor = pi.main_color,
+                            SubColor = pi.sub_color
+                        };
+            // 精確匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.ProductMId))
+                query = query.Where(ph => ph.ProductMId == searchParams.ProductMId);
+
+            // 加入子檔條件判斷
+            if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
+                query = query.Where(pi => EF.Functions.Like(pi.Colorway ?? "", $"%{searchParams.Colorway}%"));
+
+            // 預設排序
+            return query.OrderBy(pi => pi.DevelopmentColorNo);
+        }
     }
+
 }

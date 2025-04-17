@@ -46,4 +46,10 @@ namespace PDMApp.Parameters.Basic
         public string DescriptionD { get; set; } // 權限Detail描述 ID
         public string IsActiveD { get; set; } // 是否啟用
     }
+
+    public class PermissionCheckParameter
+    {
+        public string DevFactoryNo { get; set; }
+        public int FrontendId { get; set; }
+    }
 }
