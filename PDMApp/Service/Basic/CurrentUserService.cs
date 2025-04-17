@@ -31,7 +31,7 @@ namespace PDMApp.Service.Basic
             return User?.FindFirst(type)?.Value;
         }
 
-        private long? TryParseLong(string value)
+        private static long? TryParseLong(string value)
         {
             return long.TryParse(value, out var result) ? result : (long?)null;
         }

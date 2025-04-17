@@ -357,7 +357,7 @@ namespace PDMApp.Controllers
         /// <summary>
         /// 登出，讓前端登出並清除登入狀態
         /// </summary>
-        [AllowAnonymous]
+        [AllowAnonymous] // 這個API不需要登入
         [HttpGet("logout")]
         public async Task<IActionResult> Logout()
         {

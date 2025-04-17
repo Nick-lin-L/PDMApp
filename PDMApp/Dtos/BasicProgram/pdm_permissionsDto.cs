@@ -93,4 +93,22 @@ namespace PDMApp.Dtos.BasicProgram
         public string DescriptionD { get; set; }  // 權限細節描述
         public string? IsActiveD { get; set; }  // 是否啟用
     }
+
+    public class PermissionCheckResultDto
+    {
+        public int PermissionId { get; set; }
+        public string PermissionName { get; set; }
+        public string HasPermission { get; set; }
+        public Dictionary<string, string> OperationPermissions { get; set; }
+        public List<ExtendedPermissionDto> ExtendedPermissions { get; set; }
+    }
+
+    public class ExtendedPermissionDto
+    {
+        public int? PermissionKeyId { get; set; }
+        public int? PermissionId { get; set; }
+        public string PermissionKey { get; set; }
+        public string Description { get; set; }
+        public string IsActive { get; set; }
+    }
 }
