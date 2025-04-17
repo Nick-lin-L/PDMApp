@@ -738,5 +738,101 @@ namespace PDMApp.Controllers
         {
             public IEnumerable<pdm_permissionsDto> Permissions { get; set; }
         }
+
+
+        // 6. 取得該作業權限
+        /// <summary>
+        /// 取得該作業權限
+        /// </summary>
+        /// <param name="request">傳入frotendID</param>
+        /// <returns>單支作業權限的主、擴充結構</returns>
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpPost("check-permission")]
+        public async Task<ActionResult<APIStatusResponse<PermissionCheckResultDto>>> CheckPermission([FromBody] PermissionCheckParameter request)
+        {
+            try
+            {
+                if (_currentUser.UserId == null)
+                {
+                    return APIResponseHelper.HandleApiError<PermissionCheckResultDto>(
+                        "401", "尚未登入", null);
+                }
+
+                if (string.IsNullOrEmpty(request.DevFactoryNo))
+                {
+                    return APIResponseHelper.HandleApiError<PermissionCheckResultDto>(
+                        "40001", "廠別不可為空", null);
+                }
+
+                // 1. 取得使用者角色
+                var userRoles = await _pcms_Pdm_TestContext.pdm_user_roles
+                    .Where(ur => ur.user_id == _currentUser.UserId)
+                    .Select(ur => ur.role_id)
+                    .ToListAsync();
+
+                // 2. 取得權限資料
+                var permission = await _pcms_Pdm_TestContext.pdm_permissions
+                    .FirstOrDefaultAsync(p => p.frontend_id == request.FrontendId);
+
+                if (permission == null)
+                {
+                    return APIResponseHelper.HandleApiError<PermissionCheckResultDto>(
+                        "40002", "找不到對應的權限資料", null);
+                }
+
+                // 3. 取得角色權限
+                var rolePermissions = await _pcms_Pdm_TestContext.pdm_role_permissions
+                    .Where(rp => userRoles.Contains(rp.role_id.Value) &&
+                                rp.permission_id == permission.permission_id &&
+                                rp.dev_factory_no == request.DevFactoryNo &&
+                                rp.is_active == "Y")
+                    .ToListAsync();
+
+                // 4. 取得擴充權限
+                var permissionDetails = await _pcms_Pdm_TestContext.pdm_role_permission_details
+                    .Where(d => userRoles.Contains(d.role_id.Value) &&
+                               d.permission_id == permission.permission_id &&
+                               d.dev_factory_no == request.DevFactoryNo)
+                    .ToListAsync();
+
+                // 在記憶體中進行分組和判斷
+                var extendedPermissions = permissionDetails
+                    .GroupBy(d => new { d.permission_key_id, d.permission_key, d.description })
+                    .Select(g => new ExtendedPermissionDto
+                    {
+                        PermissionKeyId = g.Key.permission_key_id ?? 0,
+                        PermissionId = permission.permission_id,
+                        PermissionKey = g.Key.permission_key,
+                        Description = g.Key.description,
+                        IsActive = g.Any(x => x.is_active == "Y") ? "Y" : "N"
+                    })
+                    .ToList();
+
+                // 5. 建立回傳結果
+                var result = new PermissionCheckResultDto
+                {
+                    PermissionId = permission.permission_id,
+                    PermissionName = permission.permission_name,
+                    HasPermission = rolePermissions.Any() ? "Y" : "N",
+                    OperationPermissions = new Dictionary<string, string>
+                    {
+                        { "Create", rolePermissions.Any(rp => rp.createp == "Y") ? "Y" : "N" },
+                        { "Read", rolePermissions.Any(rp => rp.readp == "Y") ? "Y" : "N" },
+                        { "Update", rolePermissions.Any(rp => rp.updatep == "Y") ? "Y" : "N" },
+                        { "Delete", rolePermissions.Any(rp => rp.deletep == "Y") ? "Y" : "N" },
+                        { "Export", rolePermissions.Any(rp => rp.exportp == "Y") ? "Y" : "N" },
+                        { "Import", rolePermissions.Any(rp => rp.importp == "Y") ? "Y" : "N" }
+                    },
+                    ExtendedPermissions = extendedPermissions
+                };
+
+                return APIResponseHelper.GenerateApiResponse("OK", "查詢成功", result);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<PermissionCheckResultDto>(
+                    "50001", $"權限檢查時發生錯誤：{ex.Message}", null);
+            }
+        }
     }
 }
