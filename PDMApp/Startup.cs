@@ -80,6 +80,7 @@ namespace PDMApp
             //services.AddControllers();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICurrentUserPermissionService, CurrentUserPermissionService>();
             services.AddControllers().ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>

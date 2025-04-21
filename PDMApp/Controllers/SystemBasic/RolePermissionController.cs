@@ -798,15 +798,10 @@ namespace PDMApp.Controllers
                 // 在記憶體中進行分組和判斷
                 var extendedPermissions = permissionDetails
                     .GroupBy(d => new { d.permission_key_id, d.permission_key, d.description })
-                    .Select(g => new ExtendedPermissionDto
-                    {
-                        PermissionKeyId = g.Key.permission_key_id ?? 0,
-                        PermissionId = permission.permission_id,
-                        PermissionKey = g.Key.permission_key,
-                        Description = g.Key.description,
-                        IsActive = g.Any(x => x.is_active == "Y") ? "Y" : "N"
-                    })
-                    .ToList();
+                    .ToDictionary(
+                        g => g.Key.permission_key,
+                        g => g.Any(x => x.is_active == "Y") ? "Y" : "N"
+                    );
 
                 // 5. 建立回傳結果
                 var result = new PermissionCheckResultDto
