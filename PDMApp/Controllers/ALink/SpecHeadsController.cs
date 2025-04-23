@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PDMApp.Attributes;
 using PDMApp.Dtos;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
@@ -51,6 +52,7 @@ namespace PDMApp.Controllers.ALink
         /// </summary>
         /// <param name="value">SpecSearchParameter</param>
         /// <returns>pdm_spec_headDto</returns>
+        [RequirePermission(2, "read")] // 權限ID = 2，Read 權限
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try
