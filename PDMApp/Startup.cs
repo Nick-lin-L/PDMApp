@@ -29,7 +29,6 @@ using System.Reflection;
 using PDMApp.Middleware;
 using System.IdentityModel.Tokens.Jwt;
 using PDMApp.Service.Basic;
-using PDMApp.Filters;
 
 namespace PDMApp
 {
@@ -82,14 +81,11 @@ namespace PDMApp
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ICurrentUserPermissionService, CurrentUserPermissionService>();
-            services.AddControllers(options =>
-            {
-                options.Filters.Add<PermissionActionFilter>();
-            })
-            .ConfigureApiBehaviorOptions(options =>
+            services.AddControllers().ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
+                    // 收集錯誤信息
                     var errors = context.ModelState
                         .Where(e => e.Value.Errors.Count > 0)
                         .ToDictionary(
@@ -97,12 +93,11 @@ namespace PDMApp
                             kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
                         );
 
-                    return new BadRequestObjectResult(new
-                    {
-                        Status = "Error",
-                        Message = "Validation failed",
-                        Errors = errors
-                    });
+                    // 將錯誤信息存儲在 HttpContext.Items 中
+                    context.HttpContext.Items["ModelValidationErrors"] = errors;
+
+                    // 返回空結果，讓中間件處理響應
+                    return new EmptyResult();
                 };
             })
             .AddJsonOptions(options =>
@@ -112,11 +107,9 @@ namespace PDMApp
                 options.JsonSerializerOptions.Converters.Add(new Utils.Converters.StringJsonConverter());
                 options.JsonSerializerOptions.Converters.Add(new Utils.Converters.IntJsonConverter());
             });
-            // 確保路由設定正確
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true;
-                options.LowercaseQueryStrings = true;
+                options.LowercaseUrls = true; // 讓 API URL 變成小寫
             });
             //services.AddAuthorization(); // 啟用授權
             services.AddControllersWithViews();
@@ -173,11 +166,6 @@ namespace PDMApp
  
           });
             */
-            // 註冊權限過濾器
-            services.AddControllers(options =>
-            {
-                options.Filters.Add<PermissionActionFilter>();
-            });
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別
@@ -313,9 +301,8 @@ namespace PDMApp
             app.UseRouting();
             app.UseCors("AllowSpecificOrigin");
 
-            // 確保認證和授權中間件的順序正確
-            app.UseAuthentication();
-            app.UseAuthorization();
+            app.UseAuthentication(); // 啟用 JWT 驗證
+            app.UseAuthorization();  // 啟用授權
 
             app.UseMiniProfiler();
             app.UseEndpoints(endpoints =>
