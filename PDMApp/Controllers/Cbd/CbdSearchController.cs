@@ -64,8 +64,8 @@ namespace PDMApp.Controllers.Cbd
         {
             try
             {
-                //至少需輸入兩個條件
-                if (!parameter.ValidationParameter(2))
+                //至少需輸入3個條件
+                if (!parameter.ValidationParameter(3))
                 {
                     throw new Exception("查詢條件不可以都為空");
                 }
@@ -86,12 +86,13 @@ namespace PDMApp.Controllers.Cbd
         }
 
         [HttpPost]
-        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> Export(Parameters.Cbd.CbdSearchParameter.QueryParameter parameter)
+        public ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>> Export(Parameters.Cbd.CbdSearchParameter.QueryParameter parameter)
         {
 
             try
             {
-                if (!parameter.ValidationParameter(2))
+                //至少需輸入3個條件
+                if (!parameter.ValidationParameter(3))
                 {
                     throw new Exception("查詢條件不可以都為空");
                 }
