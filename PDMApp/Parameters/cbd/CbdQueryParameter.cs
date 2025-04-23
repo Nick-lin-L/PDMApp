@@ -21,10 +21,10 @@ namespace PDMApp.Parameters.Cbd
         public class CbdQuery
         {
             [JsonPropertyName("DevelopmentNo")] public string? development_no { set; get; }
+            [JsonPropertyName("DevelopmentColorNo")] public string? development_color_no { set; get; }
             [JsonPropertyName("WorkingName")] public string? working_name { set; get; }
             [JsonPropertyName("Stage")] public string? stage { set; get; }
             [JsonPropertyName("Colorway")] public string? colorway { set; get; }
-            [JsonPropertyName("Colors")] public string? colors { set; get; }
             [JsonPropertyName("ItemTradingCode")] public string? itemtrading_code { set; get; }
             [JsonPropertyName("ColorCode")] public string? color_code { set; get; }
             [JsonPropertyName("BrandNo")] public string? BrandNo { set; get; }
