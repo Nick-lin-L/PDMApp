@@ -52,7 +52,7 @@ namespace PDMApp.Controllers.ALink
         /// </summary>
         /// <param name="value">SpecSearchParameter</param>
         /// <returns>pdm_spec_headDto</returns>
-        [RequirePermission(2, "read")] // 權限ID = 2，Read 權限
+        //[RequirePermission(2, "READ")] // 權限ID = 2，Read 權限
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try
