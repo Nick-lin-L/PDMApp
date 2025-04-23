@@ -14,6 +14,7 @@ using PDMApp.Utils;
 using PDMApp.Dtos.Cbd;
 using PDMApp.Parameters.PGTSPEC;
 using System.Globalization;
+using PDMApp.Extensions;
 
 namespace PDMApp.Controllers.Cbd
 {
@@ -178,6 +179,15 @@ namespace PDMApp.Controllers.Cbd
         public async Task<ActionResult<APIStatusResponse<Utils.PagedResult<Dtos.Cbd.CbdQueryDto.QueryDto>>>> Query(Parameters.Cbd.CbdQueryParameter.CbdQuery parameter)
         {
             var response = new APIStatusResponse<Utils.PagedResult<object>>();
+            if (string.IsNullOrWhiteSpace(parameter.development_no?.Replace("%", "")) && string.IsNullOrWhiteSpace(parameter.itemtrading_code?.Replace("%", "")) && string.IsNullOrWhiteSpace(parameter.working_name?.Replace("%", "")))
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "20001",
+                    Message = "Working Name、Development No、Item Trading Code擇一必填",
+                    Details = ""
+                });
+            }
             try
             {
                 var query = from ph in _pcms_Pdm_TestContext.plm_product_head
@@ -212,18 +222,7 @@ namespace PDMApp.Controllers.Cbd
                                 Update_user = ch.update_user,
                                 Update_date = ch.update_date == null ? "" : ch.update_date.Value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                             };
-                if (!string.IsNullOrEmpty(parameter.color_code))
-                {
-                    query = query.Where(x => x.Color_code.Contains(parameter.color_code));
-                }
-                if (!string.IsNullOrEmpty(parameter.development_no))
-                {
-                    query = query.Where(x => x.Development_no.Contains(parameter.development_no));
-                }
-                if (!string.IsNullOrEmpty(parameter.stage))
-                {
-                    query = query.Where(x => x.Stage == parameter.stage);
-                }
+
                 if (!string.IsNullOrEmpty(parameter.working_name))
                 {
                     query = query.Where(x => x.Working_name.Contains(parameter.working_name));
@@ -232,9 +231,17 @@ namespace PDMApp.Controllers.Cbd
                 {
                     query = query.Where(x => x.Colorway.Contains(parameter.colorway));
                 }
-                if (!string.IsNullOrEmpty(parameter.colors))
+                if (!string.IsNullOrEmpty(parameter.development_no))
                 {
-                    query = query.Where(x => x.Colors.Contains(parameter.colors));
+                    query = query.Where(x => x.Development_no.Contains(parameter.development_no));
+                }
+                if (!string.IsNullOrEmpty(parameter.development_color_no))
+                {
+                    query = query.Where(x => x.Development_color_no.Contains(parameter.development_color_no));
+                }
+                if (!string.IsNullOrEmpty(parameter.stage))
+                {
+                    query = query.Where(x => x.Stage == parameter.stage);
                 }
                 if (!string.IsNullOrEmpty(parameter.itemtrading_code))
                 {
