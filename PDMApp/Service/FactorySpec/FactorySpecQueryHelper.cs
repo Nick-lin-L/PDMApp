@@ -9,41 +9,46 @@ namespace PDMApp.Service.FactorySpec
 {
     public static class FactorySpecQueryHelper
     {
-        public static IQueryable<FactorySpecHeaderDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
-
+        public static (bool, string, IQueryable<FactorySpecHeaderDto>) QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
-            // 使用多表 Join 查詢來組合所需欄位
-            return (from ph in _pcms_Pdm_TestContext.pdm_product_head
-                    join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
-                    join shf in _pcms_Pdm_TestContext.pdm_spec_head_factory on pi.product_d_id equals shf.product_d_id                
-                    join pn in _pcms_Pdm_TestContext.pdm_namevalue on shf.stage equals pn.value_desc
-                    where pn.group_key == "stage"
-                    join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
-                    where pnse.group_key == "season"
+            try
+            {
+                var query = (from ph in _pcms_Pdm_TestContext.pdm_product_head
+                             join pi in _pcms_Pdm_TestContext.pdm_product_item on ph.product_m_id equals pi.product_m_id
+                             join shf in _pcms_Pdm_TestContext.pdm_spec_head_factory on pi.product_d_id equals shf.product_d_id
+                             join pn in _pcms_Pdm_TestContext.pdm_namevalue on shf.stage equals pn.value_desc
+                             where pn.group_key == "stage"
+                             join pnse in _pcms_Pdm_TestContext.pdm_namevalue on ph.season equals pnse.value_desc
+                             where pnse.group_key == "season"
+                             select new FactorySpecHeaderDto
+                             {
+                                 SpecMId = shf.spec_m_id,
+                                 Year = ph.year,
+                                 Season = pnse.text, //使用前端傳入的「值」直接查詢key value的value
+                                 EntryMode = shf.entrymode,
+                                 Factory = shf.factory,
+                                 Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
+                                 ItemNo = ph.item_no,
+                                 DevNo = ph.dev_no,
+                                 DevColorDispName = pi.dev_color_disp_name,
+                                 ColorNo = pi.color_no,
+                                 Fty1 = ph.factory1,
+                                 Fty2 = ph.factory2,
+                                 Fty3 = ph.factory3,
+                                 Ver = shf.ver,
+                                 VssVer = shf.vssver,
+                                 SpecUpdateDate = shf.spec_update_date,
+                                 SpecUpdateUser = shf.spec_update_user
+                             });
 
-
-                    select new FactorySpecHeaderDto
-                    {
-                        SpecMId = shf.spec_m_id,
-                        Year = ph.year,
-                        Season = pnse.text, //使用前端傳入的「值」直接查詢key value的value
-                        EntryMode = shf.entrymode,
-                        Factory = shf.factory,
-                        Stage = pn.text, //使用前端傳入的「值」直接查詢key value的value
-                        ItemNo = ph.item_no,
-                        DevNo = ph.dev_no,
-                        DevColorDispName = pi.dev_color_disp_name,
-                        ColorNo = pi.color_no,                       
-                        Fty1 = ph.factory1,
-                        Fty2 = ph.factory2,
-                        Fty3 = ph.factory3,
-                        Ver = shf.ver,
-                        VssVer = shf.vssver,
-                        SpecUpdateDate = shf.spec_update_date,
-                        SpecUpdateUser = shf.spec_update_user
-
-                    });
+                return (true, "Query successful", query);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Query failed: {ex.Message}", null);
+            }
         }
+
 
 
 

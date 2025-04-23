@@ -213,7 +213,21 @@ namespace PDMApp.Service.SPEC
                             HCHA = si.hcha,
                             Sec = si.sec
                         };
-            
+            if (!string.IsNullOrWhiteSpace(value.PartName))
+                query = query.Where(x => x.Parts != null && x.Parts.Contains(value.PartName));
+
+            if (!string.IsNullOrWhiteSpace(value.Material))
+                query = query.Where(x => x.Material != null && x.Material.Contains(value.Material));
+
+            if (!string.IsNullOrWhiteSpace(value.MaterialColor))
+                query = query.Where(x => x.MaterialColor != null && x.MaterialColor.Contains(value.MaterialColor));
+
+            if (!string.IsNullOrWhiteSpace(value.Supplier))
+                query = query.Where(x => x.Supplier != null && x.Supplier.Contains(value.Supplier));
+
+            if (!string.IsNullOrWhiteSpace(value.HeelHeight))
+                query = query.Where(x => x.Detail != null && x.Detail.Contains(value.HeelHeight));
+
             return query;
         }
 

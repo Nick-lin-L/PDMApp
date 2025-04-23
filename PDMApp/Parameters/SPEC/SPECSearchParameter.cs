@@ -34,7 +34,12 @@
 
     public class SPECExportSearchParameter
     {
-        public string? SpecMId { get; set; }  
+        public string? SpecMId { get; set; }
+        public string? PartName { get; set; }
+        public string? Material { get; set; }
+        public string? MaterialColor { get; set; }
+        public string? Supplier { get; set; }
+        public string? HeelHeight { get; set; }
     }
 
 
