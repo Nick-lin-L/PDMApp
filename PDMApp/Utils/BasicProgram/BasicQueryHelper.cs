@@ -61,10 +61,10 @@ namespace PDMApp.Utils.BasicProgram
                         Deletep = Prp.deletep,
                         Exportp = Prp.exportp,
                         Importp = Prp.importp,
-                        Permission1 = Prp.permission1,
-                        Permission2 = Prp.permission2,
-                        Permission3 = Prp.permission3,
-                        Permission4 = Prp.permission4
+                        //Permission1 = Prp.permission1,
+                        //Permission2 = Prp.permission2,
+                        //Permission3 = Prp.permission3,
+                        //Permission4 = Prp.permission4
                     });
         }
 
@@ -219,10 +219,10 @@ namespace PDMApp.Utils.BasicProgram
                                        Deletep = Prp.deletep ?? "N",
                                        Exportp = Prp.exportp ?? "N",
                                        Importp = Prp.importp ?? "N",
-                                       Permission1 = Prp.permission1 ?? "N",
-                                       Permission2 = Prp.permission2 ?? "N",
-                                       Permission3 = Prp.permission3 ?? "N",
-                                       Permission4 = Prp.permission4 ?? "N",
+                                       //Permission1 = Prp.permission1 ?? "N",
+                                       //Permission2 = Prp.permission2 ?? "N",
+                                       //Permission3 = Prp.permission3 ?? "N",
+                                       //Permission4 = Prp.permission4 ?? "N",
 
                                        // 時間和建立/更新者資訊
                                        CreatedAt = Prp.created_at ?? Pp.created_at,
@@ -245,7 +245,7 @@ namespace PDMApp.Utils.BasicProgram
                 permissionsQuery = permissionsQuery.Where(p => p.DevFactoryNo == parameters.DevFactoryNo);
             }
 
-            var permissions = await permissionsQuery.OrderBy(q => q.PermissionId).ToListAsync();
+            var permissions = await permissionsQuery.OrderBy(q => q.FrontEndId).ToListAsync();
 
             // 查詢 details
             var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions

@@ -18,6 +18,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Transactions;
 using static PDMApp.Service.PdmUsersRepository;
+using PDMApp.Attributes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -25,6 +26,7 @@ namespace PDMApp.Controllers
 {
     [Route("api/v1/Basic/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "PDMToken")]
     public class RolePermissionController : ControllerBase
     {
         // GET: api/<RolePermissionController>
@@ -98,6 +100,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="value">傳入的參數物件，用於判斷是否需要過濾資料。</param>
         /// <returns>回傳查詢後的角色資料 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
+        [RequirePermission(1, "read")]
         [HttpPost("roles")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_rolesDto>>>> Roles([FromBody] RolesParameter value)
         {
@@ -174,7 +177,7 @@ namespace PDMApp.Controllers
         }
 
         // 3. 新增或更新角色資料
-        [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "PDMToken")]
+        [RequirePermission(1, "create")]
         [HttpPost("upsert")]
         //public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> UpsertRolePermission([FromBody] RolePermissionsParameter request)
@@ -527,6 +530,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="roleId">要刪除的角色ID</param>
         /// <returns>刪除結果</returns>
+        [RequirePermission(1, "delete")]
         [HttpDelete("delete/{roleId}")]
         public async Task<ActionResult<APIStatusResponse<object>>> DeleteRole(int roleId)
         {
@@ -619,7 +623,7 @@ namespace PDMApp.Controllers
                 //var cacheKey = $"menu_permissions_{_currentUser.UserId}_{request.DevFactoryNo}_{request.LangCode}";
 
                 //if (_cache.TryGetValue(cacheKey, out UserPermissionResultDto cachedResult))
-                    //return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
+                //return APIResponseHelper.GenerateApiResponse("OK", "查詢成功 (cache)", cachedResult).Result;
 
                 // 傳入語系參數
                 var result = await _repository.GetUserPermissionTreeAsync(
@@ -798,15 +802,10 @@ namespace PDMApp.Controllers
                 // 在記憶體中進行分組和判斷
                 var extendedPermissions = permissionDetails
                     .GroupBy(d => new { d.permission_key_id, d.permission_key, d.description })
-                    .Select(g => new ExtendedPermissionDto
-                    {
-                        PermissionKeyId = g.Key.permission_key_id ?? 0,
-                        PermissionId = permission.permission_id,
-                        PermissionKey = g.Key.permission_key,
-                        Description = g.Key.description,
-                        IsActive = g.Any(x => x.is_active == "Y") ? "Y" : "N"
-                    })
-                    .ToList();
+                    .ToDictionary(
+                        g => g.Key.permission_key,
+                        g => g.Any(x => x.is_active == "Y") ? "Y" : "N"
+                    );
 
                 // 5. 建立回傳結果
                 var result = new PermissionCheckResultDto

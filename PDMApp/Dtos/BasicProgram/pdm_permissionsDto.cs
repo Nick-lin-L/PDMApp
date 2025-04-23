@@ -33,10 +33,10 @@ namespace PDMApp.Dtos.BasicProgram
         public string? Deletep { get; set; }
         public string? Exportp { get; set; }
         public string? Importp { get; set; }
-        public string? Permission1 { get; set; }
-        public string? Permission2 { get; set; }
-        public string? Permission3 { get; set; }
-        public string? Permission4 { get; set; }
+        //public string? Permission1 { get; set; }
+        //public string? Permission2 { get; set; }
+        //public string? Permission3 { get; set; }
+        //public string? Permission4 { get; set; }
         //public Dictionary<string, string> PermissionDetails { get; set; } = new Dictionary<string, string>();
     }
 
@@ -100,7 +100,7 @@ namespace PDMApp.Dtos.BasicProgram
         public string PermissionName { get; set; }
         public string HasPermission { get; set; }
         public Dictionary<string, string> OperationPermissions { get; set; }
-        public List<ExtendedPermissionDto> ExtendedPermissions { get; set; }
+        public Dictionary<string, string> ExtendedPermissions { get; set; }
     }
 
     public class ExtendedPermissionDto
