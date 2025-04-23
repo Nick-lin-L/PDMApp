@@ -48,9 +48,25 @@ namespace PDMApp.Controllers.FactorySPEC
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // 預先檢查 Item No 或 Dev No 是否同時為空
+            if (string.IsNullOrWhiteSpace(value.ItemNo) && string.IsNullOrWhiteSpace(value.DevNo))
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "BUSINESS_ERROR",
+                    Message = "Item No 或 Dev No 必須至少填寫一個"
+                });
+            }
+
             try
             {
-                var query = FactorySpecQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
+                var (isSuccess, message, query) = FactorySpecQueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(200, new { ErrorCode = "BUSINESS_ERROR", Message = message });
+                }
+
                 var filters = new List<Expression<Func<FactorySpecHeaderDto, bool>>>();
 
                 // Factory（完全匹配）
