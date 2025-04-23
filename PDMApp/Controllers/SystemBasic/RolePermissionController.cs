@@ -100,7 +100,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="value">傳入的參數物件，用於判斷是否需要過濾資料。</param>
         /// <returns>回傳查詢後的角色資料 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
-        [RequirePermission(1, "read")]
+        [RequirePermission(1, "READ")]
         [HttpPost("roles")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_rolesDto>>>> Roles([FromBody] RolesParameter value)
         {
@@ -177,7 +177,7 @@ namespace PDMApp.Controllers
         }
 
         // 3. 新增或更新角色資料
-        [RequirePermission(1, "create")]
+        [RequirePermission(1, "CREATE")]
         [HttpPost("upsert")]
         //public async Task<IActionResult> UpsertRolePermission([FromBody] RolePermissionsParameter request)
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> UpsertRolePermission([FromBody] RolePermissionsParameter request)
@@ -530,7 +530,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="roleId">要刪除的角色ID</param>
         /// <returns>刪除結果</returns>
-        [RequirePermission(1, "delete")]
+        [RequirePermission(1, "DELETE")]
         [HttpDelete("delete/{roleId}")]
         public async Task<ActionResult<APIStatusResponse<object>>> DeleteRole(int roleId)
         {

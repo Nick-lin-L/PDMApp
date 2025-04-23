@@ -53,32 +53,32 @@ namespace PDMApp.Service.Basic
             // 根據不同動作檢查具體權限
             switch (action.ToUpper())
             {
-                case "create":
+                case "CREATE":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&
                                       rp.createp == "Y");
-                case "read":
+                case "READ":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&
                                       rp.readp == "Y");
-                case "update":
+                case "UPDATE":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&
                                       rp.updatep == "Y");
-                case "delete":
+                case "DELETE":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&
                                       rp.deletep == "Y");
-                case "export":
+                case "EXPORT":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&
                                       rp.exportp == "Y");
-                case "import":
+                case "IMPORT":
                     return await _context.pdm_role_permissions
                         .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
                                       rp.permission_id == permissionId &&

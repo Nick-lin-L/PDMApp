@@ -15,7 +15,7 @@ namespace PDMApp.Attributes
         public RequirePermissionAttribute(int permissionId, string action)
         {
             PermissionId = permissionId;
-            Action = action; // 大寫
+            Action = action.ToUpper(); // 大寫
         }
     }
 }
