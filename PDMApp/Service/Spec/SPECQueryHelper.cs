@@ -33,6 +33,7 @@ namespace PDMApp.Service.SPEC
                     return (false, "除了 Brand 之外，至少必須填寫一個欄位！", null);
                 }
 
+                // 建立基礎查詢 (不篩 PartName、Material、MaterialColor、Supplier)
                 var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
                                  join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
                                  join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
@@ -63,7 +64,7 @@ namespace PDMApp.Service.SPEC
                                      Colorway = pi.colorway
                                  }).Distinct();
 
-                // **WHERE 過濾條件**
+                // 先篩基本條件 (不包含 Material、MaterialColor、Supplier、PartName)
                 if (!string.IsNullOrWhiteSpace(value.Brand))
                     baseQuery = baseQuery.Where(ph => ph.Brand == value.Brand);
                 if (!string.IsNullOrWhiteSpace(value.EntryMode))
@@ -82,18 +83,10 @@ namespace PDMApp.Service.SPEC
                     baseQuery = baseQuery.Where(ph => ph.Stage == value.Stage);
                 if (!string.IsNullOrWhiteSpace(value.LastNo))
                     baseQuery = baseQuery.Where(ph => ph.LastNo.Contains(value.LastNo));
-                if (!string.IsNullOrWhiteSpace(value.PartName))
-                    baseQuery = baseQuery.Where(ph => ph.PartName.Contains(value.PartName));
-                if (!string.IsNullOrWhiteSpace(value.Material))
-                    baseQuery = baseQuery.Where(ph => ph.Material.Contains(value.Material));
-                if (!string.IsNullOrWhiteSpace(value.MaterialColor))
-                    baseQuery = baseQuery.Where(ph => ph.MaterialColor.Contains(value.MaterialColor));
-                if (!string.IsNullOrWhiteSpace(value.Supplier))
-                    baseQuery = baseQuery.Where(ph => ph.Supplier.Contains(value.Supplier));
                 if (!string.IsNullOrWhiteSpace(value.HeelHeight))
                     baseQuery = baseQuery.Where(ph => ph.HeelHeight.Contains(value.HeelHeight));
 
-                // **先計算最大版本**
+                // 先計算最大版本
                 var maxVerQuery = baseQuery
                     .GroupBy(x => new { x.DevelopmentNo, x.DevelopmentColorNo, x.Stage })
                     .Select(g => new
@@ -104,27 +97,55 @@ namespace PDMApp.Service.SPEC
                         MaxVer = g.Max(x => x.Ver)
                     });
 
-                // **篩選最新版本**
+                // 取最大版本的資料
                 var latestQuery = (from q in baseQuery
                                    join maxVer in maxVerQuery
                                    on new { q.DevelopmentNo, q.DevelopmentColorNo, q.Stage, q.Ver }
                                    equals new { maxVer.DevelopmentNo, maxVer.DevelopmentColorNo, maxVer.Stage, Ver = maxVer.MaxVer }
-                                   select new SPECHeaderDto // 直接轉換為 DTO
+                                   select new
                                    {
-                                       SpecMId = q.SpecMId,
-                                       Brand = q.Brand,
-                                       Stage = q.Stage,
-                                       SampleFactory = q.SampleFactory,
-                                       DevelopmentNo = q.DevelopmentNo,
-                                       ItemNo = q.ItemNo,
-                                       Season = q.Season,
-                                       DevelopmentColorNo = q.DevelopmentColorNo,
-                                       ColorCode = q.ColorCode,
-                                       Colorway = q.Colorway,
-                                       Last = q.LastNo
-                                   }).Distinct(); // 確保唯一
+                                       q.SpecMId,
+                                       q.Brand,
+                                       q.Stage,
+                                       q.SampleFactory,
+                                       q.DevelopmentNo,
+                                       q.ItemNo,
+                                       q.Season,
+                                       q.DevelopmentColorNo,
+                                       q.ColorCode,
+                                       q.Colorway,
+                                       q.LastNo,
+                                       q.PartName,
+                                       q.Material,
+                                       q.MaterialColor,
+                                       q.Supplier
+                                   }).Distinct();
 
-                var resultQuery = latestQuery; // 直接使用 latestQuery
+                // 在最大版本後篩選 Material、MaterialColor、Supplier、PartName
+                if (!string.IsNullOrWhiteSpace(value.PartName))
+                    latestQuery = latestQuery.Where(q => q.PartName.Contains(value.PartName));
+                if (!string.IsNullOrWhiteSpace(value.Material))
+                    latestQuery = latestQuery.Where(q => q.Material.Contains(value.Material));
+                if (!string.IsNullOrWhiteSpace(value.MaterialColor))
+                    latestQuery = latestQuery.Where(q => q.MaterialColor.Contains(value.MaterialColor));
+                if (!string.IsNullOrWhiteSpace(value.Supplier))
+                    latestQuery = latestQuery.Where(q => q.Supplier.Contains(value.Supplier));
+
+                // 組最終結果
+                var resultQuery = latestQuery.Select(q => new SPECHeaderDto
+                {
+                    SpecMId = q.SpecMId,
+                    Brand = q.Brand,
+                    Stage = q.Stage,
+                    SampleFactory = q.SampleFactory,
+                    DevelopmentNo = q.DevelopmentNo,
+                    ItemNo = q.ItemNo,
+                    Season = q.Season,
+                    DevelopmentColorNo = q.DevelopmentColorNo,
+                    ColorCode = q.ColorCode,
+                    Colorway = q.Colorway,
+                    Last = q.LastNo
+                }).Distinct();
 
                 return (true, "Query successful", resultQuery);
             }
