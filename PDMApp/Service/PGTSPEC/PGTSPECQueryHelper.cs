@@ -161,14 +161,13 @@ namespace PDMApp.Service.PGTSPEC
         {
             try
             {
-                // 檢查除了 Brand 之外，是否至少有一個欄位被填寫
+
                 if (string.IsNullOrWhiteSpace(value.ModelName) &&
                     string.IsNullOrWhiteSpace(value.Colorway) &&
                     string.IsNullOrWhiteSpace(value.DevelopmentNo) &&
-                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) &&
-                    string.IsNullOrWhiteSpace(value.Stage))
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo))
                 {
-                    return (false, "除了 Brand 和 Ver之外，至少必須填寫一個欄位！", null);
+                    return (false, "除了 Brand 之外，Model Name、Colorway、Development No、Development Color No 必須至少填寫一個！", null);
                 }
 
                 var baseQuery = (from ph in _pcms_Pdm_TestContext.plm_product_head
