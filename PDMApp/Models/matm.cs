@@ -26,15 +26,16 @@ namespace PDMApp.Models
         public string attyp { get; set; }
         public string memo { get; set; }
         public char? locked { get; set; }
-        public string order_stauts { get; set; }
+        public string order_status { get; set; }
         public string status { get; set; }
-        public string stop_date { get; set; }
+        public decimal? stop_date { get; set; }
         public string trans_id { get; set; }
         public string trans_msg { get; set; }
-        public char? trans_pro_mk { get; set; }
+        public char? trans_proc_mk { get; set; }
         public string sync_time { get; set; }
         public DateTime? create_tm { get; set; }
         public DateTime? modify_tm { get; set; }
         public string modify_user { get; set; }
+        public string create_user { get; set; }
     }
 }
