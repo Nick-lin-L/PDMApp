@@ -508,6 +508,109 @@ namespace PDMApp.Utils
             // 預設排序
             return query.OrderBy(pi => pi.DevelopmentColorNo);
         }
+
+
+
+        /// <summary>
+        /// ShoeShape Initial，一次查詢所有資料後回傳
+        /// </summary>
+        /// <param name="_pcms_Pdm_TestContext"></param>
+        /// <returns>廠別下拉、權限表、特殊權限表</returns>
+        public static async Task<Dictionary<string, object>> QueryInitial(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            // 廠別下拉
+            var factoryQuery = from Pf in _pcms_Pdm_TestContext.pdm_factory
+                               select new pdm_DropDownDto
+                               {
+                                   Id = Pf.factory_id,
+                                   Value = Pf.dev_factory_no,
+                                   Text = Pf.dev_factory_no
+                               };
+            // 查詢權限清單
+            var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                                   select new pdm_permissionsInitDto
+                                   {
+                                       PermissionId = Pp.permission_id,
+                                       PermissionName = Pp.permission_name,
+                                       Description = Pp.description,
+                                       FrontEndId = Pp.frontend_id,
+                                       IsActive = Pp.is_active ?? "Y",
+                                       // 預設權限設定為 "Y"
+                                       Createp = "Y",
+                                       Readp = "Y",
+                                       Updatep = "Y",
+                                       Deletep = "Y",
+                                       Exportp = "Y",
+                                       Importp = "Y",
+                                       Permission1 = "Y",
+                                       Permission2 = "Y",
+                                       Permission3 = "Y",
+                                       Permission4 = "Y"
+                                   };
+
+            var permissions = await permissionsQuery
+                .OrderBy(p => p.PermissionId)
+                .ToListAsync();
+
+            // 查詢權限清單details
+            var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                               join Ppk in _pcms_Pdm_TestContext.pdm_permission_keys
+                                   on Pp.permission_id equals Ppk.permission_id
+                               select new pdm_role_permission_detailsInitDto
+                               {
+                                   PermissionId = Pp.permission_id,
+                                   PermissionName = Pp.permission_name,
+                                   Description = Pp.description,
+                                   PermissionKey = Ppk.permission_key,
+                                   PermissionKeyId = Ppk.permission_key_id,
+                                   DescriptionD = Ppk.description,
+                                   IsActiveD = "Y"  // 預設為未啟用
+                               };
+
+            var permissionDetails = await detailsQuery
+                .OrderBy(d => d.PermissionId)
+                .ToListAsync();
+
+            // 將查詢結果包裝成 Dictionary
+            return new Dictionary<string, object>
+            {
+                { "Factory", factoryQuery },
+                { "Permissions", permissions },
+                { "PermissionDetails", permissionDetails }
+            };
+        }
+
+        public static async Task<Dictionary<string, List<DevelopmentNoDto>>> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            var query = (from ph in _pcms_Pdm_TestContext.plm_product_head
+                         join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.value_desc
+                         where n.group_key == "brand"
+                         select new
+                         {
+                             ProductMId = ph.product_m_id,
+                             DevelopmentNo = ph.development_no,
+                             Brand = n.text
+                         }).Distinct();
+
+            // **先執行 SQL 查詢，將結果載入記憶體**
+            var rawData = await query.ToListAsync();
+
+            // **在 C# 端執行 GroupBy**
+            var groupedData = rawData
+                .GroupBy(ph => ph.Brand)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(ph => new DevelopmentNoDto
+                    {
+                        ProductMId = ph.ProductMId,
+                        Text = ph.DevelopmentNo,
+                        Value = ph.DevelopmentNo
+                    }).ToList()
+                );
+
+            return groupedData;
+        }
+
     }
 
 }

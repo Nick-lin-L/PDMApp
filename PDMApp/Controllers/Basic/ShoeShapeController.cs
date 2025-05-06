@@ -21,6 +21,33 @@ namespace PDMApp.Controllers.Basic
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
         }
 
+        // 0. Pageload 下拉查詢列表
+        /// <summary>
+        /// Roles頁面初始化傳入的參數，與新增角色時的畫面資料
+        /// </summary>
+        /// <param name="value">傳入的參數物件，用於判斷是否需要加載特定的初始資料。</param>
+        /// <returns>回傳一個包含初始數據的 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
+        [ProducesResponseType(typeof(APIStatusResponse<IDictionary<string, object>>), 200)]
+        [ProducesResponseType(typeof(object), 500)]
+        [HttpPost("initial")]
+        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> RolePageInitial([FromBody] PermissionsParameter value)
+        {
+            try
+            {
+                var queryInit = await BasicQueryHelper.QueryInitial(_pcms_Pdm_TestContext);
+                return APIResponseHelper.HandleDynamicMultiPageResponse(queryInit);
+            }
+            catch (Exception ex)
+            {
+                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: $"查詢過程中發生錯誤: {ex.Message}",
+                    data: null
+                ));
+            }
+        }
+
+
         [HttpPost("heads")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<ShoeShapeDto>>>> Post([FromBody] ShoeShapeParameter value)
         {
@@ -30,8 +57,6 @@ namespace PDMApp.Controllers.Basic
                 var pagedResult = await QueryHelper.QueryShoeShapeHead(_pcms_Pdm_TestContext, value)
                                                    .Distinct()
                                                    .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
-
-
 
                 return APIResponseHelper.HandlePagedApiResponse(pagedResult);
             }
