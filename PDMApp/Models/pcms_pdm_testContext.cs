@@ -72,11 +72,14 @@ namespace PDMApp.Models
         public virtual DbSet<tblsysstatus> tblsysstatus { get; set; }
         public virtual DbSet<tblsysuser> tblsysuser { get; set; }
         public virtual DbSet<work_order_head> work_order_head { get; set; }
+        public virtual DbSet<work_order_item> work_order_item { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
@@ -289,9 +292,15 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<matm>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.mat_id)
+                    .HasName("pk_matm");
 
                 entity.ToTable("matm", "asics_pdm");
+
+                entity.Property(e => e.mat_id)
+                    .HasMaxLength(36)
+                    .HasDefaultValueSql("(uuid_generate_v4())::text")
+                    .HasComment("物料ID");
 
                 entity.Property(e => e.attyp)
                     .HasMaxLength(2)
@@ -329,12 +338,6 @@ namespace PDMApp.Models
                 entity.Property(e => e.mat_full_nm)
                     .HasMaxLength(300)
                     .HasComment("物料完整說明");
-
-                entity.Property(e => e.mat_id)
-                    .IsRequired()
-                    .HasMaxLength(36)
-                    .HasDefaultValueSql("(uuid_generate_v4())::text")
-                    .HasComment("物料ID");
 
                 entity.Property(e => e.mat_nm)
                     .HasMaxLength(300)
@@ -3702,12 +3705,15 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<work_order_head>(entity =>
             {
+                entity.HasKey(e => e.wk_m_id)
+                    .HasName("fgw_ref_main_pk");
+
                 entity.ToTable("work_order_head", "asics_pdm");
 
                 entity.HasIndex(e => new { e.fact_no, e.order_no, e.order_ver }, "fgw_ref_main_un")
                     .IsUnique();
 
-                entity.Property(e => e.id)
+                entity.Property(e => e.wk_m_id)
                     .HasMaxLength(22)
                     .HasComment("id");
 
@@ -3825,7 +3831,6 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.pro_mk)
                     .HasMaxLength(1)
-                    .HasDefaultValueSql("'N'::bpchar")
                     .HasComment("SERP資料對接處理註記");
 
                 entity.Property(e => e.purpose)
@@ -3857,6 +3862,10 @@ namespace PDMApp.Models
                 entity.Property(e => e.style_no)
                     .HasMaxLength(30)
                     .HasComment("型體代號");
+
+                entity.Property(e => e.trans_id)
+                    .HasMaxLength(22)
+                    .HasComment("拋轉SERP的批次號");
 
                 entity.Property(e => e.txt_attrib_01)
                     .HasMaxLength(200)
@@ -3941,6 +3950,46 @@ namespace PDMApp.Models
                 entity.Property(e => e.type_definition)
                     .HasMaxLength(20)
                     .HasComment("困難度");
+            });
+
+            modelBuilder.Entity<work_order_item>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("work_order_item", "asics_pdm");
+
+                entity.Property(e => e.modify_date)
+                    .HasMaxLength(19)
+                    .HasComment("異動時間");
+
+                entity.Property(e => e.modify_user)
+                    .HasMaxLength(14)
+                    .HasComment("異動人員");
+
+                entity.Property(e => e.qty)
+                    .IsRequired()
+                    .HasMaxLength(16)
+                    .HasComment("派工數量");
+
+                entity.Property(e => e.shoe_kind)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("鞋型");
+
+                entity.Property(e => e.size_no)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("尺寸");
+
+                entity.Property(e => e.wk_d_id)
+                    .IsRequired()
+                    .HasMaxLength(22)
+                    .HasComment("派工單子檔ID");
+
+                entity.Property(e => e.wk_m_id)
+                    .IsRequired()
+                    .HasMaxLength(22)
+                    .HasComment("派工單主檔ID");
             });
 
             OnModelCreatingPartial(modelBuilder);

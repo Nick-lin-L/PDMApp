@@ -7,7 +7,7 @@ namespace PDMApp.Models
 {
     public partial class work_order_head
     {
-        public string id { get; set; }
+        public string wk_m_id { get; set; }
         public string fact_no { get; set; }
         public string brand_no { get; set; }
         public string order_no { get; set; }
@@ -57,11 +57,12 @@ namespace PDMApp.Models
         public decimal modify_time { get; set; }
         public char del_mk { get; set; }
         public decimal? del_date { get; set; }
-        public char pro_mk { get; set; }
+        public char? pro_mk { get; set; }
         public string err_msg { get; set; }
         public string style_id { get; set; }
         public string order_type { get; set; }
         public string plm_spec_m_id { get; set; }
         public string order_status { get; set; }
+        public string trans_id { get; set; }
     }
 }
