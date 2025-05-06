@@ -34,7 +34,7 @@ namespace PDMApp.Controllers.Basic
         {
             try
             {
-                var queryInit = await BasicQueryHelper.QueryInitial(_pcms_Pdm_TestContext);
+                var queryInit = await QueryHelper.QueryInitial(_pcms_Pdm_TestContext);
                 return APIResponseHelper.HandleDynamicMultiPageResponse(queryInit);
             }
             catch (Exception ex)

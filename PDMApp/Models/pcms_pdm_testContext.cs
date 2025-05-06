@@ -21,6 +21,8 @@ namespace PDMApp.Models
         public virtual DbSet<dms_ebom_color> dms_ebom_color { get; set; }
         public virtual DbSet<global_users> global_users { get; set; }
         public virtual DbSet<matm> matm { get; set; }
+        public virtual DbSet<matm_err_list> matm_err_list { get; set; }
+        public virtual DbSet<matm_list> matm_list { get; set; }
         public virtual DbSet<pcg_spec_head> pcg_spec_head { get; set; }
         public virtual DbSet<pcg_spec_item> pcg_spec_item { get; set; }
         public virtual DbSet<pdm_api_permission> pdm_api_permission { get; set; }
@@ -54,6 +56,7 @@ namespace PDMApp.Models
         public virtual DbSet<plm_product_item> plm_product_item { get; set; }
         public virtual DbSet<plm_spec_head> plm_spec_head { get; set; }
         public virtual DbSet<plm_spec_item> plm_spec_item { get; set; }
+        public virtual DbSet<serp_mid_conn_info> serp_mid_conn_info { get; set; }
         public virtual DbSet<sys_languages> sys_languages { get; set; }
         public virtual DbSet<sys_material_large_class> sys_material_large_class { get; set; }
         public virtual DbSet<sys_material_medium_class> sys_material_medium_class { get; set; }
@@ -62,17 +65,28 @@ namespace PDMApp.Models
         public virtual DbSet<sys_menu_i18n> sys_menu_i18n { get; set; }
         public virtual DbSet<sys_menus> sys_menus { get; set; }
         public virtual DbSet<sys_namevalue> sys_namevalue { get; set; }
+        public virtual DbSet<tbldept> tbldept { get; set; }
+        public virtual DbSet<tblfa> tblfa { get; set; }
+        public virtual DbSet<tblfadet> tblfadet { get; set; }
+        public virtual DbSet<tbllocation> tbllocation { get; set; }
+        public virtual DbSet<tblsysstatus> tblsysstatus { get; set; }
+        public virtual DbSet<tblsysuser> tblsysuser { get; set; }
+        public virtual DbSet<work_order_head> work_order_head { get; set; }
+        public virtual DbSet<work_order_item> work_order_item { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Server=172.16.104.80;Port=5432;Database=pcms_pdm_test;User Id=asics_pdm;Password=XZ6bjkW4dgjv86hw");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("Relational:Collation", "en_US.UTF-8");
+            modelBuilder.HasPostgresExtension("uuid-ossp")
+                .HasAnnotation("Relational:Collation", "en_US.UTF-8");
 
             modelBuilder.Entity<dms_article>(entity =>
             {
@@ -278,9 +292,15 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<matm>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.mat_id)
+                    .HasName("pk_matm");
 
                 entity.ToTable("matm", "asics_pdm");
+
+                entity.Property(e => e.mat_id)
+                    .HasMaxLength(36)
+                    .HasDefaultValueSql("(uuid_generate_v4())::text")
+                    .HasComment("物料ID");
 
                 entity.Property(e => e.attyp)
                     .HasMaxLength(2)
@@ -298,6 +318,10 @@ namespace PDMApp.Models
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasComment("新增時間");
 
+                entity.Property(e => e.create_user)
+                    .HasMaxLength(20)
+                    .HasComment("新增人員");
+
                 entity.Property(e => e.cust_no)
                     .HasMaxLength(30)
                     .HasComment("客人料號");
@@ -308,16 +332,12 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.locked)
                     .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::character varying")
                     .HasComment("鎖檔註記(from SERP)");
 
                 entity.Property(e => e.mat_full_nm)
                     .HasMaxLength(300)
                     .HasComment("物料完整說明");
-
-                entity.Property(e => e.mat_id)
-                    .IsRequired()
-                    .HasMaxLength(20)
-                    .HasComment("物料ID");
 
                 entity.Property(e => e.mat_nm)
                     .HasMaxLength(300)
@@ -347,12 +367,12 @@ namespace PDMApp.Models
                     .HasMaxLength(4)
                     .HasComment("物料類型");
 
-                entity.Property(e => e.order_stauts)
+                entity.Property(e => e.order_status)
                     .HasMaxLength(10)
                     .HasComment("物料編碼狀態");
 
                 entity.Property(e => e.scm_bclass_no)
-                    .HasMaxLength(1)
+                    .HasMaxLength(2)
                     .HasComment("大分類");
 
                 entity.Property(e => e.scm_mclass_no)
@@ -377,7 +397,7 @@ namespace PDMApp.Models
                     .HasComment("物料狀態");
 
                 entity.Property(e => e.stop_date)
-                    .HasMaxLength(8)
+                    .HasPrecision(19)
                     .HasComment("停用日期");
 
                 entity.Property(e => e.sync_time)
@@ -388,17 +408,63 @@ namespace PDMApp.Models
                     .HasMaxLength(22)
                     .HasComment("拋轉ID");
 
-                entity.Property(e => e.trans_msg)
-                    .HasMaxLength(100)
-                    .HasComment("拋轉錯誤訊息");
+                entity.Property(e => e.trans_msg).HasComment("拋轉錯誤訊息");
 
-                entity.Property(e => e.trans_pro_mk)
+                entity.Property(e => e.trans_proc_mk)
                     .HasMaxLength(1)
                     .HasComment("拋轉處理註記");
 
                 entity.Property(e => e.uom)
                     .HasMaxLength(3)
                     .HasComment("基礎計量單位");
+            });
+
+            modelBuilder.Entity<matm_err_list>(entity =>
+            {
+                entity.HasKey(e => new { e.mgt_no, e.mat_no, e.sync_time })
+                    .HasName("matm_err_list_pk");
+
+                entity.ToTable("matm_err_list", "asics_pdm");
+
+                entity.Property(e => e.mgt_no).HasMaxLength(4);
+
+                entity.Property(e => e.mat_no).HasMaxLength(20);
+
+                entity.Property(e => e.sync_time).HasMaxLength(14);
+
+                entity.Property(e => e.mk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+            });
+
+            modelBuilder.Entity<matm_list>(entity =>
+            {
+                entity.HasKey(e => new { e.mgt_no, e.mat_no, e.sync_time })
+                    .HasName("pcms_base_matl_list_pk");
+
+                entity.ToTable("matm_list", "asics_pdm");
+
+                entity.Property(e => e.mgt_no).HasMaxLength(4);
+
+                entity.Property(e => e.mat_no).HasMaxLength(20);
+
+                entity.Property(e => e.sync_time).HasMaxLength(14);
+
+                entity.Property(e => e.is_locked)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+
+                entity.Property(e => e.mk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar");
+
+                entity.Property(e => e.scm_bclass_no).HasMaxLength(2);
+
+                entity.Property(e => e.scm_mclass_no).HasMaxLength(2);
+
+                entity.Property(e => e.scm_sclass_no).HasMaxLength(2);
+
+                entity.Property(e => e.serp_mat_no).HasMaxLength(18);
             });
 
             modelBuilder.Entity<pcg_spec_head>(entity =>
@@ -3149,6 +3215,45 @@ namespace PDMApp.Models
                 entity.Property(e => e.update_date).HasColumnType("date");
             });
 
+            modelBuilder.Entity<serp_mid_conn_info>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("serp_mid_conn_info", "asics_pdm");
+
+                entity.Property(e => e.fact_no)
+                    .IsRequired()
+                    .HasMaxLength(4);
+
+                entity.Property(e => e.pasw)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.port)
+                    .IsRequired()
+                    .HasMaxLength(5);
+
+                entity.Property(e => e.schema)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.server)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.server_ip)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.sid)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.username)
+                    .IsRequired()
+                    .HasMaxLength(20);
+            });
+
             modelBuilder.Entity<sys_languages>(entity =>
             {
                 entity.HasKey(e => e.language_id)
@@ -3419,6 +3524,472 @@ namespace PDMApp.Models
                 entity.Property(e => e.text).HasMaxLength(100);
 
                 entity.Property(e => e.text_en).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<tbldept>(entity =>
+            {
+                entity.HasKey(e => e.deptcode)
+                    .HasName("tbldept_pkey");
+
+                entity.ToTable("tbldept", "asics_pdm");
+
+                entity.Property(e => e.deptcode).HasMaxLength(10);
+
+                entity.Property(e => e.deptname)
+                    .IsRequired()
+                    .HasMaxLength(60);
+
+                entity.Property(e => e.deptsname)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.fixby)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixdate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.note)
+                    .HasMaxLength(200)
+                    .HasDefaultValueSql("NULL::character varying");
+            });
+
+            modelBuilder.Entity<tblfa>(entity =>
+            {
+                entity.HasKey(e => e.facode)
+                    .HasName("tblfa_pkey");
+
+                entity.ToTable("tblfa", "asics_pdm");
+
+                entity.Property(e => e.facode).HasMaxLength(20);
+
+                entity.Property(e => e.catego).HasMaxLength(10);
+
+                entity.Property(e => e.deptcode).HasMaxLength(10);
+
+                entity.Property(e => e.faname).HasMaxLength(30);
+
+                entity.Property(e => e.faspec)
+                    .HasMaxLength(30)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixby)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixdate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.mainnote)
+                    .HasMaxLength(500)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.recorder).HasMaxLength(10);
+
+                entity.Property(e => e.status).HasDefaultValueSql("0");
+
+                entity.Property(e => e.supplierid)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.unit).HasMaxLength(10);
+            });
+
+            modelBuilder.Entity<tblfadet>(entity =>
+            {
+                entity.HasKey(e => new { e.facode, e.storerecorder, e.storedeptcode, e.locationid })
+                    .HasName("tblfadet_pkey");
+
+                entity.ToTable("tblfadet", "asics_pdm");
+
+                entity.Property(e => e.facode).HasMaxLength(20);
+
+                entity.Property(e => e.storerecorder).HasMaxLength(10);
+
+                entity.Property(e => e.storedeptcode).HasMaxLength(10);
+
+                entity.Property(e => e.locationid).HasMaxLength(30);
+
+                entity.Property(e => e.FACode_StoreRecorder_StoreDeptCode_LocationID_Qty_ExSellQty_ExA)
+                    .HasMaxLength(128)
+                    .HasColumnName("FACode	StoreRecorder	StoreDeptCode	LocationID	Qty	ExSellQty	ExA");
+
+                entity.Property(e => e.deptcode).HasMaxLength(50);
+
+                entity.Property(e => e.deptname).HasMaxLength(50);
+
+                entity.Property(e => e.deptsname).HasMaxLength(50);
+
+                entity.Property(e => e.detnote)
+                    .HasMaxLength(500)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.exaccqty).HasDefaultValueSql("0");
+
+                entity.Property(e => e.exscrapqty).HasDefaultValueSql("0");
+
+                entity.Property(e => e.exsellqty).HasDefaultValueSql("0");
+
+                entity.Property(e => e.fixby)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixdate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.note).HasMaxLength(50);
+
+                entity.Property(e => e.qty).HasDefaultValueSql("0");
+            });
+
+            modelBuilder.Entity<tbllocation>(entity =>
+            {
+                entity.HasKey(e => e.locationid)
+                    .HasName("tbllocation_pkey");
+
+                entity.ToTable("tbllocation", "asics_pdm");
+
+                entity.Property(e => e.locationid)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixby)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixdate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.isnotvalid).HasDefaultValueSql("false");
+
+                entity.Property(e => e.locationname)
+                    .HasMaxLength(100)
+                    .HasDefaultValueSql("''::character varying");
+            });
+
+            modelBuilder.Entity<tblsysstatus>(entity =>
+            {
+                entity.HasKey(e => e.status)
+                    .HasName("tblsysstatus_pkey");
+
+                entity.ToTable("tblsysstatus", "asics_pdm");
+
+                entity.Property(e => e.status).ValueGeneratedNever();
+
+                entity.Property(e => e.statusname).HasMaxLength(10);
+            });
+
+            modelBuilder.Entity<tblsysuser>(entity =>
+            {
+                entity.HasKey(e => e.userid)
+                    .HasName("tblsysuser_pkey");
+
+                entity.ToTable("tblsysuser", "asics_pdm");
+
+                entity.Property(e => e.userid).HasMaxLength(10);
+
+                entity.Property(e => e.deptcode)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixby)
+                    .HasMaxLength(10)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.fixdate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.isnotvalid).HasDefaultValueSql("false");
+
+                entity.Property(e => e.username)
+                    .HasMaxLength(30)
+                    .HasDefaultValueSql("''::character varying");
+            });
+
+            modelBuilder.Entity<work_order_head>(entity =>
+            {
+                entity.HasKey(e => e.wk_m_id)
+                    .HasName("fgw_ref_main_pk");
+
+                entity.ToTable("work_order_head", "asics_pdm");
+
+                entity.HasIndex(e => new { e.fact_no, e.order_no, e.order_ver }, "fgw_ref_main_un")
+                    .IsUnique();
+
+                entity.Property(e => e.wk_m_id)
+                    .HasMaxLength(22)
+                    .HasComment("id");
+
+                entity.Property(e => e.article_no)
+                    .IsRequired()
+                    .HasMaxLength(30)
+                    .HasComment("型號");
+
+                entity.Property(e => e.b_pm)
+                    .HasMaxLength(40)
+                    .HasComment("品牌端開發人員");
+
+                entity.Property(e => e.brand_no)
+                    .IsRequired()
+                    .HasMaxLength(4)
+                    .HasComment("品牌代號");
+
+                entity.Property(e => e.category)
+                    .HasMaxLength(30)
+                    .HasComment("category");
+
+                entity.Property(e => e.color_no)
+                    .HasMaxLength(30)
+                    .HasComment("型體配色代號");
+
+                entity.Property(e => e.colorway)
+                    .HasMaxLength(200)
+                    .HasComment("型體配色說明");
+
+                entity.Property(e => e.create_time)
+                    .HasPrecision(19)
+                    .HasComment("新增時間");
+
+                entity.Property(e => e.create_user)
+                    .HasPrecision(14)
+                    .HasComment("新增人員");
+
+                entity.Property(e => e.del_date)
+                    .HasPrecision(19)
+                    .HasComment("刪除時間");
+
+                entity.Property(e => e.del_mk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'Y'::bpchar")
+                    .HasComment("刪除註記");
+
+                entity.Property(e => e.dev_no)
+                    .IsRequired()
+                    .HasMaxLength(40)
+                    .HasComment("開發代號");
+
+                entity.Property(e => e.err_msg).HasComment("SERP資料對接錯誤訊息");
+
+                entity.Property(e => e.fact_no)
+                    .IsRequired()
+                    .HasMaxLength(4)
+                    .HasComment("廠別代號");
+
+                entity.Property(e => e.gender)
+                    .HasMaxLength(20)
+                    .HasComment("性別");
+
+                entity.Property(e => e.last_no)
+                    .HasMaxLength(30)
+                    .HasComment("楦頭代號");
+
+                entity.Property(e => e.last_width)
+                    .HasMaxLength(10)
+                    .HasComment("楦寬");
+
+                entity.Property(e => e.matlway)
+                    .HasMaxLength(300)
+                    .HasComment("型體材質");
+
+                entity.Property(e => e.model_nm)
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasComment("型體名稱");
+
+                entity.Property(e => e.modify_time)
+                    .HasPrecision(19)
+                    .HasComment("異動時間");
+
+                entity.Property(e => e.modify_user)
+                    .HasPrecision(14)
+                    .HasComment("異動人員");
+
+                entity.Property(e => e.mold_no)
+                    .HasMaxLength(200)
+                    .HasComment("底模代號");
+
+                entity.Property(e => e.order_no)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("派工單號");
+
+                entity.Property(e => e.order_status)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("派工單狀態");
+
+                entity.Property(e => e.order_type)
+                    .IsRequired()
+                    .HasMaxLength(1)
+                    .HasComment("1：型體派工 2：部位派工");
+
+                entity.Property(e => e.order_ver)
+                    .HasPrecision(5)
+                    .HasDefaultValueSql("0")
+                    .HasComment("派工單版本(SERP用，確認派工時+1)");
+
+                entity.Property(e => e.plm_spec_m_id)
+                    .HasMaxLength(32)
+                    .HasComment("部位派工的BOM ID");
+
+                entity.Property(e => e.pro_mk)
+                    .HasMaxLength(1)
+                    .HasComment("SERP資料對接處理註記");
+
+                entity.Property(e => e.purpose)
+                    .HasMaxLength(40)
+                    .HasComment("派工單目的");
+
+                entity.Property(e => e.req_date)
+                    .HasPrecision(19)
+                    .HasComment("需求日期");
+
+                entity.Property(e => e.sample_size)
+                    .HasMaxLength(10)
+                    .HasComment("樣品碼");
+
+                entity.Property(e => e.season)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("季節");
+
+                entity.Property(e => e.stage)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("階段");
+
+                entity.Property(e => e.style_id)
+                    .HasMaxLength(32)
+                    .HasComment("型體ID");
+
+                entity.Property(e => e.style_no)
+                    .HasMaxLength(30)
+                    .HasComment("型體代號");
+
+                entity.Property(e => e.trans_id)
+                    .HasMaxLength(22)
+                    .HasComment("拋轉SERP的批次號");
+
+                entity.Property(e => e.txt_attrib_01)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位1");
+
+                entity.Property(e => e.txt_attrib_02)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位2");
+
+                entity.Property(e => e.txt_attrib_03)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位3");
+
+                entity.Property(e => e.txt_attrib_04)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位4");
+
+                entity.Property(e => e.txt_attrib_05)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位5");
+
+                entity.Property(e => e.txt_attrib_06)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位6");
+
+                entity.Property(e => e.txt_attrib_07)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位7");
+
+                entity.Property(e => e.txt_attrib_08)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位8");
+
+                entity.Property(e => e.txt_attrib_09)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位9");
+
+                entity.Property(e => e.txt_attrib_10)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位10");
+
+                entity.Property(e => e.txt_attrib_11)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位11");
+
+                entity.Property(e => e.txt_attrib_12)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位12");
+
+                entity.Property(e => e.txt_attrib_13)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位13");
+
+                entity.Property(e => e.txt_attrib_14)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位14");
+
+                entity.Property(e => e.txt_attrib_15)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位15");
+
+                entity.Property(e => e.txt_attrib_16)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位16");
+
+                entity.Property(e => e.txt_attrib_17)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位17");
+
+                entity.Property(e => e.txt_attrib_18)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位18");
+
+                entity.Property(e => e.txt_attrib_19)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位19");
+
+                entity.Property(e => e.txt_attrib_20)
+                    .HasMaxLength(200)
+                    .HasComment("延伸欄位20");
+
+                entity.Property(e => e.type_definition)
+                    .HasMaxLength(20)
+                    .HasComment("困難度");
+            });
+
+            modelBuilder.Entity<work_order_item>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("work_order_item", "asics_pdm");
+
+                entity.Property(e => e.modify_date)
+                    .HasMaxLength(19)
+                    .HasComment("異動時間");
+
+                entity.Property(e => e.modify_user)
+                    .HasMaxLength(14)
+                    .HasComment("異動人員");
+
+                entity.Property(e => e.qty)
+                    .IsRequired()
+                    .HasMaxLength(16)
+                    .HasComment("派工數量");
+
+                entity.Property(e => e.shoe_kind)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("鞋型");
+
+                entity.Property(e => e.size_no)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasComment("尺寸");
+
+                entity.Property(e => e.wk_d_id)
+                    .IsRequired()
+                    .HasMaxLength(22)
+                    .HasComment("派工單子檔ID");
+
+                entity.Property(e => e.wk_m_id)
+                    .IsRequired()
+                    .HasMaxLength(22)
+                    .HasComment("派工單主檔ID");
             });
 
             OnModelCreatingPartial(modelBuilder);
