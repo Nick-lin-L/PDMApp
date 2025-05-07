@@ -3503,17 +3503,16 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<sys_namevalue>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.pkid)
+                    .HasName("pk_sys_namevalue");
 
                 entity.ToTable("sys_namevalue", "asics_pdm");
+
+                entity.Property(e => e.pkid).HasMaxLength(4);
 
                 entity.Property(e => e.data_no).HasMaxLength(20);
 
                 entity.Property(e => e.group_key).HasMaxLength(30);
-
-                entity.Property(e => e.pkid)
-                    .IsRequired()
-                    .HasMaxLength(4);
 
                 entity.Property(e => e.status)
                     .HasMaxLength(1)
