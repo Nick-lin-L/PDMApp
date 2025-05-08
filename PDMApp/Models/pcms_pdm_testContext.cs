@@ -3711,7 +3711,7 @@ namespace PDMApp.Models
                     .IsUnique();
 
                 entity.Property(e => e.wk_m_id)
-                    .HasMaxLength(22)
+                    .HasMaxLength(36)
                     .HasComment("id");
 
                 entity.Property(e => e.article_no)
@@ -3754,8 +3754,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.del_mk)
                     .HasMaxLength(1)
-                    .HasDefaultValueSql("'Y'::bpchar")
-                    .HasComment("刪除註記");
+                    .HasDefaultValueSql("'N'::bpchar")
+                    .HasComment("刪除註記(Y代表刪除)");
 
                 entity.Property(e => e.dev_no)
                     .IsRequired()
@@ -3826,7 +3826,7 @@ namespace PDMApp.Models
                     .HasMaxLength(32)
                     .HasComment("部位派工的BOM ID");
 
-                entity.Property(e => e.pro_mk)
+                entity.Property(e => e.proc_mk)
                     .HasMaxLength(1)
                     .HasComment("SERP資料對接處理註記");
 
@@ -3951,9 +3951,14 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<work_order_item>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.wk_d_id)
+                    .HasName("work_order_item_pk");
 
                 entity.ToTable("work_order_item", "asics_pdm");
+
+                entity.Property(e => e.wk_d_id)
+                    .HasMaxLength(22)
+                    .HasComment("派工單子檔ID");
 
                 entity.Property(e => e.modify_date)
                     .HasMaxLength(19)
@@ -3978,14 +3983,14 @@ namespace PDMApp.Models
                     .HasMaxLength(10)
                     .HasComment("尺寸");
 
-                entity.Property(e => e.wk_d_id)
+                entity.Property(e => e.sort)
                     .IsRequired()
-                    .HasMaxLength(22)
-                    .HasComment("派工單子檔ID");
+                    .HasMaxLength(3)
+                    .HasComment("排序");
 
                 entity.Property(e => e.wk_m_id)
                     .IsRequired()
-                    .HasMaxLength(22)
+                    .HasMaxLength(36)
                     .HasComment("派工單主檔ID");
             });
 
