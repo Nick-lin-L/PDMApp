@@ -14,6 +14,9 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using PDMApp.Service;
+using PDMApp.Service.Basic;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -21,14 +24,19 @@ namespace PDMApp.Controllers.ALink
 {
     [Route("api/v1/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "PDMToken")]
     public class SpecHeadsController : ControllerBase
     {
 
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SpecHeadsController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public SpecHeadsController(
+            pcms_pdm_testContext pcms_Pdm_testContext,
+            ICurrentUserService currentUserService)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
+            _currentUserService = currentUserService;
         }
 
         // GET: api/<SpecHeadsController>
@@ -52,9 +60,20 @@ namespace PDMApp.Controllers.ALink
         /// </summary>
         /// <param name="value">SpecSearchParameter</param>
         /// <returns>pdm_spec_headDto</returns>
-        //[RequirePermission(2, "READ")] // 權限ID = 2，Read 權限
+        [HttpPost]
+        [RequirePermission(2, "read")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
+            // 檢查是否至少有一個搜尋條件
+            if (!ValidateSearchParams(value))
+            {
+                return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
+                    errorCode: "40001",
+                    message: "請至少輸入一個搜尋條件",
+                    data: null
+                );
+            }
+
             try
             {
                 // Step 1：查詢 + 分頁（EF 查 DB）
@@ -75,7 +94,7 @@ namespace PDMApp.Controllers.ALink
             {
                 return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
                     errorCode: "50001",
-                    message: $"權限查詢過程中發生錯誤: {ex.Message}",
+                    message: $"查詢過程中發生錯誤: {ex.Message}",
                     data: null
                 );
             }
@@ -375,11 +394,13 @@ namespace PDMApp.Controllers.ALink
             }
             catch (Exception ex)
             {
-                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                var errorResponse = APIResponseHelper.HandleApiError<object>(
                     errorCode: "10001",
                     message: $"匯出過程中發生錯誤: {ex.Message}",
                     data: null
-                ));
+                );
+                HttpContext.Items["CustomErrorMessage"] = errorResponse.Value;
+                throw;  // 重新拋出異常，讓 ValidationMiddleware 處理
             }
         }
 
