@@ -13,7 +13,6 @@ namespace PDMApp.Service.Basic
     {
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        // 無立即 SaveChanges 的版本，用來累積流水號更新
         private static async Task<(string newMatNo, string errorMsg, sys_namevalue updatedSeqRow)> GenerateMatNoWithoutSaveAsync(pcms_pdm_testContext context)
         {
             var titleRow = await context.sys_namevalue.FirstOrDefaultAsync(n => n.group_key == "mat_title" && n.status == "Y");
@@ -30,37 +29,46 @@ namespace PDMApp.Service.Basic
             var paddedSeq = matSeq.ToString().PadLeft(15, '0');
             var newMatNo = titleRow.data_no.Trim() + paddedSeq;
 
-            // 更新 seqRow 的值，但不儲存
             seqRow.data_no = (matSeq + 1).ToString();
             return (newMatNo, null, seqRow);
         }
 
-        public static async Task<(bool isSuccess, string message, string failMatId)> SubmitMultipleToSerpAsync(pcms_pdm_testContext context,List<MaterialSubmitParameter> requestList)
+        public static async Task<(bool isSuccess, string message)> SubmitMultipleToSerpAsync(pcms_pdm_testContext context, List<MaterialSubmitParameter> requestList)
         {
             using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
                 var now = DateTime.Now;
-                string timestamp = now.ToString("yyyyMMddHHmmssfff") + now.ToString("ffffff").Substring(3, 3);
+                string timestamp = now.ToString("yyyyMMddHHmmssfff") + now.ToString("ffffff").Substring(3, 3); // 單一 trans_id
 
                 var updatedMaterials = new List<matm>();
                 var updatedSeqRows = new List<sys_namevalue>();
 
+                // 先檢查是否有任何一筆已送出過
                 foreach (var req in requestList)
                 {
                     var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId && m.fact_no == req.DevFactoryNo);
                     if (material == null)
-                        return (false, "找不到指定的物料資料。", req.MatId);
+                        return (false, $"找不到指定的物料資料{material.mat_no}。");
+
+                    if (!string.IsNullOrEmpty(material.trans_id))
+                        return (false, $"料號{material.mat_no}已送出過，請勿重複送出。");
+                }
+
+                // 所有資料都合法，開始處理送出
+                foreach (var req in requestList)
+                {
+                    var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId && m.fact_no == req.DevFactoryNo);
 
                     if (string.IsNullOrEmpty(material.mat_no))
                     {
                         var (newMatNo, generateErrMsg, updatedSeqRow) = await GenerateMatNoWithoutSaveAsync(context);
                         if (newMatNo == null)
-                            return (false, generateErrMsg, req.MatId);
+                            return (false, generateErrMsg);
 
                         material.mat_no = newMatNo;
-                        updatedSeqRows.Add(updatedSeqRow); // 收集要更新的流水號設定
+                        updatedSeqRows.Add(updatedSeqRow); // 收集更新的流水號設定
                     }
 
                     material.order_status = "INPRG";
@@ -70,36 +78,43 @@ namespace PDMApp.Service.Basic
                     updatedMaterials.Add(material);
                 }
 
-                // 更新資料庫（包含 material 和 sys_namevalue）
                 context.matm.UpdateRange(updatedMaterials);
                 context.sys_namevalue.UpdateRange(updatedSeqRows);
                 await context.SaveChangesAsync();
+                await transaction.CommitAsync(); // 提交更新資料與 trans_id
 
-                // 呼叫 SERP Web API（逐筆）
-                foreach (var material in updatedMaterials)
+                // 呼叫 SERP API：只呼叫一次
+                string factNo = updatedMaterials[0].fact_no;
+                string apiUrl = $"https://esb6test.pouchen.com/services/PCMS_PDM_BASIC_MATL_I_QAS?FACT_NO={factNo}&TRANS_ID={timestamp}";
+
+                var response = await _httpClient.GetAsync(apiUrl);
+                var apiResult = await response.Content.ReadAsStringAsync();
+
+                var apiJson = JObject.Parse(apiResult);
+                var status = apiJson["STATUS"]?.ToString();
+                var apiErrorMsg = apiJson["ERROR_MSG"]?.ToString();
+
+                if (status != "Y")
                 {
-                    string apiUrl = $"https://esb6test.pouchen.com/services/PCMS_PDM_BASIC_MATL_I_QAS?FACT_NO={material.fact_no}&TRANS_ID={material.trans_id}";
-                    var response = await _httpClient.GetAsync(apiUrl);
-                    var apiResult = await response.Content.ReadAsStringAsync();
-
-                    var apiJson = JObject.Parse(apiResult);
-                    var status = apiJson["STATUS"]?.ToString();
-                    var apiErrorMsg = apiJson["ERROR_MSG"]?.ToString();
-
-                    if (status != "Y")
+                    foreach (var material in updatedMaterials)
                     {
-                        await transaction.RollbackAsync();
-                        return (false, $"送出失敗：{apiErrorMsg}", material.mat_id);
+                        material.order_status = "OPEN";
+                        material.trans_proc_mk = 'Y';
+                        material.trans_id = null;
                     }
+
+                    context.matm.UpdateRange(updatedMaterials);
+                    await context.SaveChangesAsync();
+
+                    return (false, $"送出失敗：{apiErrorMsg}");
                 }
 
-                await transaction.CommitAsync();
-                return (true, "全部送出成功", null);
+                return (true, "送出成功");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return (false, $"處理過程中發生錯誤: {ex.Message}", null);
+                return (false, $"處理過程中發生錯誤: {ex.Message}");
             }
         }
     }
