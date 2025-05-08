@@ -84,26 +84,26 @@ namespace PDMApp
             services.AddScoped<ICurrentUserPermissionService, CurrentUserPermissionService>();
             services.AddControllers(options =>
             {
+                // 加入權限過濾器
                 options.Filters.Add<PermissionActionFilter>();
             })
             .ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
-                    //var errorCode = context.ModelState.w
+                    // 收集錯誤信息
                     var errors = context.ModelState
-                        .Where(e => e.Value.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
-                        );
+                                    .Where(e => e.Value.Errors.Count > 0)
+                                    .ToDictionary(
+                                        kvp => kvp.Key,
+                                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
+                                    );
 
-                    return new OkObjectResult(new
-                    {
-                        //Status = "Error",
-                        errorCode = "40001",
-                        message = errors.Values.FirstOrDefault() ?? "Oops! Something went wrong. Please reach out to your IT support team."
-                    });
+                    // 將錯誤信息存儲在 HttpContext.Items 中
+                    context.HttpContext.Items["ModelValidationErrors"] = errors;
+
+                    // 返回空結果，讓中間件處理響應
+                    return new EmptyResult();
                 };
             })
             .AddJsonOptions(options =>
@@ -174,11 +174,6 @@ namespace PDMApp
  
           });
             */
-            // 註冊權限過濾器
-            services.AddControllers(options =>
-            {
-                options.Filters.Add<PermissionActionFilter>();
-            });
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別
