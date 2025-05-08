@@ -172,21 +172,21 @@ namespace PDMApp.Controllers.Basic
         {
             try
             {
-                var (isSuccess, message, failMatId) = await Service.Basic.MaterialSubmitHelper.SubmitMultipleToSerpAsync(_pcms_Pdm_TestContext, requestList);
+                var (isSuccess, message) = await Service.Basic.MaterialSubmitHelper.SubmitMultipleToSerpAsync(_pcms_Pdm_TestContext, requestList);
 
                 if (!isSuccess)
                 {
                     return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
-                        Message = $"送出失敗，料號 {failMatId} 發生錯誤：{message}"
+                        Message = message
                     });
                 }
 
                 return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = "全部送出成功"
+                    Message = message
                 });
             }
             catch (Exception ex)
