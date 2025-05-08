@@ -66,6 +66,14 @@ namespace PDMApp.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
+            // 檢查是否已經有自定義的錯誤訊息
+            if (context.Items.ContainsKey("CustomErrorMessage"))
+            {
+                var customError = context.Items["CustomErrorMessage"];
+                await System.Text.Json.JsonSerializer.SerializeAsync(context.Response.Body, customError);
+                return;
+            }
+
             await context.Response.WriteAsJsonAsync(new
             {
                 Code = "SERVER_ERROR",

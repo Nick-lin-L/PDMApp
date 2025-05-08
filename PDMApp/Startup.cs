@@ -97,7 +97,7 @@ namespace PDMApp
                             kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
                         );
 
-                    return new BadRequestObjectResult(new
+                    return new OkObjectResult(new
                     {
                         Status = "Error",
                         Message = "Validation failed",
@@ -283,11 +283,11 @@ namespace PDMApp
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseValidationExceptionHandler();
 
             //if (env.IsDevelopment())
             //{
             app.UseDeveloperExceptionPage();
+            //}
             app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
                               //app.UseSwagger(); 原生swagger
             app.UseSwaggerUi3(); // NSwag
@@ -318,6 +318,8 @@ namespace PDMApp
             app.UseAuthorization();
 
             app.UseMiniProfiler();
+            // 將 ValidationMiddleware 移到最後
+            app.UseValidationExceptionHandler();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
