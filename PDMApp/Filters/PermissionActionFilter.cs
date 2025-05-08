@@ -42,7 +42,7 @@ namespace PDMApp.Filters
                     // 使用 APIResponseHelper 生成統一的錯誤回應
                     var response = APIResponseHelper.HandleApiError<object>(
                         errorCode: "40301",
-                        message: $"您沒有執行此操作的權限 (PermissionId: {attr.PermissionId}, Action: {attr.Action})",
+                        message: $"Sorry, you don’t have permission to do this. (PermissionId: {attr.PermissionId}, Action: {attr.Action})",
                         data: null
                     );
                     context.Result = response.Result;
