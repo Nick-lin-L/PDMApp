@@ -57,7 +57,7 @@ namespace PDMApp.Models
         public decimal modify_time { get; set; }
         public char del_mk { get; set; }
         public decimal? del_date { get; set; }
-        public char? pro_mk { get; set; }
+        public char? proc_mk { get; set; }
         public string err_msg { get; set; }
         public string style_id { get; set; }
         public string order_type { get; set; }

@@ -14,5 +14,6 @@ namespace PDMApp.Models
         public string modify_user { get; set; }
         public string modify_date { get; set; }
         public string wk_d_id { get; set; }
+        public string sort { get; set; }
     }
 }
