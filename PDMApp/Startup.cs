@@ -90,6 +90,7 @@ namespace PDMApp
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
+                    //var errorCode = context.ModelState.w
                     var errors = context.ModelState
                         .Where(e => e.Value.Errors.Count > 0)
                         .ToDictionary(
@@ -99,9 +100,9 @@ namespace PDMApp
 
                     return new OkObjectResult(new
                     {
-                        Status = "Error",
-                        Message = "Validation failed",
-                        Errors = errors
+                        //Status = "Error",
+                        errorCode = "40001",
+                        message = errors.Values.FirstOrDefault() ?? "Oops! Something went wrong. Please reach out to your IT support team."
                     });
                 };
             })
