@@ -61,7 +61,8 @@ namespace PDMApp.Controllers.ALink
         /// <param name="value">SpecSearchParameter</param>
         /// <returns>pdm_spec_headDto</returns>
         [HttpPost]
-        [RequirePermission(2, "read")]
+        [RequirePermission(2, "READ")]
+        //[RequirePermission(2, "PDF_export")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             // 檢查是否至少有一個搜尋條件
