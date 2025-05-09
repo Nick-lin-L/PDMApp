@@ -245,6 +245,7 @@ namespace PDMApp.Controllers.ALink
         }
 
         [HttpPost("Export")]
+        [RequirePermission(2, "EXPORT")]
         //public async Task<IActionResult> ExportMasterDetail([FromBody] SpecSearchParameter value)
         public async Task<ActionResult<APIStatusResponse<IEnumerable<ExportFileResponseDto>>>> ExportMasterDetail([FromBody] SpecSearchParameter value)
         {
