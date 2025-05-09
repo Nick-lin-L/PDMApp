@@ -20,29 +20,28 @@ namespace PDMApp.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            // 檢查是否有 RequirePermission 特性
-            var permissionAttributes = context.ActionDescriptor
-                .EndpointMetadata
-                .OfType<RequirePermissionAttribute>()
-                .ToList();
+            var endpoint = context.ActionDescriptor.EndpointMetadata;
 
-            if (!permissionAttributes.Any())
-            {
-                await next(); // 沒有標記權限需求，直接放行
-                return;
-            }
-
-            // 檢查每個權限
+            // 檢查權限，如果沒有檢查權限標記則視為放行
+            var permissionAttributes = endpoint.OfType<RequirePermissionAttribute>();
             foreach (var attr in permissionAttributes)
             {
-                bool hasPermission = await _permissionService.HasPermissionAsync(attr.PermissionId, attr.Action);
+                bool hasPermission;
+                if (attr.IsExtendedPermission)
+                {
+                    hasPermission = await _permissionService.HasExtendedPermissionAsync(attr.PermissionId, attr.Action);
+                }
+                else
+                {
+                    hasPermission = await _permissionService.HasPermissionAsync(attr.PermissionId, attr.Action);
+                }
 
                 if (!hasPermission)
                 {
                     // 使用 APIResponseHelper 生成統一的錯誤回應
                     var response = APIResponseHelper.HandleApiError<object>(
                         errorCode: "40301",
-                        message: $"Sorry, you don’t have permission to do this. (PermissionId: {attr.PermissionId}, Action: {attr.Action})",
+                        message: $"Sorry, you don't have permission to do this. (PermissionId: {attr.PermissionId}, Action: {attr.Action})",
                         data: null
                     );
                     context.Result = response.Result;

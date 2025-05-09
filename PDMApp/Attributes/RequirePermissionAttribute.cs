@@ -17,5 +17,7 @@ namespace PDMApp.Attributes
             PermissionId = permissionId;
             Action = action.ToUpper(); // 大寫
         }
+
+        public bool IsExtendedPermission => !new[] { "CREATE", "READ", "UPDATE", "DELETE", "EXPORT", "IMPORT" }.Contains(Action);
     }
 }

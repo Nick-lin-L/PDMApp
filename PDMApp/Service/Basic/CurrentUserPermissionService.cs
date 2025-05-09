@@ -106,11 +106,11 @@ namespace PDMApp.Service.Basic
                 return false;
             }
 
-            // 檢查擴充權限
+            // 檢查擴充權限，將 permissionKey 轉為大寫
             return await _context.pdm_role_permission_details
                 .AnyAsync(d => userRoles.Contains(d.role_id.Value) &&
                               d.permission_id == permissionId &&
-                              d.permission_key == permissionKey &&
+                              d.permission_key.ToUpper() == permissionKey.ToUpper() &&
                               d.is_active == "Y");
         }
 
