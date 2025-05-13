@@ -48,7 +48,7 @@ namespace PDMApp.Service.Basic
                 // 先檢查是否有任何一筆已送出過
                 foreach (var req in requestList)
                 {
-                    var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId && m.fact_no == req.DevFactoryNo);
+                    var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId);
                     if (material == null)
                         return (false, $"找不到指定的物料資料{material.mat_no}。");
 
@@ -59,7 +59,7 @@ namespace PDMApp.Service.Basic
                 // 所有資料都合法，開始處理送出
                 foreach (var req in requestList)
                 {
-                    var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId && m.fact_no == req.DevFactoryNo);
+                    var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId);
 
                     if (string.IsNullOrEmpty(material.mat_no))
                     {
@@ -98,8 +98,8 @@ namespace PDMApp.Service.Basic
                 {
                     foreach (var material in updatedMaterials)
                     {
-                        material.order_status = "OPEN";
-                        material.trans_proc_mk = 'Y';
+                        material.order_status = "REJD";
+                        material.trans_proc_mk = 'E';
                         material.trans_id = null;
                     }
 
