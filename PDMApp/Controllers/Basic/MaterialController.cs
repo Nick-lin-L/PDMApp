@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using System.IO;
+using ClosedXML.Excel;
 
 namespace PDMApp.Controllers.Basic
 {
@@ -200,6 +202,101 @@ namespace PDMApp.Controllers.Basic
             }
         }
 
+        // POST api/v1/Basic/Material/export
+        [HttpPost("export")]
+        public async Task<ActionResult<APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] MaterialSearchParameter value)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var (isSuccess, message, query) = await Service.Basic.MaterialQueryHelper.QueryMaterial(_pcms_Pdm_TestContext, value);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(400, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                var dataList = await query.OrderBy(m => m.MatNo).ToListAsync();
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("MaterialList");
+
+                // 設定標題（僅保留指定欄位）
+                string[] headers = new[]
+                {
+                    "PDM MATL NO",      // MatNo
+                    "SERP MATL No",     // SerpMatNo
+                    "MATL Full Info",   // MatFullNm
+                    "Color No",         // ColorNo
+                    "Color Info",       // ColorNm
+                    "STANDARD",         // Standard
+                    "MATL Note",        // Memo
+                    "MDA MATL No.",     // Matnr
+                    "Primary Cat",      // ScmBclassNo
+                    "Secondary Cat",    // ScmMclassNo
+                    "Minor Cat."        // ScmSclassNo
+                };
+
+                for (int col = 0; col < headers.Length; col++)
+                {
+                    worksheet.Cell(1, col + 1).Value = headers[col];
+                    worksheet.Cell(1, col + 1).Style.Font.Bold = true;
+                    worksheet.Cell(1, col + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                }
+
+                // 填入資料
+                int row = 2;
+                foreach (var item in dataList)
+                {
+                    worksheet.Cell(row, 1).Value = item.MatNo;
+                    worksheet.Cell(row, 2).Value = item.SerpMatNo;
+                    worksheet.Cell(row, 3).Value = item.MatFullNm;
+                    worksheet.Cell(row, 4).Value = item.ColorNo;
+                    worksheet.Cell(row, 5).Value = item.ColorNm;
+                    worksheet.Cell(row, 6).Value = item.Standard;
+                    worksheet.Cell(row, 7).Value = item.Memo;
+                    worksheet.Cell(row, 8).Value = item.Matnr;
+                    worksheet.Cell(row, 9).Value = item.ScmBclassNo;
+                    worksheet.Cell(row, 10).Value = item.ScmMclassNo;
+                    worksheet.Cell(row, 11).Value = item.ScmSclassNo;
+                    row++;
+                }
+
+                // 自動調整欄位寬度
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
+
+                // 轉換為 Base64 字串
+                var base64String = Convert.ToBase64String(stream.ToArray());
+
+                // 準備回傳的 ResponseDto
+                var response = new Dtos.ExportFileResponseDto
+                {
+                    FileName = $"MaterialList_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                    FileContent = base64String
+                };
+
+                // 回傳 API 狀態
+                return APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = $"匯出過程中發生錯誤: {ex.Message}"
+                });
+            }
+        }
 
     }
 }

@@ -23,7 +23,7 @@ namespace PDMApp.Dtos.Basic
         public string? ScmMclassNo { get; set; }
         public string? ScmSclassNo { get; set; }
         public string? Status { get; set; }
-        public decimal? StopDate { get; set; }  
+        public string? StopDate { get; set; }  
         public string? Memo { get; set; }
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? ModifyTime { get; set; }
@@ -45,5 +45,12 @@ namespace PDMApp.Dtos.Basic
         public string Text { get; set; }
         public string Value { get; set; }
     }
+
+    public class ExportFileResponseDto
+    {
+        public string FileName { get; set; }
+        public string FileContent { get; set; } // Base64 字串
+    }
+
 
 }
