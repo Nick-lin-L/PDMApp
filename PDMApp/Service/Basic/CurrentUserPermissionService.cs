@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using PDMApp.Models;
 using System;
 using System.Collections.Generic;
@@ -11,81 +13,129 @@ namespace PDMApp.Service.Basic
     {
         private readonly pcms_pdm_testContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<CurrentUserPermissionService> _logger;
+
+        // 快取時間設定
+        private static readonly TimeSpan CACHE_DURATION = TimeSpan.FromMinutes(10);
+
+        private const string CACHE_KEYS_LIST = "permission_cache_keys";
 
         public CurrentUserPermissionService(
             pcms_pdm_testContext context,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IMemoryCache cache,
+            ILogger<CurrentUserPermissionService> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _cache = cache;
+            _logger = logger;
+        }
+
+        // 在設定快取時記錄快取鍵
+        private void SetCacheWithKey(string key, object value)
+        {
+            _cache.Set(key, value, CACHE_DURATION);
+
+            // 記錄快取鍵
+            var cacheKeys = _cache.Get<HashSet<string>>(CACHE_KEYS_LIST) ?? new HashSet<string>();
+            cacheKeys.Add(key);
+            _cache.Set(CACHE_KEYS_LIST, cacheKeys);
         }
 
         public async Task<bool> HasPermissionAsync(int permissionId, string action)
         {
-            if (_currentUserService.UserId == null)
+            try
             {
+                // 1. 檢查用戶是否登入
+                if (_currentUserService.UserId == null)
+                {
+                    return false;
+                }
+
+                // 2. 檢查快取
+                var cacheKey = $"permission_{_currentUserService.UserId}_{permissionId}_{action.ToUpper()}";
+                if (_cache.TryGetValue(cacheKey, out bool cachedResult))
+                {
+                    return cachedResult;
+                }
+
+                // 3. 獲取用戶角色（使用快取）
+                var userRoles = await GetUserRolesAsync();
+                if (!userRoles.Any())
+                {
+                    return false;
+                }
+
+                // 4. 單次查詢所有需要的權限資訊
+                var permission = await _context.pdm_role_permissions
+                    .Where(rp => userRoles.Contains(rp.role_id.Value) &&
+                               rp.permission_id == permissionId &&
+                               rp.is_active == "Y")
+                    .Select(rp => new
+                    {
+                        rp.createp,
+                        rp.readp,
+                        rp.updatep,
+                        rp.deletep,
+                        rp.exportp,
+                        rp.importp
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (permission == null)
+                {
+                    return false;
+                }
+
+                // 5. 在記憶體中判斷權限
+                var result = action.ToUpper() switch
+                {
+                    "CREATE" => permission.createp == "Y",
+                    "READ" => permission.readp == "Y",
+                    "UPDATE" => permission.updatep == "Y",
+                    "DELETE" => permission.deletep == "Y",
+                    "EXPORT" => permission.exportp == "Y",
+                    "IMPORT" => permission.importp == "Y",
+                    _ => false
+                };
+
+                // 6. 設定快取
+                SetCacheWithKey(cacheKey, result);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "權限檢查失敗: UserId={UserId}, PermissionId={PermissionId}, Action={Action}",
+                    _currentUserService.UserId,
+                    permissionId,
+                    action);
                 return false;
             }
+        }
 
-            // 獲取用戶的角色
-            var userRoles = await _context.pdm_user_roles
+        // 快取用戶角色
+        private async Task<List<int>> GetUserRolesAsync()
+        {
+            var cacheKey = $"user_roles_{_currentUserService.UserId}";
+
+            if (_cache.TryGetValue(cacheKey, out List<int> cachedRoles))
+            {
+                return cachedRoles;
+            }
+
+            var roles = await _context.pdm_user_roles
                 .Where(ur => ur.user_id == _currentUserService.UserId)
-                .Select(ur => ur.role_id)
+                .Select(ur => ur.role_id.Value)
                 .ToListAsync();
 
-            if (!userRoles.Any())
-            {
-                return false;
-            }
+            // 設定快取時使用新方法
+            SetCacheWithKey(cacheKey, roles);
 
-            // 檢查角色權限
-            var hasPermission = await _context.pdm_role_permissions
-                .Where(rp => userRoles.Contains(rp.role_id.Value) &&
-                           rp.permission_id == permissionId &&
-                           rp.is_active == "Y")
-                .AnyAsync();
-
-            if (!hasPermission)
-            {
-                return false;
-            }
-
-            // 根據不同動作檢查具體權限
-            switch (action.ToUpper())
-            {
-                case "CREATE":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.createp == "Y");
-                case "READ":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.readp == "Y");
-                case "UPDATE":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.updatep == "Y");
-                case "DELETE":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.deletep == "Y");
-                case "EXPORT":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.exportp == "Y");
-                case "IMPORT":
-                    return await _context.pdm_role_permissions
-                        .AnyAsync(rp => userRoles.Contains(rp.role_id.Value) &&
-                                      rp.permission_id == permissionId &&
-                                      rp.importp == "Y");
-                default:
-                    return false;
-            }
+            return roles;
         }
 
         public async Task<bool> HasExtendedPermissionAsync(int permissionId, string permissionKey)
