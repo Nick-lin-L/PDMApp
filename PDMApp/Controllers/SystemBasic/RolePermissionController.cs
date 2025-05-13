@@ -12,12 +12,10 @@ using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Transactions;
-using static PDMApp.Service.PdmUsersRepository;
 using PDMApp.Attributes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
