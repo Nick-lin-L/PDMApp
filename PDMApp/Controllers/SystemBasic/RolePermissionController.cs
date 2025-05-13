@@ -33,6 +33,8 @@ namespace PDMApp.Controllers
         private readonly IMemoryCache _cache;
         private readonly ICurrentUserService _currentUser;
 
+        private const string CACHE_KEYS_LIST = "permission_cache_keys";
+
         public RolePermissionController(pcms_pdm_testContext pcms_Pdm_testContext, PdmUsersRepository repository, IMemoryCache cache, ICurrentUserService currentUser)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
@@ -408,6 +410,25 @@ namespace PDMApp.Controllers
                     // **[4] 儲存 & 交易提交**
                     await _pcms_Pdm_TestContext.SaveChangesAsync();
                     scope.Complete();
+
+                    // 清除快取
+                    var cacheKeys = _cache.Get<HashSet<string>>(CACHE_KEYS_LIST) ?? new HashSet<string>();
+
+                    // 清除該角色的所有快取
+                    var keysToRemove = cacheKeys.Where(k =>
+                        k.StartsWith($"permission_") ||
+                        k.StartsWith($"user_roles_")
+                    ).ToList();
+
+                    foreach (var key in keysToRemove)
+                    {
+                        _cache.Remove(key);
+                        cacheKeys.Remove(key);
+                    }
+
+                    // 更新快取
+                    _cache.Set(CACHE_KEYS_LIST, cacheKeys);
+
                     var resultData = new Dictionary<string, object>
                     {
                         { "Role", new { role.role_id, role.role_name, role.description, role.dev_factory_no, role.is_active } },
