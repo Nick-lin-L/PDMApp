@@ -57,7 +57,6 @@
     public class MaterialSubmitParameter
     {
         public string MatId { get; set; }
-        public string DevFactoryNo { get; set; }
     }
 
 }

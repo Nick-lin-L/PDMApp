@@ -66,6 +66,13 @@ namespace PDMApp.Service.Basic
                                     into sclassJoin
                                 from sclass in sclassJoin.DefaultIfEmpty()
 
+                                    // Join pdm_users to get ModifyUserName
+                                join user in _pcms_Pdm_TestContext.pdm_users
+                                    on m.modify_user equals user.pccuid.ToString()
+                                    into userJoin
+                                from user in userJoin.DefaultIfEmpty()
+
+
                                 select new MaterialDto
                                 {
                                     FactNo = m.fact_no,
@@ -85,10 +92,10 @@ namespace PDMApp.Service.Basic
                                     ScmMclassNo = m.scm_mclass_no + "-" + mclass.class_name_zh_tw,
                                     ScmSclassNo = m.scm_sclass_no + "-" + sclass.class_name_zh_tw,
                                     Status = m.status,
-                                    StopDate = m.stop_date,
+                                    StopDate = m.stop_date.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd") : null,
                                     Memo = m.memo,
                                     ModifyTime = m.modify_tm,
-                                    ModifyUser = m.modify_user,
+                                    ModifyUser = user != null ? user.username : m.modify_user,
                                     Locked = m.locked,
                                     OrderStatus = m.order_status + "-" + orderStatusName.text,
                                     TransMsg = m.trans_msg
@@ -123,6 +130,7 @@ namespace PDMApp.Service.Basic
                 return (false, $"查詢發生錯誤：{ex.Message}", null);
             }
         }
+
 
 
 
