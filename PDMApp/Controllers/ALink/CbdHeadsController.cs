@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using PDMApp.Dtos;
+using PDMApp.Attributes;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
 using PDMApp.Parameters.ALink;
 using PDMApp.Utils;
+using PDMApp.Service;
+using PDMApp.Service.Basic;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -19,14 +23,18 @@ namespace PDMApp.Controllers.ALink
 {
     [Route("api/v1/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "PDMToken")]
     public class CbdHeadsController : ControllerBase
     {
 
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CbdHeadsController(pcms_pdm_testContext pcms_Pdm_testContext)
+
+        public CbdHeadsController(pcms_pdm_testContext pcms_Pdm_testContext, ICurrentUserService currentUserService)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
+            _currentUserService = currentUserService;
         }
 
 
@@ -45,7 +53,14 @@ namespace PDMApp.Controllers.ALink
             return "value";
         }
 
+        // 查詢CBD主檔
+        /// <summary>
+        /// 查詢CBD主檔
+        /// </summary>
+        /// <param name="value">SpecSearchParameter</param>
+        /// <returns>回傳查詢後的資料 <see cref="APIStatusResponse{IDictionary}"/> 格式。</returns>
         [HttpPost]
+        [RequirePermission(3, "READ")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
             try

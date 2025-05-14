@@ -69,7 +69,7 @@ namespace PDMApp.Service.Basic
                 }
 
                 // 4. 單次查詢所有需要的權限資訊
-                var permission = await _context.pdm_role_permissions
+                var permissions = await _context.pdm_role_permissions
                     .Where(rp => userRoles.Contains(rp.role_id.Value) &&
                                rp.permission_id == permissionId &&
                                rp.is_active == "Y")
@@ -80,26 +80,27 @@ namespace PDMApp.Service.Basic
                         rp.updatep,
                         rp.deletep,
                         rp.exportp,
-                        rp.importp
+                        rp.importp,
+                        rp.dev_factory_no
                     })
-                    .FirstOrDefaultAsync();
+                    .ToListAsync();
 
-                if (permission == null)
+                if (!permissions.Any())
                 {
                     return false;
                 }
 
                 // 5. 在記憶體中判斷權限
-                var result = action.ToUpper() switch
+                var result = permissions.Any(p => action.ToUpper() switch
                 {
-                    "CREATE" => permission.createp == "Y",
-                    "READ" => permission.readp == "Y",
-                    "UPDATE" => permission.updatep == "Y",
-                    "DELETE" => permission.deletep == "Y",
-                    "EXPORT" => permission.exportp == "Y",
-                    "IMPORT" => permission.importp == "Y",
+                    "CREATE" => p.createp == "Y",
+                    "READ" => p.readp == "Y",
+                    "UPDATE" => p.updatep == "Y",
+                    "DELETE" => p.deletep == "Y",
+                    "EXPORT" => p.exportp == "Y",
+                    "IMPORT" => p.importp == "Y",
                     _ => false
-                };
+                });
 
                 // 6. 設定快取
                 SetCacheWithKey(cacheKey, result);
