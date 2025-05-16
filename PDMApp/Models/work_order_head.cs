@@ -64,5 +64,9 @@ namespace PDMApp.Models
         public string plm_spec_m_id { get; set; }
         public string order_status { get; set; }
         public string trans_id { get; set; }
+        public string cust_sr { get; set; }
+        public string report_sort { get; set; }
+        public string order_kind { get; set; }
+        public string fg_type { get; set; }
     }
 }

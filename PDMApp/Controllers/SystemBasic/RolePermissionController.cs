@@ -198,7 +198,7 @@ namespace PDMApp.Controllers
                         //return APIResponseHelper.HandleApiError<object>("401", "找不到登入者資訊");
                     }
 
-                    // 然後你就可以用：
+                    // 然後就可以用：
                     var updatedBy = currentUser.UserId;
 
                     // 確保 Permissions 和 PermissionDetails 不為 null
