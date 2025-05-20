@@ -91,6 +91,7 @@ namespace PDMApp.Controllers.Basic
                 );
             }
         }
+
         [HttpPost("import-main")]
         public async Task<ActionResult<APIStatusResponse<List<plm_product_head>>>> ImportHeads([FromBody] List<ShoeShapeImportHeadParameter> parameters)
         {
@@ -248,7 +249,7 @@ namespace PDMApp.Controllers.Basic
                     product.item_trading_code = param.Item_Trading_Code;
                     product.global_id = param.Global_ID;
                     product.sort_order = param.Sort_Order;
-                    product.factory = param.Main_Factory; // 使用當前登入廠別
+                    product.factory = param.Login_Factory; // 使用當前登入廠別
 
                     if (existingProduct == null)
                     {
@@ -282,8 +283,142 @@ namespace PDMApp.Controllers.Basic
                 );
             }
         }
+
+
+        [HttpPost("import-detail")]
+        public async Task<ActionResult<APIStatusResponse<List<plm_product_item>>>> Importdetails([FromBody] List<ShoeShapeImportDetailParameter> parameters)
+        {
+            try
+            {
+                // 1. 驗證所有資料
+                var validationResults = new List<(int Index, string Error)>();
+
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    var param = parameters[i];
+
+                    // 檢查 DevelopmentNo
+                    if (string.IsNullOrEmpty(param.Development_No))
+                    {
+                        validationResults.Add((i + 1, "DevelopmentNo 不能為空"));
+                        continue;
+                    }
+
+                    // 檢查 Development_Color_No 或 Color_Code 至少有一個有值
+                    if (string.IsNullOrEmpty(param.Development_Color_No) && string.IsNullOrEmpty(param.Color_Code))
+                    {
+                        validationResults.Add((i + 1, "Development_Color_No 和 Color_Code 不能同時為空"));
+                    }
+                }
+
+                // 如果有任何驗證錯誤，返回所有錯誤
+                if (validationResults.Any())
+                {
+                    var errorMessage = string.Join("\n", validationResults.Select(x => $"第 {x.Index} 行: {x.Error}"));
+                    return APIResponseHelper.HandleApiError<List<plm_product_item>>(
+                        errorCode: "50003",
+                        message: $"資料驗證失敗:\n{errorMessage}",
+                        data: null
+                    );
+                }
+
+                // 2. 批次查詢優化
+                var developmentNos = parameters.Select(p => p.Development_No).Distinct().ToList();
+
+                // 一次性查詢所有相關的 product_head
+                var productHeads = await _pcms_Pdm_TestContext.plm_product_head
+                    .Where(x => developmentNos.Contains(x.development_no))
+                    .ToDictionaryAsync(x => x.development_no, x => x);
+
+                // 一次性查詢所有可能存在的 product_item
+                var existingItems = await _pcms_Pdm_TestContext.plm_product_item
+                    .Join(_pcms_Pdm_TestContext.plm_product_head,
+                        item => item.product_m_id,
+                        head => head.product_m_id,
+                        (item, head) => new { item, head })
+                    .Where(x => developmentNos.Contains(x.head.development_no))
+                    .Select(x => new {
+                        x.item,
+                        x.head.development_no,
+                        x.item.development_color_no
+                    })
+                    .ToDictionaryAsync(
+                        x => $"{x.development_no}_{x.development_color_no}",
+                        x => x.item
+                    );
+
+                // 3. 處理所有資料
+                var results = new List<plm_product_item>();
+                var now = DateTime.Now;
+
+                foreach (var param in parameters)
+                {
+                    // 檢查 DevelopmentNo 是否存在於 plm_product_head
+                    if (!productHeads.TryGetValue(param.Development_No, out var existingProductHead))
+                    {
+                        continue; // 略過找不到對應 product_m_id 的記錄
+                    }
+
+                    // 處理 Color_Code 和 Development_Color_No 的邏輯
+                    string developmentColorNo = param.Development_Color_No;
+                    if (string.IsNullOrEmpty(developmentColorNo) && !string.IsNullOrEmpty(param.Color_Code))
+                    {
+                        developmentColorNo = param.Color_Code;
+                    }
+
+                    // 檢查是否已存在記錄
+                    var key = $"{param.Development_No}_{developmentColorNo}";
+                    var existingItem = existingItems.GetValueOrDefault(key);
+                    var productItem = existingItem ?? new plm_product_item();
+
+                    // 如果是新增記錄，生成新的 UUID
+                    if (existingItem == null)
+                    {
+                        productItem.product_d_id = GenerateUUID();
+                        productItem.product_m_id = existingProductHead.product_m_id;
+                        productItem.add_date = now;
+                    }
+
+                    // 更新或設置產品資料
+                    productItem.active = param.Active;
+                    productItem.design_candidate = param.Design_Candidate;
+                    productItem.colorway = param.Colorway;
+                    productItem.development_color_no = param.Development_Color_No;
+                    productItem.color_code = param.Color_Code;
+                    productItem.main_color = param.Main_Color;
+                    productItem.sub_color = param.Sub_Color;
+                    productItem.moq_per_color = param.Moq_Per_Color;
+                    productItem.update_date = now;
+
+                    if (existingItem == null)
+                    {
+                        await _pcms_Pdm_TestContext.plm_product_item.AddAsync(productItem);
+                    }
+
+                    results.Add(productItem);
+                }
+
+                await _pcms_Pdm_TestContext.SaveChangesAsync();
+
+                return APIResponseHelper.GenerateApiResponse<List<plm_product_item>>(
+                    "OK",
+                    "資料已成功儲存",
+                    results
+                );
+            }
+            catch (Exception ex)
+            {
+                var fullError = ex.InnerException?.Message ?? ex.Message;
+                return APIResponseHelper.HandleApiError<List<plm_product_item>>(
+                    errorCode: "50002",
+                    message: $"資料導入失敗: {ex.Message}",
+                    data: null
+                );
+            }
+        }
+
         // 新增日期轉換方法
-        private string ConvertToYYYYMMDD(string dateStr)
+        private static string ConvertToYYYYMMDD(string dateStr)
         {
             if (string.IsNullOrEmpty(dateStr))
                 return null;
@@ -297,7 +432,7 @@ namespace PDMApp.Controllers.Basic
         }
 
         // 生成 UUID
-        private string GenerateUUID()
+        private static string GenerateUUID()
         {
             return Guid.NewGuid().ToString("N"); // 使用 "N" 格式會生成 32 位不帶連字符的 UUID
         }
