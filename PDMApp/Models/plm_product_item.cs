@@ -29,5 +29,7 @@ namespace PDMApp.Models
         public string moq_per_color { get; set; }
         public DateTime? add_date { get; set; }
         public DateTime? update_date { get; set; }
+        public string dev_art_no { get; set; }
+        public string art_no { get; set; }
     }
 }
