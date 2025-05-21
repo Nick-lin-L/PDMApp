@@ -52,6 +52,7 @@
         public string? DevFactoryNo { get; set; }
         public string? Status { get; set; }
         public string? OrderStatus { get; set; }
+        public string? SerpMatNo { get; set; }
     }
 
     public class MaterialSubmitParameter

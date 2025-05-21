@@ -436,5 +436,8 @@ namespace PDMApp.Controllers.Basic
         {
             return Guid.NewGuid().ToString("N"); // 使用 "N" 格式會生成 32 位不帶連字符的 UUID
         }
+
+
+
     }
 }

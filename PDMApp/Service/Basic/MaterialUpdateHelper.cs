@@ -203,21 +203,21 @@ namespace PDMApp.Service.Basic
                 }
 
                 // 進行更新
-                material.mat_no = value.MatNo;
-                material.status = value.Status;
+                material.mat_no = value.MatNo?.Trim();
+                material.status = value.Status?.Trim();
                 material.attyp = value.Attyp?.Split('-')[0];
-                material.mat_nm = value.MatNm;
-                material.mat_full_nm = value.MatFullNm;
+                material.mat_nm = value.MatNm?.Trim();
+                material.mat_full_nm = value.MatFullNm?.Trim();
                 material.uom = value.Uom?.Split('-')[0]?.Trim();
-                material.color_no = value.ColorNo;
-                material.color_nm = value.ColorNm;
-                material.standard = value.Standard;
-                material.cust_no = value.CustNo;
-                material.matnr = value.Matnr;
+                material.color_no = value.ColorNo?.Trim();
+                material.color_nm = value.ColorNm?.Trim();
+                material.standard = value.Standard?.Trim();
+                material.cust_no = value.CustNo?.Trim();
+                material.matnr = value.Matnr?.Trim();
                 material.scm_bclass_no = value.ScmBclassNo?.Split('-')[0]?.Trim();
                 material.scm_mclass_no = value.ScmMclassNo?.Split('-')[0]?.Trim();
                 material.scm_sclass_no = value.ScmSclassNo?.Split('-')[0]?.Trim();
-                material.memo = value.Memo;
+                material.memo = value.Memo?.Trim();
                 material.order_status = value.OrderStatus?.Split('-')[0]?.Trim(); ;
                 material.modify_user = pccuid;
 
