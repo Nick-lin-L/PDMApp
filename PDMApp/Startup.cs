@@ -70,7 +70,7 @@ namespace PDMApp
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // 指定前端來源
+                    builder.WithOrigins("https://pcms-pdm-test.pouchen.com", "https://pcms-mif-test01.pouchen.com", "http://localhost:443*") // 指定前端來源
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials() // 如果有 Cookie 或憑證請求，這是必需的

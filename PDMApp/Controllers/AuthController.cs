@@ -345,7 +345,7 @@ namespace PDMApp.Controllers
                     <head><meta charset='UTF-8'></head>
                     <body>
                         <script>
-                            window.location.replace('https://pcms-mif-test01.pouchen.com/PDM/');
+                            window.location.replace('https://pcms-pdm-test.pouchen.com');
                         </script>
                     </body>
                 </html>
