@@ -118,7 +118,7 @@ namespace PDMApp.Parameters.Basic
         public string Development_No { get; set; }
 
         public string Product_D_Id { get; set; }
-        public string Active { get; set; }
+        public string Deteail_Active { get; set; }
         public string Design_Candidate { get; set; }
         public string Colorway { get; set; }
         public string Development_Color_No { get; set; }
