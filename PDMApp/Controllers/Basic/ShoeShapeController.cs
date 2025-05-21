@@ -262,14 +262,14 @@ namespace PDMApp.Controllers.Basic
                         product.update_date = DateTime.Now;
                     }
 
-                    results.Add(product);
+                    //results.Add(product);
                 }
 
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
 
                 return APIResponseHelper.GenerateApiResponse<List<plm_product_head>>(
                     "OK",
-                    "資料已成功儲存",
+                    "Data has been saved successfully.",
                     results
                 );
             }
@@ -278,7 +278,7 @@ namespace PDMApp.Controllers.Basic
                 var fullError = ex.InnerException?.Message ?? ex.Message;
                 return APIResponseHelper.HandleApiError<List<plm_product_head>>(
                     errorCode: "50002",
-                    message: $"資料導入失敗: {ex.Message}",
+                    message: $"Data import failed: {ex.Message}",
                     data: null
                 );
             }
@@ -317,7 +317,7 @@ namespace PDMApp.Controllers.Basic
                     var errorMessage = string.Join("\n", validationResults.Select(x => $"第 {x.Index} 行: {x.Error}"));
                     return APIResponseHelper.HandleApiError<List<plm_product_item>>(
                         errorCode: "50003",
-                        message: $"資料驗證失敗:\n{errorMessage}",
+                        message: $"Data validation failed.:\n{errorMessage}",
                         data: null
                     );
                 }
@@ -380,7 +380,7 @@ namespace PDMApp.Controllers.Basic
                     }
 
                     // 更新或設置產品資料
-                    productItem.active = param.Active;
+                    productItem.active = param.Deteail_Active;
                     productItem.design_candidate = param.Design_Candidate;
                     productItem.colorway = param.Colorway;
                     productItem.development_color_no = param.Development_Color_No;
@@ -395,14 +395,14 @@ namespace PDMApp.Controllers.Basic
                         await _pcms_Pdm_TestContext.plm_product_item.AddAsync(productItem);
                     }
 
-                    results.Add(productItem);
+                    //results.Add(productItem);
                 }
 
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
 
                 return APIResponseHelper.GenerateApiResponse<List<plm_product_item>>(
                     "OK",
-                    "資料已成功儲存",
+                    "Data has been saved successfully.",
                     results
                 );
             }
@@ -411,7 +411,7 @@ namespace PDMApp.Controllers.Basic
                 var fullError = ex.InnerException?.Message ?? ex.Message;
                 return APIResponseHelper.HandleApiError<List<plm_product_item>>(
                     errorCode: "50002",
-                    message: $"資料導入失敗: {ex.Message}",
+                    message: $"Data has been saved successfully: {ex.Message}",
                     data: null
                 );
             }

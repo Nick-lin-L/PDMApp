@@ -149,7 +149,6 @@ namespace PDMApp.Utils
                         .ThenBy(ph => ph.Stage);
         }
 
-
         public static IQueryable<pdm_spec_headDto> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             // 使用多表 Join 查詢來組合所需欄位
@@ -332,7 +331,6 @@ namespace PDMApp.Utils
                     });
         }
 
-
         public static IQueryable<CbdUpperDTO> CbdUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from si in _pcms_Pdm_TestContext.pdm_spec_item
@@ -369,7 +367,6 @@ namespace PDMApp.Utils
                         PartClass = si.partclass
                     });
         }
-
 
         public static IQueryable<CbdExpenseDTO> CbdExpenseResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
@@ -460,24 +457,29 @@ namespace PDMApp.Utils
             // 模糊匹配條件
             if (!string.IsNullOrWhiteSpace(searchParams.Season))
                 query = query.Where(ph => EF.Functions.Like(ph.Season ?? "", $"%{searchParams.Season}%"));
+
             if (!string.IsNullOrWhiteSpace(searchParams.WorkingName))
                 query = query.Where(ph => EF.Functions.Like(ph.WorkingName ?? "", $"%{searchParams.WorkingName}%"));
+
             if (!string.IsNullOrWhiteSpace(searchParams.DevelopmentNo))
                 query = query.Where(ph => EF.Functions.Like(ph.DevelopmentNo ?? "", $"%{searchParams.DevelopmentNo}%"));
-            
+
+            // 處理 LastUpdate 條件
+            var today = DateTime.Today;
             if (searchParams.LastUpdate.HasValue)
             {
-                var targetDate = DateTime.Now.AddDays(-searchParams.LastUpdate.Value);
-                query = query.Where(ph => ph.LastUpdate >= targetDate);
+                // 如果有輸入 LastUpdate，使用輸入的值
+                var lastUpdateDate = DateTime.Today.AddDays(-searchParams.LastUpdate.Value);
+                query = query.Where(ph => ph.LastUpdate >= lastUpdateDate && ph.LastUpdate < today.AddDays(1));
             }
-
-            // 加入子檔條件判斷
-            //if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
-            //    query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
+            else
+            {
+                // 如果沒有輸入 LastUpdate，預設查詢當天的資料
+                query = query.Where(ph => ph.LastUpdate >= today && ph.LastUpdate < today.AddDays(1));
+            }
 
             // 預設排序
             return query.OrderBy(ph => ph.DevelopmentNo);
-
         }
 
         public static IQueryable<ShoeShapeDetailsDto> QueryShoeShapeDetails(pcms_pdm_testContext _pcms_Pdm_TestContext, ShoeShapeDetailParameter searchParams)
@@ -508,8 +510,6 @@ namespace PDMApp.Utils
             // 預設排序
             return query.OrderBy(pi => pi.DevelopmentColorNo);
         }
-
-
 
         /// <summary>
         /// ShoeShape Initial，一次查詢所有資料後回傳
@@ -610,7 +610,62 @@ namespace PDMApp.Utils
 
             return groupedData;
         }
+        /*
+        public static IQueryable<pdm_spec_head_for_CustomerDto> QueryCustomer(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecMIdParameter searchParams)
+        {
+            // 基礎查詢
+            var query = from ph in _pcms_Pdm_TestContext.plm_product_head
+                        join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                        join sh in _pcms_Pdm_TestContext.plm_spec_head on ph.stage equals pn.text
+                        where pn.group_key == "stage"
+                        select new ShoeShapeDto
+                        {
+                            ProductMId = ph.product_m_id,
+                            DevelopmentNo = ph.development_no,
+                            //DevelopmentColorNo = pi.development_color_no,
+                            ItemNo = ph.item_trading_code,
+                            Season = ph.season,
+                            Stage = pn.text,
+                            WorkingName = ph.working_name,
+                            Factory = ph.assigned_agents,
+                            Gender = ph.gender,
+                            SampleSize = ph.default_size,
+                            Width = ph.width,
+                            Last1 = ph.last1,
+                            Last2 = ph.last2,
+                            Last3 = ph.last3,
+                            SizeRange = ph.size_range,
+                            SizeRun = ph.size_run,
+                            LastUpdate = ph.update_date,
+                            //Colorway = pi.colorway
+                        };
 
+            // 精確匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.ProductMId))
+                query = query.Where(ph => ph.ProductMId == searchParams.ProductMId);
+
+            // 模糊匹配條件
+            if (!string.IsNullOrWhiteSpace(searchParams.Season))
+                query = query.Where(ph => EF.Functions.Like(ph.Season ?? "", $"%{searchParams.Season}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.WorkingName))
+                query = query.Where(ph => EF.Functions.Like(ph.WorkingName ?? "", $"%{searchParams.WorkingName}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.DevelopmentNo))
+                query = query.Where(ph => EF.Functions.Like(ph.DevelopmentNo ?? "", $"%{searchParams.DevelopmentNo}%"));
+
+            if (searchParams.LastUpdate.HasValue)
+            {
+                var targetDate = DateTime.Now.AddDays(-searchParams.LastUpdate.Value);
+                query = query.Where(ph => ph.LastUpdate >= targetDate);
+            }
+
+            // 加入子檔條件判斷
+            //if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
+            //    query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
+
+            // 預設排序
+            return query.OrderBy(ph => ph.DevelopmentNo);
+
+        }
+        */
     }
-
 }
