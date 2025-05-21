@@ -11,7 +11,7 @@ namespace PDMApp.Parameters.Basic
     public class ShoeShapeImportHeadParameter
     {
         public string Product_M_Id { get; set; }
-        public string Active { get; set; }
+        public bool Active { get; set; }
         public string Assigned_Agents { get; set; }
         public string Working_Name { get; set; }
         public string Series { get; set; }
@@ -118,7 +118,7 @@ namespace PDMApp.Parameters.Basic
         public string Development_No { get; set; }
 
         public string Product_D_Id { get; set; }
-        public string Deteail_Active { get; set; }
+        public bool Deteail_Active { get; set; }
         public string Design_Candidate { get; set; }
         public string Colorway { get; set; }
         public string Development_Color_No { get; set; }

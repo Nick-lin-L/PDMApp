@@ -153,7 +153,7 @@ namespace PDMApp.Controllers.Basic
 
 
                     // 更新或設置產品資料
-                    product.active = param.Active;
+                    product.active = param.Active ? "true" : "false";  // 將 bool 轉換為 "true"/"false"
                     product.assigned_agents = param.Assigned_Agents;
                     product.working_name = param.Working_Name;
                     product.series = param.Series;
@@ -380,7 +380,7 @@ namespace PDMApp.Controllers.Basic
                     }
 
                     // 更新或設置產品資料
-                    productItem.active = param.Deteail_Active;
+                    productItem.active = param.Deteail_Active ? "true" : "false";  // 將 bool 轉換為 "true"/"false"
                     productItem.design_candidate = param.Design_Candidate;
                     productItem.colorway = param.Colorway;
                     productItem.development_color_no = param.Development_Color_No;
