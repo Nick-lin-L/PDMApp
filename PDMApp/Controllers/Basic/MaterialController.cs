@@ -215,7 +215,7 @@ namespace PDMApp.Controllers.Basic
 
                 if (!isSuccess)
                 {
-                    return StatusCode(400, new
+                    return StatusCode(200, new
                     {
                         ErrorCode = "BUSINESS_ERROR",
                         Message = message
@@ -297,6 +297,104 @@ namespace PDMApp.Controllers.Basic
                 });
             }
         }
+
+        // POST api/v1/Basic/Material/import/create
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpPost("import/create")]
+        public async Task<ActionResult<APIStatusResponse<object>>> ImportCreateMaterials([FromBody] List<MaterialCreateParameter> importList)
+        {
+            try
+            {
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();
+
+                var (isSuccess, successList, errorList) = await Service.Basic.MaterialImportCreateHelper.TryImportCreateAsync(_pcms_Pdm_TestContext, importList, pccuid);
+
+                if (!isSuccess)
+                {
+                    var stream = Service.Basic.MaterialImportCreateHelper.ExportCreateErrorExcel(errorList);
+                    var base64 = Convert.ToBase64String(stream.ToArray());
+
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "IMPORT_FAILED",
+                        Message = "匯入失敗，請檢查系統導出的 Excel",
+                        File = new Dtos.ExportFileResponseDto
+                        {
+                            FileName = $"MaterialCreateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                            FileContent = base64
+                        }
+                    });
+
+                }
+
+                return StatusCode(200, new
+                {
+                    ErrorCode = "OK",
+                    Message = "匯入成功",
+                    Data = successList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
+
+        // POST api/v1/Basic/Material/import/update
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpPost("import/update")]
+        public async Task<ActionResult<APIStatusResponse<object>>> ImportUpdateMaterials([FromBody] List<MaterialUpdateParameter> importList)
+        {
+            try
+            {
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();
+
+                var (isSuccess, errorList) = await Service.Basic.MaterialImportUpdateHelper.TryImportUpdateAsync(_pcms_Pdm_TestContext, importList, pccuid);
+
+                if (!isSuccess)
+                {
+                    var stream = Service.Basic.MaterialImportUpdateHelper.ExportUpdateErrorExcel(errorList);
+                    var base64 = Convert.ToBase64String(stream.ToArray());
+
+                    //return StatusCode(200, new
+                    //{
+                    //    ErrorCode = "IMPORT_FAILED",
+                    //    Message = "匯入失敗，請檢查系統導出的 Excel",
+                    //    File = new Dtos.ExportFileResponseDto
+                    //    {
+                    //        FileName = $"MaterialUpdateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                    //        FileContent = base64
+                    //    }
+                    //});
+
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "1122.xlsx");
+                }
+
+                return StatusCode(200, new
+                {
+                    ErrorCode = "OK",
+                    Message = "匯入成功"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
 
     }
 }
