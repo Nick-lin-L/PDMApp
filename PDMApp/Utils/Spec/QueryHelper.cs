@@ -635,7 +635,6 @@ namespace PDMApp.Utils
                             UpdateDate = sh.update_date,
                             UpdateUser = sh.update_user,
                             LastUpdate = sh.update_date ?? sh.create_date,
-                            //Colorway = pi.colorway 
                         };
 
             // 精確匹配條件
@@ -653,19 +652,10 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.Stage))
                 query = query.Where(ph => EF.Functions.Like(ph.Stage ?? "", $"%{searchParams.Stage}%"));
-            if (!string.IsNullOrWhiteSpace(searchParams.Stage))
-                query = query.Where(ph => EF.Functions.Like(ph.Stage ?? "", $"%{searchParams.Stage}%"));
-
-            /*
-            if (searchParams.LastUpdate.HasValue)
-            {
-                var targetDate = DateTime.Now.AddDays(-searchParams.LastUpdate.Value);
-                query = query.Where(ph => ph.LastUpdate >= targetDate);
-            }*/
 
 
             // 預設排序
-            return query.OrderBy(ph => ph.DevelopmentNo);
+            return query.Distinct().OrderBy(ph => ph.DevelopmentNo);
 
         }
     }

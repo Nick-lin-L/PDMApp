@@ -9,7 +9,7 @@ namespace PDMApp.Parameters.SPEC
     public class CustomerSpecsSearchParameter
     {
 #nullable enable
-        [Required]
+        //[Required]
         //public string? SpecMId { get; set; }
         public string? Season { get; set; }
         public string? WorkingName { get; set; }
