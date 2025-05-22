@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace PDMApp.Parameters.SPEC
 {
-    public class CustomerSpesSearchParameter
+    public class CustomerSpecsSearchParameter
     {
 #nullable enable
         [Required]
-        public string? SpecMId { get; set; }
-        public string? PartNo { get; set; }
-        public string? PartName { get; set; }
-        public string? MatColor { get; set; }
-        public string? Material { get; set; }
-        public string? SubMaterial { get; set; }
-        public string? Supplier { get; set; }
-        public string? Width { get; set; }
+        //public string? SpecMId { get; set; }
+        public string? Season { get; set; }
+        public string? WorkingName { get; set; }
+        public string? DevelopmentNo { get; set; }
+        public string? Colorway { get; set; }
+        public string? LastUpdate { get; set; }
+        public string? LoginFactory { get; set; }
+        public string? Stage { get; set; }
 
         //        public int PageNumber { get; set; } = 1; // 預設為第1頁
         //        public int PageSize { get; set; } = 10; // 預設每頁10筆
