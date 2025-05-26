@@ -27,7 +27,7 @@ namespace PDMApp.Models
         public string mold_no { get; set; }
         public string last_no { get; set; }
         public string last_width { get; set; }
-        public decimal? req_date { get; set; }
+        public DateTime? req_date { get; set; }
         public string type_definition { get; set; }
         public string b_pm { get; set; }
         public string sample_size { get; set; }
@@ -52,11 +52,11 @@ namespace PDMApp.Models
         public string txt_attrib_19 { get; set; }
         public string txt_attrib_20 { get; set; }
         public decimal create_user { get; set; }
-        public decimal create_time { get; set; }
+        public DateTime create_time { get; set; }
         public decimal modify_user { get; set; }
-        public decimal modify_time { get; set; }
+        public DateTime modify_time { get; set; }
         public char del_mk { get; set; }
-        public decimal? del_date { get; set; }
+        public DateTime? del_date { get; set; }
         public char? proc_mk { get; set; }
         public string err_msg { get; set; }
         public string style_id { get; set; }
@@ -68,5 +68,8 @@ namespace PDMApp.Models
         public string report_sort { get; set; }
         public string order_kind { get; set; }
         public string fg_type { get; set; }
+        public string spec_m_id { get; set; }
+        public string wk_memo { get; set; }
+        public string step_memo { get; set; }
     }
 }
