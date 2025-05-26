@@ -74,6 +74,7 @@ namespace PDMApp.Models
         public virtual DbSet<tblsysuser> tblsysuser { get; set; }
         public virtual DbSet<work_order_head> work_order_head { get; set; }
         public virtual DbSet<work_order_item> work_order_item { get; set; }
+        public virtual DbSet<work_order_partmat> work_order_partmat { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -622,6 +623,8 @@ namespace PDMApp.Models
                 entity.Property(e => e.translate_rule).HasMaxLength(1024);
 
                 entity.Property(e => e.update_date).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.usage).HasPrecision(11, 3);
 
                 entity.HasOne(d => d.spec_m)
                     .WithMany(p => p.pcg_spec_item)
@@ -3189,8 +3192,6 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.colorway).HasMaxLength(100);
 
-                entity.Property(e => e.create_date).HasColumnType("date");
-
                 entity.Property(e => e.create_user).HasMaxLength(30);
 
                 entity.Property(e => e.development_color).HasMaxLength(5);
@@ -3200,8 +3201,6 @@ namespace PDMApp.Models
                 entity.Property(e => e.stage).HasMaxLength(10);
 
                 entity.Property(e => e.stage_code).HasMaxLength(5);
-
-                entity.Property(e => e.update_date).HasColumnType("date");
 
                 entity.Property(e => e.update_user).HasMaxLength(30);
             });
@@ -3821,9 +3820,7 @@ namespace PDMApp.Models
                     .HasMaxLength(200)
                     .HasComment("型體配色說明");
 
-                entity.Property(e => e.create_time)
-                    .HasPrecision(19)
-                    .HasComment("新增時間");
+                entity.Property(e => e.create_time).HasComment("新增時間");
 
                 entity.Property(e => e.create_user)
                     .HasPrecision(14)
@@ -3833,9 +3830,7 @@ namespace PDMApp.Models
                     .HasMaxLength(40)
                     .HasComment("品牌Sample Request");
 
-                entity.Property(e => e.del_date)
-                    .HasPrecision(19)
-                    .HasComment("刪除時間");
+                entity.Property(e => e.del_date).HasComment("刪除時間");
 
                 entity.Property(e => e.del_mk)
                     .HasMaxLength(1)
@@ -3879,9 +3874,7 @@ namespace PDMApp.Models
                     .HasMaxLength(100)
                     .HasComment("型體名稱");
 
-                entity.Property(e => e.modify_time)
-                    .HasPrecision(19)
-                    .HasComment("異動時間");
+                entity.Property(e => e.modify_time).HasComment("異動時間");
 
                 entity.Property(e => e.modify_user)
                     .HasPrecision(14)
@@ -3897,7 +3890,6 @@ namespace PDMApp.Models
                     .HasComment("派工單種類(BY廠層級設定)");
 
                 entity.Property(e => e.order_no)
-                    .IsRequired()
                     .HasMaxLength(20)
                     .HasComment("派工單號");
 
@@ -3932,9 +3924,7 @@ namespace PDMApp.Models
                     .HasMaxLength(4)
                     .HasComment("進度表排序(修改需求日時清空)");
 
-                entity.Property(e => e.req_date)
-                    .HasPrecision(19)
-                    .HasComment("需求日期");
+                entity.Property(e => e.req_date).HasComment("需求日期");
 
                 entity.Property(e => e.sample_size)
                     .HasMaxLength(10)
@@ -3945,10 +3935,14 @@ namespace PDMApp.Models
                     .HasMaxLength(10)
                     .HasComment("季節");
 
+                entity.Property(e => e.spec_m_id).HasMaxLength(36);
+
                 entity.Property(e => e.stage)
                     .IsRequired()
                     .HasMaxLength(20)
                     .HasComment("階段");
+
+                entity.Property(e => e.step_memo).HasComment("製程備註");
 
                 entity.Property(e => e.style_id)
                     .HasMaxLength(32)
@@ -4045,6 +4039,8 @@ namespace PDMApp.Models
                 entity.Property(e => e.type_definition)
                     .HasMaxLength(20)
                     .HasComment("困難度");
+
+                entity.Property(e => e.wk_memo).HasComment("派工單備註");
             });
 
             modelBuilder.Entity<work_order_item>(entity =>
@@ -4059,22 +4055,18 @@ namespace PDMApp.Models
                     .HasComment("派工單子檔ID");
 
                 entity.Property(e => e.del_mk)
-                    .IsRequired()
                     .HasMaxLength(1)
                     .HasDefaultValueSql("'N'::bpchar")
                     .HasComment("刪除註記(Y代表刪除)");
 
-                entity.Property(e => e.modify_date)
-                    .HasMaxLength(19)
-                    .HasComment("異動時間");
+                entity.Property(e => e.modify_date).HasComment("異動時間");
 
                 entity.Property(e => e.modify_user)
-                    .HasMaxLength(14)
+                    .HasPrecision(14)
                     .HasComment("異動人員");
 
                 entity.Property(e => e.qty)
-                    .IsRequired()
-                    .HasMaxLength(16)
+                    .HasPrecision(16)
                     .HasComment("派工數量");
 
                 entity.Property(e => e.shoe_kind)
@@ -4101,6 +4093,41 @@ namespace PDMApp.Models
                     .IsRequired()
                     .HasMaxLength(36)
                     .HasComment("派工單主檔ID");
+            });
+
+            modelBuilder.Entity<work_order_partmat>(entity =>
+            {
+                entity.HasKey(e => e.wk_pm_id)
+                    .HasName("work_order_partmat_pk");
+
+                entity.ToTable("work_order_partmat", "asics_pdm");
+
+                entity.Property(e => e.wk_pm_id)
+                    .HasMaxLength(36)
+                    .HasComment("uuid");
+
+                entity.Property(e => e.del_mk).HasMaxLength(1);
+
+                entity.Property(e => e.mat_no).HasMaxLength(20);
+
+                entity.Property(e => e.material)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.part_no).HasMaxLength(4);
+
+                entity.Property(e => e.parts)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.qty).HasPrecision(11, 3);
+
+                entity.Property(e => e.usage).HasPrecision(11, 3);
+
+                entity.Property(e => e.wk_m_id)
+                    .IsRequired()
+                    .HasMaxLength(36)
+                    .HasComment("主檔id");
             });
 
             OnModelCreatingPartial(modelBuilder);

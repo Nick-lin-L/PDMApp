@@ -2,9 +2,11 @@
 using PDMApp.Dtos;
 using PDMApp.Dtos.Basic;
 using PDMApp.Dtos.BasicProgram;
+using PDMApp.Dtos.SPEC;
 using PDMApp.Models;
 using PDMApp.Parameters.ALink;
 using PDMApp.Parameters.Basic;
+using PDMApp.Parameters.SPEC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -610,39 +612,35 @@ namespace PDMApp.Utils
 
             return groupedData;
         }
-        /*
-        public static IQueryable<pdm_spec_head_for_CustomerDto> QueryCustomer(pcms_pdm_testContext _pcms_Pdm_TestContext, SpecMIdParameter searchParams)
+
+        public static IQueryable<CustomerSearchDto> QueryCustomer(pcms_pdm_testContext _pcms_Pdm_TestContext, CustomerSpecsSearchParameter searchParams)
         {
             // 基礎查詢
             var query = from ph in _pcms_Pdm_TestContext.plm_product_head
                         join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                        join sh in _pcms_Pdm_TestContext.plm_spec_head on ph.stage equals pn.text
-                        where pn.group_key == "stage"
-                        select new ShoeShapeDto
+                        join sh in _pcms_Pdm_TestContext.plm_spec_head on ph.development_no equals sh.development_no
+                        join pn in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.stage_code equals pn.value_desc
+                        where pn.group_key == "stage" && (string.IsNullOrEmpty(searchParams.LoginFactory) || pn.fact_no == searchParams.LoginFactory)
+                        select new CustomerSearchDto
                         {
-                            ProductMId = ph.product_m_id,
-                            DevelopmentNo = ph.development_no,
-                            //DevelopmentColorNo = pi.development_color_no,
-                            ItemNo = ph.item_trading_code,
                             Season = ph.season,
-                            Stage = pn.text,
                             WorkingName = ph.working_name,
-                            Factory = ph.assigned_agents,
-                            Gender = ph.gender,
-                            SampleSize = ph.default_size,
-                            Width = ph.width,
-                            Last1 = ph.last1,
-                            Last2 = ph.last2,
-                            Last3 = ph.last3,
-                            SizeRange = ph.size_range,
-                            SizeRun = ph.size_run,
-                            LastUpdate = ph.update_date,
-                            //Colorway = pi.colorway
+                            DevelopmentNo = ph.development_no,
+                            DevelopmentColor = sh.development_color,
+                            Stage = pn.text,
+                            ColorCode = sh.colorcode,
+                            Colorway = sh.colorway,
+                            CreateDate = sh.create_date,
+                            CreateUser = sh.create_user,
+                            UpdateDate = sh.update_date,
+                            UpdateUser = sh.update_user,
+                            LastUpdate = sh.update_date ?? sh.create_date,
+                            LoginFactory = pn.fact_no
                         };
 
             // 精確匹配條件
-            if (!string.IsNullOrWhiteSpace(searchParams.ProductMId))
-                query = query.Where(ph => ph.ProductMId == searchParams.ProductMId);
+            //if (!string.IsNullOrWhiteSpace(searchParams.ProductMId))
+            //    query = query.Where(ph => ph.ProductMId == searchParams.ProductMId);
 
             // 模糊匹配條件
             if (!string.IsNullOrWhiteSpace(searchParams.Season))
@@ -651,21 +649,26 @@ namespace PDMApp.Utils
                 query = query.Where(ph => EF.Functions.Like(ph.WorkingName ?? "", $"%{searchParams.WorkingName}%"));
             if (!string.IsNullOrWhiteSpace(searchParams.DevelopmentNo))
                 query = query.Where(ph => EF.Functions.Like(ph.DevelopmentNo ?? "", $"%{searchParams.DevelopmentNo}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
+                query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
+            if (!string.IsNullOrWhiteSpace(searchParams.Stage))
+                query = query.Where(ph => EF.Functions.Like(ph.Stage ?? "", $"%{searchParams.Stage}%"));
 
-            if (searchParams.LastUpdate.HasValue)
-            {
-                var targetDate = DateTime.Now.AddDays(-searchParams.LastUpdate.Value);
-                query = query.Where(ph => ph.LastUpdate >= targetDate);
-            }
-
-            // 加入子檔條件判斷
-            //if (!string.IsNullOrWhiteSpace(searchParams.Colorway))
-            //    query = query.Where(ph => EF.Functions.Like(ph.Colorway ?? "", $"%{searchParams.Colorway}%"));
+            // 處理 LastUpdate 條件
+            var today = DateTime.Today;
+            var days = !string.IsNullOrWhiteSpace(searchParams.LastUpdate) &&
+                       int.TryParse(searchParams.LastUpdate, out int parsedDays)
+                       ? parsedDays
+                       : 30;
+            var lastUpdateDate = today.AddDays(-days);
+            query = query.Where(ph =>
+                (ph.UpdateDate >= lastUpdateDate && ph.UpdateDate < today.AddDays(1)) ||
+                (ph.UpdateDate == null && ph.CreateDate >= lastUpdateDate && ph.CreateDate < today.AddDays(1))
+            );
 
             // 預設排序
-            return query.OrderBy(ph => ph.DevelopmentNo);
+            return query.Distinct().OrderBy(ph => ph.DevelopmentNo);
 
         }
-        */
     }
 }

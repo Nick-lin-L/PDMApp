@@ -42,6 +42,7 @@ namespace PDMApp.Models
         public string releasepaper { get; set; }
         public string basecolor { get; set; }
         public string recycle { get; set; }
+        public decimal? usage { get; set; }
 
         public virtual pcg_spec_head spec_m { get; set; }
     }

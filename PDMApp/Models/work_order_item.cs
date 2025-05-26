@@ -10,12 +10,12 @@ namespace PDMApp.Models
         public string wk_m_id { get; set; }
         public string shoe_kind { get; set; }
         public string size_no { get; set; }
-        public string qty { get; set; }
-        public string modify_user { get; set; }
-        public string modify_date { get; set; }
+        public decimal qty { get; set; }
+        public decimal? modify_user { get; set; }
+        public DateTime? modify_date { get; set; }
         public string wk_d_id { get; set; }
         public string sort { get; set; }
-        public string del_mk { get; set; }
+        public char del_mk { get; set; }
         public string trans_mk { get; set; }
     }
 }
