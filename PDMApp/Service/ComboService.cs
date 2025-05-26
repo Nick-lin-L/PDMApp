@@ -264,8 +264,25 @@ namespace PDMApp.Service
                     .GroupBy(ph => ph.BrandNo)
                     .ToDictionary(
                         g => g.Key,
-                        g => g.Select(x => new { Text =  x.Season , Value=x.Season }).ToList().OrderBy(x => x.Text)
+                        g => g.Select(x => new { Text = x.Season, Value = x.Season }).ToList().OrderBy(x => x.Text)
                         );
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+        public async Task<object> OrderStatus()
+        {
+            try
+            {
+                var query = _context.sys_namevalue.AsQueryable().Where(x => x.group_key == "wkorder_status" && x.status == "Y");
+                var data = query.Select(x => new
+                {
+                    Text = x.text,
+                    Value = x.text
+                });
+                return await data.OrderBy(x => x.Value).ToListAsync();
             }
             catch (Exception e)
             {
