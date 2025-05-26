@@ -18,6 +18,7 @@ namespace PDMApp.Dtos.SPEC
         public string? CreateUser { get; set; }
         public DateTime? UpdateDate { get; set; }
         public string? UpdateUser { get; set; }
-        public DateTime? LastUpdate { get; set; }        
+        public DateTime? LastUpdate { get; set; }
+        public string? LoginFactory { get; set; }
     }
 }

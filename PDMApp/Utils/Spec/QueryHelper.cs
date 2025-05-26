@@ -620,7 +620,7 @@ namespace PDMApp.Utils
                         join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
                         join sh in _pcms_Pdm_TestContext.plm_spec_head on ph.development_no equals sh.development_no
                         join pn in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.stage_code equals pn.value_desc
-                        where pn.group_key == "stage"
+                        where pn.group_key == "stage" && (string.IsNullOrEmpty(searchParams.LoginFactory) || pn.fact_no == searchParams.LoginFactory)
                         select new CustomerSearchDto
                         {
                             Season = ph.season,
@@ -629,12 +629,13 @@ namespace PDMApp.Utils
                             DevelopmentColor = sh.development_color,
                             Stage = pn.text,
                             ColorCode = sh.colorcode,
-                            Colorway  = sh.colorway,
+                            Colorway = sh.colorway,
                             CreateDate = sh.create_date,
                             CreateUser = sh.create_user,
                             UpdateDate = sh.update_date,
                             UpdateUser = sh.update_user,
                             LastUpdate = sh.update_date ?? sh.create_date,
+                            LoginFactory = pn.fact_no
                         };
 
             // 精確匹配條件
@@ -653,6 +654,17 @@ namespace PDMApp.Utils
             if (!string.IsNullOrWhiteSpace(searchParams.Stage))
                 query = query.Where(ph => EF.Functions.Like(ph.Stage ?? "", $"%{searchParams.Stage}%"));
 
+            // 處理 LastUpdate 條件
+            var today = DateTime.Today;
+            var days = !string.IsNullOrWhiteSpace(searchParams.LastUpdate) &&
+                       int.TryParse(searchParams.LastUpdate, out int parsedDays)
+                       ? parsedDays
+                       : 30;
+            var lastUpdateDate = today.AddDays(-days);
+            query = query.Where(ph =>
+                (ph.UpdateDate >= lastUpdateDate && ph.UpdateDate < today.AddDays(1)) ||
+                (ph.UpdateDate == null && ph.CreateDate >= lastUpdateDate && ph.CreateDate < today.AddDays(1))
+            );
 
             // 預設排序
             return query.Distinct().OrderBy(ph => ph.DevelopmentNo);

@@ -46,14 +46,14 @@ namespace PDMApp.Controllers.SPEC
         {
             return "value";
         }
-        
+
         // POST api/<CustomerSpecsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
         /// <summary>
-        /// 查詢SpecHeads
+        /// 查詢Customer
         /// </summary>
-        /// <param name="value">SpecSearchParameter</param>
-        /// <returns>pdm_spec_headDto</returns>
+        /// <param name="value">CustomerSpecsSearchParameter</param>
+        /// <returns>CustomerSearchDto</returns>
         [HttpPost]
         //[RequirePermission(2, "READ")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<CustomerSearchDto>>>> Post([FromBody] CustomerSpecsSearchParameter value)
