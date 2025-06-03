@@ -101,4 +101,5 @@ namespace PDMApp.Dtos
         public string? Memo { get; set; }
 
     }
+
 }
