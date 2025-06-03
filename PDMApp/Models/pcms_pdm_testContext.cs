@@ -4051,7 +4051,7 @@ namespace PDMApp.Models
                 entity.ToTable("work_order_item", "asics_pdm");
 
                 entity.Property(e => e.wk_d_id)
-                    .HasMaxLength(22)
+                    .HasMaxLength(36)
                     .HasComment("派工單子檔ID");
 
                 entity.Property(e => e.del_mk)

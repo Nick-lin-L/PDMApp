@@ -100,9 +100,9 @@ namespace PDMApp.Parameters.ProductionOrder
         {
             public string? DevFactoryNo { get; set; }
             public string? WkMId { get; set; }
-            public List<DetailData> DetailData { get; set; } = new List<DetailData>();
+            public uint? RowVersion { get; set; }
+            public List<DetailData>? DetailData { get; set; } = new List<DetailData>();
         }
-
         public class DetailData
         {
             public string? WkDId { get; set; }
@@ -111,8 +111,13 @@ namespace PDMApp.Parameters.ProductionOrder
             public string? ShoeKind { get; set; }
             public string? SizeNo { get; set; }
             public decimal? Qty { get; set; }
-            public char? DelMk { get; set; } = 'N';
+            public string? DelMk { get; set; } = "N";
             public uint? RowVersion { get; set; }
+        }
+
+        public class SubmitParameter
+        {
+            public string? WkMId { get; set; }
         }
     }
 }

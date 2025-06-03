@@ -178,29 +178,6 @@ namespace PDMApp.Controllers.ProductionOrder
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> CreateDetailData(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
-        {
-            var response = new APIStatusResponse<object>();
-            try
-            {
-                var data = await _artnoPoService.CreateDetailData(parameter);
-                response.Data = data;
-                response.ErrorCode = "OK";
-                return response;
-            }
-            catch (Exception e)
-            {
-                return StatusCode(200, new
-                {
-                    ErrorCode = "21001",
-                    Message = e.Message,
-                    Details = ""
-                });
-
-            }
-        }
-
-        [HttpPost]
         public async Task<ActionResult<APIStatusResponse<object>>> UpdateDetailData(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
         {
             var response = new APIStatusResponse<object>();
@@ -223,12 +200,12 @@ namespace PDMApp.Controllers.ProductionOrder
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> DetleteDetailData(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        public async Task<ActionResult<APIStatusResponse<object>>> ProcessPo(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
         {
             var response = new APIStatusResponse<object>();
             try
             {
-                var data = await _artnoPoService.DeleteDetailData(parameter);
+                var data = await _artnoPoService.ProcessPo(parameter);
                 response.Data = data;
                 response.ErrorCode = "OK";
                 return response;
@@ -241,7 +218,39 @@ namespace PDMApp.Controllers.ProductionOrder
                     Message = e.Message,
                     Details = ""
                 });
+            }
+        }
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<object>>> SubmitToSerp([FromBody] List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
+        {
+            try
+            {
+                var data = await _artnoPoService.SubmitToSerp(parameter);
+                if (data.ToString() != "OK")
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "Error",
+                        Message = data
+                    });
+                }
+                else
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "OK",
+                        Message = data
+                    });
+                }
 
+            }
+            catch (Exception e)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "Error",
+                    Message = e.Message
+                });
             }
         }
         [HttpPost]
@@ -269,62 +278,6 @@ namespace PDMApp.Controllers.ProductionOrder
                 });
 
             }
-        }
-
-
-        [HttpGet]
-        public async Task<ActionResult<APIStatusResponse<object>>> GetGlobalUser()
-        {
-            var response = new APIStatusResponse<object>();
-            try
-            {
-                response.Data = await _Context.global_users.FirstAsync();
-
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                response.Message = ex.Message;
-            }
-            catch (Exception e)
-            {
-                response.Message = e.Message;
-            }
-            finally
-            {
-
-            }
-            return response;
-        }
-        [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> GlobalUser(global_users Parameter)
-        {
-            var response = new APIStatusResponse<object>();
-            try
-            {
-                using (var transaction = await _Context.Database.BeginTransactionAsync())
-                {
-                    var global_user = await _Context.global_users.Where(x => x.pccuid == Parameter.pccuid).FirstOrDefaultAsync();
-
-                    global_user.chinese_nm = "Dennis";
-                    _Context.Update(global_user);
-                    await _Context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                }
-
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                response.Message = ex.Message;
-            }
-            catch (Exception e)
-            {
-                response.Message = e.Message;
-            }
-            finally
-            {
-
-            }
-            return response;
         }
 
     }
