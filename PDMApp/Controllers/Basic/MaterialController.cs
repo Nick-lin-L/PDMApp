@@ -357,31 +357,30 @@ namespace PDMApp.Controllers.Basic
                 var currentUser = CurrentUserUtils.Get(HttpContext);
                 var pccuid = currentUser.Pccuid?.ToString();
 
-                var (isSuccess, errorList) = await Service.Basic.MaterialImportUpdateHelper.TryImportUpdateAsync(_pcms_Pdm_TestContext, importList, pccuid);
+                var (isSuccess, successList, errorList) = await Service.Basic.MaterialImportUpdateHelper.TryImportUpdateAsync(_pcms_Pdm_TestContext, importList, pccuid);
 
                 if (!isSuccess)
                 {
                     var stream = Service.Basic.MaterialImportUpdateHelper.ExportUpdateErrorExcel(errorList);
                     var base64 = Convert.ToBase64String(stream.ToArray());
 
-                    //return StatusCode(200, new
-                    //{
-                    //    ErrorCode = "IMPORT_FAILED",
-                    //    Message = "匯入失敗，請檢查系統導出的 Excel",
-                    //    File = new Dtos.ExportFileResponseDto
-                    //    {
-                    //        FileName = $"MaterialUpdateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
-                    //        FileContent = base64
-                    //    }
-                    //});
-
-                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "1122.xlsx");
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "IMPORT_FAILED",
+                        Message = "匯入失敗，請檢查系統導出的 Excel",
+                        File = new Dtos.ExportFileResponseDto
+                        {
+                            FileName = $"MaterialUpdateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                            FileContent = base64
+                        }
+                    });
                 }
 
                 return StatusCode(200, new
                 {
                     ErrorCode = "OK",
-                    Message = "匯入成功"
+                    Message = "匯入成功",
+                    Data = successList
                 });
             }
             catch (Exception ex)
@@ -394,6 +393,46 @@ namespace PDMApp.Controllers.Basic
                 });
             }
         }
+
+        // POST api/v1/Basic/Material/purchase
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        [HttpPost("purchase")]
+        public async Task<ActionResult<APIStatusResponse<object>>> PurchaseMaterialPreview([FromBody] List<MaterialPurchaseParameter> importList)
+        {
+            try
+            {
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();
+
+                var (isSuccess, stream) = await Service.Basic.MaterialImportPurchaseHelper.GenerateMaterialPurchasePreviewExcelAsync(_pcms_Pdm_TestContext, importList);
+
+                var base64 = Convert.ToBase64String(stream.ToArray());
+                var fileName = $"MaterialPurchasePreview_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+                return StatusCode(200, new
+                {
+                    ErrorCode = isSuccess ? "OK" : "VALIDATION_FAILED",
+                    Message = isSuccess ? "預覽產生成功" : "部分資料不合法，請參考 Excel",
+                    File = new Dtos.ExportFileResponseDto
+                    {
+                        FileName = fileName,
+                        FileContent = base64
+                    }
+                });
+
+                //return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "1122.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
 
 
     }
