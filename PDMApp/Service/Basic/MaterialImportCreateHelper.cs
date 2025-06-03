@@ -235,34 +235,82 @@ namespace PDMApp.Service.Basic
                 await _context.matm.AddRangeAsync(insertList);
                 await _context.SaveChangesAsync();
 
-                // 把成功匯入的資料轉為 MaterialDto 並補上 MatId
-                var dtos = insertList.Select(item => new MaterialDto
-                {
-                    MatId = item.mat_id,
-                    Attyp = item.attyp,
-                    MatNo = item.mat_no,
-                    MatNm = item.mat_nm,
-                    MatFullNm = item.mat_full_nm,
-                    Uom = item.uom,
-                    ColorNo = item.color_no,
-                    ColorNm = item.color_nm,
-                    Standard = item.standard,
-                    Matnr = item.matnr,
-                    CustNo = item.cust_no,
-                    ScmBclassNo = item.scm_bclass_no,
-                    ScmMclassNo = item.scm_mclass_no,
-                    ScmSclassNo = item.scm_sclass_no,
-                    Memo = item.memo,
-                    ModifyUser = item.modify_user,
-                    ModifyTime = item.modify_tm,
-                    Status = item.status,
-                    Locked = item.locked,
-                    OrderStatus = item.order_status,
-                    TransMsg = item.trans_msg,
-                    FactNo = item.fact_no,
-                    SerpMatNo = item.serp_mat_no,
-                    StopDate = item.stop_date?.ToString("yyyy-MM-dd")
-                }).ToList();
+                var matIds = insertList.Select(x => x.mat_id).ToList();
+
+                // 直接重查資料並帶 join（格式與 QueryMaterial 相同）
+                var dtos = await (
+                    from m in _context.matm
+                    where matIds.Contains(m.mat_id)
+
+                    join attypName in _context.sys_namevalue
+                        on new { Key = m.attyp, Group = "attyp" }
+                        equals new { Key = attypName.data_no, Group = attypName.group_key }
+                        into attypJoin
+                    from attypName in attypJoin.DefaultIfEmpty()
+
+                    join orderStatusName in _context.sys_namevalue
+                        on new { Key = m.order_status, Group = "mat_status" }
+                        equals new { Key = orderStatusName.data_no, Group = orderStatusName.group_key }
+                        into orderStatusJoin
+                    from orderStatusName in orderStatusJoin.DefaultIfEmpty()
+
+                    join uomName in _context.sys_namevalue
+                        on new { Key = m.uom, Group = "uom" }
+                        equals new { Key = uomName.data_no, Group = uomName.group_key }
+                        into uomJoin
+                    from uomName in uomJoin.DefaultIfEmpty()
+
+                    join bclass in _context.sys_material_large_class
+                        on m.scm_bclass_no equals bclass.class_l_no
+                        into bclassJoin
+                    from bclass in bclassJoin.DefaultIfEmpty()
+
+                    join mclass in _context.sys_material_medium_class
+                        on new { L = m.scm_bclass_no, M = m.scm_mclass_no }
+                        equals new { L = mclass.class_l_no, M = mclass.class_m_no }
+                        into mclassJoin
+                    from mclass in mclassJoin.DefaultIfEmpty()
+
+                    join sclass in _context.sys_material_small_class
+                        on new { L = m.scm_bclass_no, M = m.scm_mclass_no, S = m.scm_sclass_no }
+                        equals new { L = sclass.class_l_no, M = sclass.class_m_no, S = sclass.class_s_no }
+                        into sclassJoin
+                    from sclass in sclassJoin.DefaultIfEmpty()
+
+                    join user in _context.pdm_users
+                        on m.modify_user equals user.pccuid.ToString()
+                        into userJoin
+                    from user in userJoin.DefaultIfEmpty()
+
+                    select new MaterialDto
+                    {
+                        FactNo = m.fact_no,
+                        MatId = m.mat_id,
+                        Attyp = m.attyp + "-" + attypName.text,
+                        SerpMatNo = m.serp_mat_no,
+                        MatNo = m.mat_no,
+                        MatNm = m.mat_nm,
+                        MatFullNm = m.mat_full_nm,
+                        Uom = m.uom + "-" + uomName.text,
+                        ColorNo = m.color_no,
+                        ColorNm = m.color_nm,
+                        Standard = m.standard,
+                        CustNo = m.cust_no,
+                        Matnr = m.matnr,
+                        ScmBclassNo = m.scm_bclass_no + "-" + bclass.class_name_zh_tw,
+                        ScmMclassNo = m.scm_mclass_no + "-" + mclass.class_name_zh_tw,
+                        ScmSclassNo = m.scm_sclass_no + "-" + sclass.class_name_zh_tw,
+                        Status = m.status,
+                        StopDate = m.stop_date.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd") : null,
+                        Memo = m.memo,
+                        ModifyTime = m.modify_tm,
+                        ModifyUser = user != null ? user.username : m.modify_user,
+                        Locked = m.locked,
+                        OrderStatus = m.order_status + "-" + orderStatusName.text,
+                        TransMsg = m.trans_msg
+                    }
+                ).ToListAsync();
+
 
                 return (true, dtos, new());
             }

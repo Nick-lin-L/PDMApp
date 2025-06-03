@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using PDMApp.Dtos.Basic;
 using PDMApp.Models;
 using PDMApp.Parameters.Basic;
 using System;
@@ -13,28 +14,6 @@ namespace PDMApp.Service.Basic
 {
     public static class MaterialImportUpdateHelper
     {
-        // 欄位顯示名稱對照表
-        private static readonly Dictionary<string, string> FieldDisplayNames = new()
-        {
-            { "Attyp", "MATL Type" },
-            { "MatNm", "MATL Info" },
-            { "MatFullNm", "MATL Full Info" },
-            { "Uom", "UOM" },
-            { "Status", "Activate" },
-            { "ColorNo", "Color No" },
-            { "ColorNm", "Color Info" },
-            { "Memo", "MATL Note" },
-            { "ScmBclassNo", "Primary Cat" },
-            { "ScmMclassNo", "Secondary Cat" },
-            { "ScmSclassNo", "Minor Cat" },
-            { "SerpMatNo", "SERP MATL No." },
-            { "MatNo", "PDM MATL NO" },
-            { "CustNo", "Cust. MATL No." },
-            { "Matnr", "MDA MATL No." },
-            { "StopDate", "Close Date" },
-            { "OrderStatus", "State" }
-        };
-
         // 將字串轉為駝峰式命名
         private static string ToCamelCase(string input)
         {
@@ -115,11 +94,11 @@ namespace PDMApp.Service.Basic
             return stream;
         }
 
-
-        public static async Task<(bool isSuccess, List<(MaterialUpdateParameter Item, string ErrorMessage)> errorList)> TryImportUpdateAsync(pcms_pdm_testContext _context, List<MaterialUpdateParameter> items, string pccuid)
+        public static async Task<(bool isSuccess, List<MaterialDto> successList, List<(MaterialUpdateParameter Item, string ErrorMessage)> errorList)> TryImportUpdateAsync(pcms_pdm_testContext _context, List<MaterialUpdateParameter> items, string pccuid)
         {
             var errorList = new List<(MaterialUpdateParameter, string)>();
             var updateList = new List<matm>();
+            var updatedDtos = new List<MaterialDto>();
 
             // 取得特殊字元清單
             var dataNoList = await _context.sys_namevalue
@@ -140,7 +119,7 @@ namespace PDMApp.Service.Basic
 
                     if (string.IsNullOrWhiteSpace(value.MatNo) && string.IsNullOrWhiteSpace(value.SerpMatNo))
                     {
-                        errorList.Add((value, "PDM料號(MatNo) 與 SERP料號(SerpMatNo) 至少需填寫一項。"));
+                        errorList.Add((value, "MatNo 與 SerpMatNo 至少需填寫一項。"));
                         continue;
                     }
 
@@ -149,38 +128,36 @@ namespace PDMApp.Service.Basic
                     // 根據 MatNo 或 SerpMatNo 查詢對應的物料
                     if (!string.IsNullOrWhiteSpace(value.MatNo) && !string.IsNullOrWhiteSpace(value.SerpMatNo))
                     {
-                        var list = await _context.matm
-                            .Where(x => x.mat_no == value.MatNo || x.serp_mat_no == value.SerpMatNo)
-                            .ToListAsync();
+                        material = await _context.matm
+                            .FirstOrDefaultAsync(x => x.mat_no == value.MatNo && x.serp_mat_no == value.SerpMatNo);
 
-                        if (list.Count == 0)
+                        if (material == null)
                         {
-                            errorList.Add((value, "找不到符合的物料（根據 MatNo 或 SerpMatNo）。"));
+                            errorList.Add((value, "找不到符合 MatNo 與 SerpMatNo 的物料資料。"));
                             continue;
                         }
-
-                        if (list.Count > 1)
-                        {
-                            errorList.Add((value, "PDM料號與SERP料號對應到不同筆資料，請確認資料正確性。"));
-                            continue;
-                        }
-
-                        material = list.First();
                     }
                     else if (!string.IsNullOrWhiteSpace(value.MatNo))
                     {
                         material = await _context.matm.FirstOrDefaultAsync(x => x.mat_no == value.MatNo);
+
+                        if (material == null)
+                        {
+                            errorList.Add((value, "找不到符合 MatNo 的物料資料。"));
+                            continue;
+                        }
                     }
-                    else
+                    else if (!string.IsNullOrWhiteSpace(value.SerpMatNo))
                     {
                         material = await _context.matm.FirstOrDefaultAsync(x => x.serp_mat_no == value.SerpMatNo);
+
+                        if (material == null)
+                        {
+                            errorList.Add((value, "找不到符合 SerpMatNo 的物料資料。"));
+                            continue;
+                        }
                     }
 
-                    if (material == null)
-                    {
-                        errorList.Add((value, "找不到對應的物料資料"));
-                        continue;
-                    }
 
                     // 動態必填欄位（用於檢查與避免更新）
                     var requiredCoreFields = await _context.pdm_namevalue_new
@@ -203,9 +180,7 @@ namespace PDMApp.Service.Basic
 
                     if (missingFields.Any())
                     {
-                        var displayNames = missingFields
-                            .Select(f => FieldDisplayNames.ContainsKey(f) ? FieldDisplayNames[f] : f);
-                        errorList.Add((value, $"缺少必填欄位或工廠核心值欄位：{string.Join(", ", displayNames)}"));
+                        errorList.Add((value, $"缺少必填欄位或工廠核心值欄位：{string.Join(", ", missingFields)}"));
                         continue;
                     }
 
@@ -219,14 +194,14 @@ namespace PDMApp.Service.Basic
                     // 驗證：locked == Y
                     if (material.locked == 'Y')
                     {
-                        if (value.ScmBclassNo?.Split('-')[0]?.Trim() != material.scm_bclass_no || value.ScmMclassNo?.Split('-')[0]?.Trim() != material.scm_mclass_no)
+                        if (value.ScmBclassNo?.Split('-')[0]?.Trim() != material.scm_bclass_no ||
+                            value.ScmMclassNo?.Split('-')[0]?.Trim() != material.scm_mclass_no)
                         {
-                            errorList.Add((value, "該筆資料為鎖定狀態，Primary Cat、Secondary Cat 不可修改。"));
+                            errorList.Add((value, "該筆資料為鎖定狀態，ScmBclassNo、ScmMclassNo 不可修改。"));
                             continue;
                         }
                     }
 
-                    // 特殊字元與全形字檢查
                     var fieldsToCheck = new Dictionary<string, string?>
                     {
                         { nameof(value.MatNm), value.MatNm?.Trim() },
@@ -240,8 +215,7 @@ namespace PDMApp.Service.Basic
                         if (!string.IsNullOrEmpty(fieldValue) &&
                             ContainsFullWidthOrSpecialChar(fieldValue, specialCharList, out var reason))
                         {
-                            var displayName = FieldDisplayNames.ContainsKey(fieldName) ? FieldDisplayNames[fieldName] : fieldName;
-                            errorList.Add((value, $"{displayName} 欄位{reason}。"));
+                            errorList.Add((value, $"{fieldName} 欄位{reason}"));
                             goto SkipUpdate;
                         }
                     }
@@ -249,7 +223,7 @@ namespace PDMApp.Service.Basic
                     // 顏色欄位互斥檢查
                     if (!string.IsNullOrWhiteSpace(value.ColorNo) ^ !string.IsNullOrWhiteSpace(value.ColorNm))
                     {
-                        errorList.Add((value, "顏色代號 (ColorNo) 與顏色說明 (ColorNm) 必須同時填寫或同時留空。"));
+                        errorList.Add((value, "ColorNo 與 ColorNm 必須同時填寫或同時留空。"));
                         continue;
                     }
 
@@ -297,20 +271,106 @@ namespace PDMApp.Service.Basic
                     errorList.Add((value, $"系統錯誤：{ex.Message}"));
                 }
 
-                SkipUpdate:
+            SkipUpdate:
                 continue;
             }
 
-            // 最後階段：若無錯誤才 SaveChanges
-            if (!errorList.Any())
+            // 若有錯誤，整批不寫入
+            if (errorList.Any())
+                return (false, new(), errorList);
+
+            // 全部無誤，才寫入資料庫
+            try
             {
                 await _context.SaveChangesAsync();
-                return (true, errorList);
+
+                var updatedIds = updateList.Select(x => x.mat_id).ToList();
+
+                var dtos = await (from m in _context.matm
+                                  where updatedIds.Contains(m.mat_id)
+
+                                  join attypName in _context.sys_namevalue
+                                      on new { Key = m.attyp, Group = "attyp" }
+                                      equals new { Key = attypName.data_no, Group = attypName.group_key }
+                                      into attypJoin
+                                  from attypName in attypJoin.DefaultIfEmpty()
+
+                                  join orderStatusName in _context.sys_namevalue
+                                      on new { Key = m.order_status, Group = "mat_status" }
+                                      equals new { Key = orderStatusName.data_no, Group = orderStatusName.group_key }
+                                      into orderStatusJoin
+                                  from orderStatusName in orderStatusJoin.DefaultIfEmpty()
+
+                                  join uomName in _context.sys_namevalue
+                                      on new { Key = m.uom, Group = "uom" }
+                                      equals new { Key = uomName.data_no, Group = uomName.group_key }
+                                      into uomJoin
+                                  from uomName in uomJoin.DefaultIfEmpty()
+
+                                  join bclass in _context.sys_material_large_class
+                                      on m.scm_bclass_no equals bclass.class_l_no
+                                      into bclassJoin
+                                  from bclass in bclassJoin.DefaultIfEmpty()
+
+                                  join mclass in _context.sys_material_medium_class
+                                      on new { L = m.scm_bclass_no, M = m.scm_mclass_no }
+                                      equals new { L = mclass.class_l_no, M = mclass.class_m_no }
+                                      into mclassJoin
+                                  from mclass in mclassJoin.DefaultIfEmpty()
+
+                                  join sclass in _context.sys_material_small_class
+                                      on new { L = m.scm_bclass_no, M = m.scm_mclass_no, S = m.scm_sclass_no }
+                                      equals new { L = sclass.class_l_no, M = sclass.class_m_no, S = sclass.class_s_no }
+                                      into sclassJoin
+                                  from sclass in sclassJoin.DefaultIfEmpty()
+
+                                  join user in _context.pdm_users
+                                      on m.modify_user equals user.pccuid.ToString()
+                                      into userJoin
+                                  from user in userJoin.DefaultIfEmpty()
+
+                                  select new MaterialDto
+                                  {
+                                      FactNo = m.fact_no,
+                                      MatId = m.mat_id,
+                                      Attyp = m.attyp + "-" + attypName.text,
+                                      SerpMatNo = m.serp_mat_no,
+                                      MatNo = m.mat_no,
+                                      MatNm = m.mat_nm,
+                                      MatFullNm = m.mat_full_nm,
+                                      Uom = m.uom + "-" + uomName.text,
+                                      ColorNo = m.color_no,
+                                      ColorNm = m.color_nm,
+                                      Standard = m.standard,
+                                      CustNo = m.cust_no,
+                                      Matnr = m.matnr,
+                                      ScmBclassNo = m.scm_bclass_no + "-" + bclass.class_name_zh_tw,
+                                      ScmMclassNo = m.scm_mclass_no + "-" + mclass.class_name_zh_tw,
+                                      ScmSclassNo = m.scm_sclass_no + "-" + sclass.class_name_zh_tw,
+                                      Status = m.status,
+                                      StopDate = m.stop_date.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd") : null,
+                                      Memo = m.memo,
+                                      ModifyTime = m.modify_tm,
+                                      ModifyUser = user != null ? user.username : m.modify_user,
+                                      Locked = m.locked,
+                                      OrderStatus = m.order_status + "-" + orderStatusName.text,
+                                      TransMsg = m.trans_msg
+                                  }).ToListAsync();
+
+
+                return (true, dtos, new());
             }
+            catch (Exception ex)
+            {
+                var message = ex.InnerException?.Message ?? ex.Message;
 
-            return (false, errorList);
+                var failed = updateList.Select(i => (
+                    new MaterialUpdateParameter { MatNo = i.mat_no, MatFullNm = i.mat_full_nm },
+                    $"整批更新失敗：{message}"
+                )).ToList();
+
+                return (false, new(), failed);
+            }
         }
-
-
     }
 }
