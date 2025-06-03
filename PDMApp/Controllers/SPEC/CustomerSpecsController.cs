@@ -128,7 +128,7 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
-        
+        /*
         [HttpPost("import-detail")]
         public async Task<ActionResult<APIStatusResponse<List<plm_product_item>>>> ImportHeads([FromBody] List<CustomerImportParameter> parameters)
         {
@@ -320,7 +320,7 @@ namespace PDMApp.Controllers.SPEC
                 );
             }
         }
-        
+        */
 
 
         // PUT api/<CustomerSpecsController>/5

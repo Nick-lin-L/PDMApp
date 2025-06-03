@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
@@ -18,6 +19,7 @@ using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
 using PDMApp.Parameters.Cbd;
+using PDMApp.Parameters.PGTSPEC;
 using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Service.SPEC
