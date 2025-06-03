@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using ClosedXML.Report.Utils;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Npgsql;
 using NPOI.SS.Formula.Functions;
 using PDMApp.Models;
@@ -20,7 +23,6 @@ namespace PDMApp.Service.ProductionOrder
         private readonly pcms_pdm_testContext _context;
         private readonly ILogger<ArtnoPoService> _logger;
         private readonly ICurrentUserService _currentUserService;
-
         public ArtnoPoService(pcms_pdm_testContext context, ILogger<ArtnoPoService> logger, ICurrentUserService currentUserService)
         {
             _context = context;
@@ -106,6 +108,7 @@ namespace PDMApp.Service.ProductionOrder
                         where m.wk_m_id == parameter.WkMId
                         select new Dtos.ProductionOrder.ArtPoDto.QueryDetailDto
                         {
+                            DevFactoryNo = m.fact_no,
                             WkMId = m.wk_m_id,
                             WkDId = d.wk_d_id,
                             Sort = d.sort,
@@ -159,7 +162,10 @@ namespace PDMApp.Service.ProductionOrder
                     data.wk_m_id = Guid.NewGuid().ToString();
                     data.fact_no = parameter.DevFactoryNo;
                     data.brand_no = brand;
-                    data.order_no = parameter.OrderNo ?? "";
+                    if (!string.IsNullOrWhiteSpace(parameter.OrderNo))
+                    {
+                        data.order_no = parameter.OrderNo;
+                    }
                     data.purpose = parameter.OrderPurchase;
                     data.order_kind = OrderKind;
                     data.dev_no = parameter.DevelopmentNo;
@@ -173,13 +179,33 @@ namespace PDMApp.Service.ProductionOrder
                     data.mold_no = parameter.MoldNo;
                     data.last_no = parameter.LastNo;
                     data.last_width = parameter.LastWidth;
+                    data.style_id = parameter.StyleId;
+                    data.txt_attrib_01 = parameter.Memo1;
+                    data.txt_attrib_02 = parameter.Memo2;
+                    data.txt_attrib_03 = parameter.Memo3;
+                    data.txt_attrib_04 = parameter.Memo4;
+                    data.txt_attrib_05 = parameter.Memo5;
+                    data.txt_attrib_06 = parameter.Memo6;
+                    data.txt_attrib_07 = parameter.Memo7;
+                    data.txt_attrib_08 = parameter.Memo8;
+                    data.txt_attrib_09 = parameter.Memo9;
+                    data.txt_attrib_10 = parameter.Memo10;
+                    data.txt_attrib_11 = parameter.Memo11;
+                    data.txt_attrib_12 = parameter.Memo12;
+                    data.txt_attrib_13 = parameter.Memo13;
+                    data.txt_attrib_14 = parameter.Memo14;
+                    data.txt_attrib_15 = parameter.Memo15;
+                    data.txt_attrib_16 = parameter.Memo16;
+                    data.txt_attrib_17 = parameter.Memo17;
+                    data.txt_attrib_18 = parameter.Memo18;
+                    data.txt_attrib_19 = parameter.Memo19;
+                    data.txt_attrib_20 = parameter.Memo20;
                     if (!string.IsNullOrWhiteSpace(parameter.ReqDate))
                     {
                         data.req_date = DateTime.ParseExact(parameter.ReqDate, "yyyyMMdd",
                             System.Globalization.CultureInfo.InvariantCulture);
                         // data.req_date = Convert.ToDecimal(new DateTimeOffset(dateTime).ToUnixTimeMilliseconds());
                     }
-
 
                     data.gender = parameter.Gender;
                     //點擊存檔時，將ORDER_STATUS='OPEN'、ORDER_TYPE='1'、CREATE_USER & MODIFY_USER寫入使用者PCCUID、CREATE_DATE & MODIFY_DATE寫入現在日期時間、WK_M_ID=UUID(36)
@@ -285,14 +311,16 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"Data has been modified , please Refresh data again !");
                     }
-                    var orderCount = _context.work_order_head.Where(x => x.fact_no == parameter.DevFactoryNo && x.order_no != parameter.OrderNo).Count();
-                    if (string.IsNullOrWhiteSpace(parameter.OrderNo) && orderCount > 0)
+                    var orderCount = _context.work_order_head.Where(x => x.fact_no == parameter.DevFactoryNo &&
+                                                                         x.wk_m_id != parameter.WkMId &&
+                                                                         x.order_no != parameter.OrderNo).Count();
+                    if (!string.IsNullOrWhiteSpace(parameter.OrderNo) && orderCount > 0)
                     {
                         throw new Exception($@"系統已存在派工單號：{parameter.OrderNo}，請重新確認單據號碼");
                     }
                     else
                     {
-                        data.order_no = parameter.OrderNo;
+                        data.order_no = string.IsNullOrWhiteSpace(parameter.OrderNo) ? null : parameter.OrderNo;
                     }
 
                     data.brand_no = brand;
@@ -309,6 +337,26 @@ namespace PDMApp.Service.ProductionOrder
                     data.mold_no = parameter.MoldNo;
                     data.last_no = parameter.LastNo;
                     data.last_width = parameter.LastWidth;
+                    data.txt_attrib_01 = parameter.Memo1;
+                    data.txt_attrib_02 = parameter.Memo2;
+                    data.txt_attrib_03 = parameter.Memo3;
+                    data.txt_attrib_04 = parameter.Memo4;
+                    data.txt_attrib_05 = parameter.Memo5;
+                    data.txt_attrib_06 = parameter.Memo6;
+                    data.txt_attrib_07 = parameter.Memo7;
+                    data.txt_attrib_08 = parameter.Memo8;
+                    data.txt_attrib_09 = parameter.Memo9;
+                    data.txt_attrib_10 = parameter.Memo10;
+                    data.txt_attrib_11 = parameter.Memo11;
+                    data.txt_attrib_12 = parameter.Memo12;
+                    data.txt_attrib_13 = parameter.Memo13;
+                    data.txt_attrib_14 = parameter.Memo14;
+                    data.txt_attrib_15 = parameter.Memo15;
+                    data.txt_attrib_16 = parameter.Memo16;
+                    data.txt_attrib_17 = parameter.Memo17;
+                    data.txt_attrib_18 = parameter.Memo18;
+                    data.txt_attrib_19 = parameter.Memo19;
+                    data.txt_attrib_20 = parameter.Memo20;
                     if (!string.Equals(parameter.DelMk, data.del_mk))
                     {
                         data.del_mk = char.Parse(parameter.DelMk);
@@ -339,7 +387,7 @@ namespace PDMApp.Service.ProductionOrder
                             data.order_status = "OPEN";
                         }
 
-                        data.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
+                        data.modify_user = string.IsNullOrWhiteSpace(_currentUserService.PccUid) ? 0 : decimal.Parse(_currentUserService.PccUid);
                         data.modify_time = DateTime.Now;
                         try
                         {
@@ -405,10 +453,10 @@ namespace PDMApp.Service.ProductionOrder
                         throw new Exception($@"派工單正拋轉SERP中，不可再被異動");
                     }
                     // 先檢查是否有重複的數據
-                    var existingItems = await _context.work_order_item
+                    var existingItems = _context.work_order_item
                         .Where(x => x.wk_m_id == parameter.WkMId && x.del_mk != 'Y')
                         .Select(x => new { x.shoe_kind, x.size_no })
-                        .ToListAsync();
+                        .ToList();
 
                     var newItems = parameter.DetailData
                         .Select(x => new { shoe_kind = x.ShoeKind, size_no = x.SizeNo });
@@ -428,12 +476,12 @@ namespace PDMApp.Service.ProductionOrder
                         throw new Exception($"發現重複資料: {duplicateInfo}");
                     }
                     var sort = await _context.work_order_item
-                                                      .Where(x => x.wk_m_id == parameter.WkMId && x.del_mk.ToString() != "Y")
+                                                      .Where(x => x.wk_m_id == parameter.WkMId && x.del_mk != 'Y')
                                                       .Where(x => string.IsNullOrWhiteSpace(x.sort))
-                                                      .Where(x => x.sort.IsNumber())
                                                       .Select(x => x.sort)
-                                                      .MaxAsync();
-                    var sortNum = decimal.Parse(sort);
+                                                      .ToListAsync();  // 先將資料載入記憶體
+
+                    // var sortNum = decimal.Parse(sort);
                     foreach (var item in parameter.DetailData)
                     {
                         var detail = new work_order_item();
@@ -443,8 +491,8 @@ namespace PDMApp.Service.ProductionOrder
                         detail.qty = (decimal)item.Qty;
                         detail.shoe_kind = item.ShoeKind;
                         detail.trans_mk = item.TransMk;
-                        detail.sort = item.Sort.IsNumber() ? item.Sort : (++sortNum).ToString();
-                        detail.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
+                        detail.sort = item.Sort;
+                        detail.modify_user = string.IsNullOrWhiteSpace(_currentUserService.PccUid) ? 0 : decimal.Parse(_currentUserService.PccUid);
                         detail.modify_date = DateTime.Now;
                         _context.Add(detail);
                         await _context.SaveChangesAsync();
@@ -467,7 +515,7 @@ namespace PDMApp.Service.ProductionOrder
                 try
                 {
                     var mainData = await _context.work_order_head.FindAsync(parameter.WkMId);
-                    if (object.ReferenceEquals(mainData, null))
+                    if (mainData == null)
                     {
                         throw new Exception("main data not found!");
                     }
@@ -475,17 +523,15 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"派工單正拋轉SERP中，不可再被異動");
                     }
-                    var updateItemKey = parameter.DetailData.Where(x => x.DelMk != 'Y').Select(x => x.WkDId).ToList();
-                    // 先檢查是否有重複的數據
-                    var existingItems = await _context.work_order_item
-                        .Where(x => x.wk_m_id == parameter.WkMId && x.del_mk != 'Y' && !updateItemKey.Contains(x.wk_d_id))
-                        .Select(x => new { x.shoe_kind, x.size_no })
-                        .ToListAsync();
+                    if (parameter?.DetailData?.Count == 0)
+                    {
+                        throw new Exception($@"無明細資料可異動");
+                    }
 
-                    var updateItem = parameter.DetailData.Select(x => new { shoe_kind = x.ShoeKind, size_no = x.SizeNo });
+                    var updateItem = parameter.DetailData.Where(x => string.IsNullOrWhiteSpace(x.DelMk) || x.DelMk != "Y").Select(x => new { shoe_kind = x.ShoeKind, size_no = x.SizeNo });
 
                     // 合併現有和新的記錄來檢查重複
-                    var allItems = existingItems.Concat(updateItem);
+                    var allItems = updateItem;
                     var duplicates = allItems
                         .GroupBy(x => new { x.shoe_kind, x.size_no })
                         .Where(g => g.Count() > 1)
@@ -498,45 +544,81 @@ namespace PDMApp.Service.ProductionOrder
                             duplicates.Select(d => $"鞋型:{d.shoe_kind} 尺寸:{d.size_no}"));
                         throw new Exception($"發現重複資料: {duplicateInfo}");
                     }
-                    var sort = await _context.work_order_item
-                                            .Where(x => x.wk_m_id == parameter.WkMId && x.del_mk.ToString() != "Y")
-                                            .Where(x => string.IsNullOrWhiteSpace(x.sort))
-                                            .Where(x => x.sort.IsNumber())
-                                            .Select(x => x.sort)
-                                            .MaxAsync();
-                    var sortNum = decimal.Parse(sort);
-                    // 記錄實際異動的筆數
+
                     int actualModifiedCount = 0;
 
                     foreach (var item in parameter.DetailData)
                     {
-                        var detail = await _context.work_order_item.FindAsync(item.WkDId);
-                        if (detail.RowVersion != item.RowVersion)
+                        // 改為使用 decimal.TryParse()
+                        if (!decimal.TryParse(item.Sort, out decimal sortValue))
                         {
-                            throw new Exception("Data has been modify");
+                            throw new Exception($"Sort field '{item.Sort}' must be a numeric value");
                         }
-                        detail.size_no = item.SizeNo;
-                        detail.qty = (decimal)item.Qty;
-                        detail.shoe_kind = item.ShoeKind;
-                        detail.trans_mk = item.TransMk;
-                        detail.sort = item.Sort.IsNumber() ? item.Sort : (++sortNum).ToString();
-                        detail.del_mk = (char)item.DelMk;
-                        if (_context.Entry(detail).State == EntityState.Modified)
+                        if (string.IsNullOrWhiteSpace(item.ShoeKind) || string.IsNullOrWhiteSpace(item.SizeNo) || string.IsNullOrWhiteSpace(item.Sort))
                         {
-                            detail.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
+                            throw new Exception("Data can not be null or empty");
+                        }
+                        if (item.Qty == null || item.Qty <= 0)
+                        {
+                            throw new Exception("Qty can not be zero or empty");
+                        }
+                        if (string.IsNullOrWhiteSpace(item.WkDId))
+                        {
+                            var detail = new work_order_item();
+                            detail.wk_d_id = Guid.NewGuid().ToString();
+                            detail.wk_m_id = parameter.WkMId;
+                            detail.size_no = item.SizeNo;
+                            detail.qty = (decimal)item.Qty;
+                            detail.shoe_kind = item.ShoeKind;
+                            detail.trans_mk = string.IsNullOrWhiteSpace(item.TransMk) ? "N" : item.TransMk;
+                            detail.sort = item.Sort;
+                            detail.modify_user = string.IsNullOrWhiteSpace(_currentUserService.PccUid) ? 0 : decimal.Parse(_currentUserService.PccUid);
                             detail.modify_date = DateTime.Now;
-
-                            // 執行單筆更新並累計異動筆數
+                            _context.Add(detail);
                             int changes = await _context.SaveChangesAsync();
                             actualModifiedCount += changes;
                         }
+                        else
+                        {
+                            var detail = await _context.work_order_item.FindAsync(item.WkDId);
+                            if (detail == null)
+                            {
+                                throw new Exception("Data not found");
+                            }
 
+                            if (detail.wk_m_id != parameter.WkMId)
+                            {
+                                throw new Exception("WkMId has been not match");
+                            }
+                            detail.size_no = item.SizeNo;
+                            detail.qty = (decimal)item.Qty;
+                            detail.shoe_kind = item.ShoeKind;
+                            detail.trans_mk = string.IsNullOrWhiteSpace(item.TransMk) ? "N" : item.TransMk;
+                            detail.sort = item.Sort;
+                            detail.del_mk = char.Parse(item.DelMk); ;
+                            if (_context.Entry(detail).State == EntityState.Modified)
+                            {
+                                if (detail.RowVersion != item.RowVersion)
+                                {
+                                    throw new Exception("Data has been modify");
+                                }
+                                detail.modify_user = string.IsNullOrWhiteSpace(_currentUserService.PccUid) ? 0 : decimal.Parse(_currentUserService.PccUid);
+                                detail.modify_date = DateTime.Now;
+
+                                // 執行單筆更新並累計異動筆數
+                                int changes = await _context.SaveChangesAsync();
+                                actualModifiedCount += changes;
+                            }
+                        }
                     }
                     // 獲取更新後的待異動筆數
                     int pendingChangesAfter = _context.ChangeTracker.Entries().Count(e => e.State != EntityState.Unchanged);
                     _logger.LogInformation($"更新後待異動筆數: {pendingChangesAfter}");
                     _logger.LogInformation($"實際異動總筆數: {actualModifiedCount}");
-
+                    if (actualModifiedCount == 0)
+                    {
+                        throw new Exception($"No Data Need Change");
+                    }
                     await transaction.CommitAsync();
                     return await GetDetailById(parameter.WkMId);
                 }
@@ -570,7 +652,7 @@ namespace PDMApp.Service.ProductionOrder
                         {
                             throw new Exception("Data has been modify");
                         }
-                        detail.del_mk = (char)item.DelMk;
+                        detail.del_mk = char.Parse(item.DelMk);
                         if (_context.Entry(detail).State == EntityState.Modified)
                         {
                             detail.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
@@ -619,13 +701,175 @@ namespace PDMApp.Service.ProductionOrder
                         };
             return await query.ToListAsync();
         }
+        public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> ProcessPo(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        {
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var mainData = await _context.work_order_head.FindAsync(parameter.WkMId);
+                    if (object.ReferenceEquals(mainData, null))
+                    {
+                        throw new Exception("main data not found!");
+                    }
+                    if (mainData.order_status == "INPRG")
+                    {
+                        throw new Exception($@"派工單正拋轉SERP中，不可再被異動");
+                    }
+                    if (mainData.order_status == "APPD")
+                    {
+                        throw new Exception($@"派工單已確認派工，不可再派工");
+                    }
+                    if (mainData.RowVersion != parameter.RowVersion)
+                    {
+                        throw new Exception($@"Data has been modified , please Refresh data again !");
+                    }
+                    if (mainData.del_mk == 'Y')
+                    {
+                        throw new Exception($@"Data has been Delete , please check data again !");
+                    }
+                    var detailData = await _context.work_order_item.Where(x => x.wk_m_id == parameter.WkMId && x.del_mk == 'N').ToListAsync();
+                    if (detailData.Count == 0)
+                    {
+                        throw new Exception($@"無派工明細無法派工，請先確認明細資料");
+                    }
+                    mainData.order_status = "APPD";
+                    mainData.order_ver = mainData.order_ver + 1;
+                    if (string.IsNullOrWhiteSpace(mainData.order_no))
+                    {
+                        var workTitle = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_title" && x.status == "Y").FirstOrDefaultAsync();
+                        var workDate = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_date" && x.status == "Y").FirstOrDefaultAsync();
+                        var workSeqno = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_seq" && x.status == "Y").FirstOrDefaultAsync();
+                        if (workTitle == null || workDate == null || workSeqno == null)
+                        {
+                            throw new Exception($@"work_title、work_date、work_seq is not exist，please contact IT");
+                        }
+                        if (workDate.value_desc != DateTime.Now.ToString("yyyyMMdd"))
+                        {
+                            workDate.value_desc = DateTime.Now.ToString("yyyyMMdd");
+                            workSeqno.value_desc = "0000001"; // 重置為 7 位數的起始值
+                        }
+                        else
+                        {
+                            // 當日期相同時，序號加1並補零
+                            int seqNo = int.Parse(workSeqno.value_desc) + 1;
+                            workSeqno.value_desc = seqNo.ToString().PadLeft(7, '0');
+                        }
+                        mainData.order_no = workTitle.value_desc + workDate.value_desc + workSeqno.value_desc;
+                        await _context.SaveChangesAsync();
+                    }
+                    mainData.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
+                    mainData.modify_time = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return await GetDataById(mainData.fact_no, mainData.wk_m_id);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
 
+        public async Task<object> SubmitToSerp(List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameters)
+        {
+            string fact_no = "";
+            HttpClient _httpClient = new HttpClient();
+            List<work_order_head> head = new List<work_order_head>();
+
+            try
+            {
+                var now = DateTime.Now;
+                string timestamp = now.ToString("yyyyMMddHHmmssfff") + now.ToString("ffffff").Substring(3, 3); // 單一 trans_id
+                string url = (await GetSysNameValueByKey("wk_inbound_url")).FirstOrDefault()?.text;
+                _logger.LogInformation("url = {}", url);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    throw new Exception($"wk_inbound_url not found !");
+                }
+                //檢核資料
+
+                foreach (var req in parameters)
+                {
+                    var data = await _context.work_order_head.FindAsync(req.WkMId);
+                    if (data == null)
+                    {
+                        throw new Exception($"Data not found {req.WkMId}");
+                    }
+                    if (string.IsNullOrWhiteSpace(data.order_no))
+                    {
+                        throw new Exception("ORDER_NO不可為空 ");
+                    }
+                    if (data.order_status == "INPRG")
+                    {
+                        throw new Exception("轉SERP中，不可再重轉");
+                    }
+                    if (data.del_mk == 'Y')
+                    {
+                        continue;
+                    }
+                    var dataList = await _context.work_order_item.Where(x => x.wk_m_id == req.WkMId && x.trans_mk == "Y" && x.del_mk == 'N').ToListAsync();
+                    if (dataList.Count == 0)
+                    {
+                        throw new Exception("明細檔至少有一筆資料trans_mk='Y' and del_mk='N'");
+                    }
+                    data.order_status = "INPRG";
+                    data.proc_mk = 'N';
+                    data.trans_id = timestamp;
+                    fact_no = data.fact_no;
+                    head.Add(data);
+                }
+                int i = await _context.SaveChangesAsync();
+                string apiUrl = $"{url}?FACT_NO={fact_no}&TRANS_ID={timestamp}";
+                var response = await _httpClient.GetAsync(apiUrl);
+                var apiResult = await response.Content.ReadAsStringAsync();
+
+                var apiJson = JObject.Parse(apiResult);
+                var status = apiJson["STATUS"]?.ToString();
+                var apiErrorMsg = apiJson["ERROR_MSG"]?.ToString();
+                _logger.LogInformation(apiErrorMsg);
+                _context.ChangeTracker.Clear();
+                if (status != "Y") // 失敗
+                {
+                    foreach (var item in head)
+                    {
+                        var entity = await _context.work_order_head.FindAsync(item.wk_m_id);
+                        if (entity != null)
+                        {
+                            entity.order_status = "REJD";
+                            entity.proc_mk = 'E';
+                            entity.trans_id = null;
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                    return apiErrorMsg;
+                }
+                else // 成功
+                {
+                    foreach (var item in head)
+                    {
+                        var entity = await _context.work_order_head.FindAsync(item.wk_m_id);
+                        if (entity != null)
+                        {
+                            entity.trans_id = null;
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                    return "OK";
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+        }
         public async Task<string> GetWorkSataus(string value)
         {
             var query = await _context.sys_namevalue.Where(x => x.group_key == "wkorder_status" && x.status == "Y" && x.text == value).Select(x => x.data_no).FirstOrDefaultAsync();
             return query;
         }
-
         public async Task<string> GetBrand(string fact_no, string text)
         {
             var query = (from n in _context.pdm_namevalue_new
@@ -645,7 +889,6 @@ namespace PDMApp.Service.ProductionOrder
             var query = await _context.sys_namevalue.Where(x => x.group_key == key && x.status == "Y").ToListAsync();
             return query;
         }
-
         public async Task<object> GetSeason(string DevFactoryNo)
         {
             try
@@ -674,7 +917,6 @@ namespace PDMApp.Service.ProductionOrder
                 throw;
             }
         }
-
         public async Task<object> GetShoeKind(string DevFactoryNo)
         {
             try
@@ -694,7 +936,6 @@ namespace PDMApp.Service.ProductionOrder
                 throw;
             }
         }
-
         public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> GetDataById(string DevFactoryNo, string wk_m_id)
         {
             return await (from m in _context.work_order_head
@@ -754,7 +995,6 @@ namespace PDMApp.Service.ProductionOrder
                               RowVersion = m.RowVersion,
                           }).FirstOrDefaultAsync();
         }
-
         private (decimal unixTimestamp, int month) ConvertReqDateToUnixTimestamp(string reqDate)
         {
             if (string.IsNullOrWhiteSpace(reqDate))
@@ -779,13 +1019,17 @@ namespace PDMApp.Service.ProductionOrder
                 return (0, 0);
             }
         }
-
         private async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDetailDto>> GetDetailById(string Id)
         {
+            // decimal sortNum;
             var query = from d in _context.work_order_item
+                        join m in _context.work_order_head
+                        on d.wk_m_id equals m.wk_m_id
                         where d.wk_m_id == Id
+                        orderby d.sort
                         select new Dtos.ProductionOrder.ArtPoDto.QueryDetailDto
                         {
+                            DevFactoryNo = m.fact_no,
                             WkMId = d.wk_m_id,
                             WkDId = d.wk_d_id,
                             Sort = d.sort,
@@ -796,7 +1040,9 @@ namespace PDMApp.Service.ProductionOrder
                             DelMk = d.del_mk.ToString(),
                             RowVersion = d.RowVersion,
                         };
-            return await query.ToListAsync();
+            var data = await query.ToListAsync();
+            data = data.OrderBy(d => decimal.Parse(d.Sort)).ToList();
+            return data;
         }
     }
 }
