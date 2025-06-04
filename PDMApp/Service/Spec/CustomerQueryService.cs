@@ -20,6 +20,7 @@ using PDMApp.Extensions;
 using PDMApp.Models;
 using PDMApp.Parameters.Cbd;
 using PDMApp.Parameters.PGTSPEC;
+using PDMApp.Parameters.SPEC;
 using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Service.SPEC
@@ -36,130 +37,176 @@ namespace PDMApp.Service.SPEC
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public static async Task<(bool, string)> CustomerImportDetailAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, InsertSpecParameter value, string pccuid, string name)
+        public static async Task<(bool, string)> CustomerImportDetailAsync(
+            pcms_pdm_testContext _pcms_Pdm_TestContext,
+            UIParameter uiParam,
+            List<ExcelParameter> excelParams,
+            string pccuid,
+            string name)
         {
             try
             {
-                // 檢查必要參數是否缺失
-                if (string.IsNullOrWhiteSpace(value.DevelopmentNo) ||
-                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) ||
-                    string.IsNullOrWhiteSpace(value.Stage) ||
-                    string.IsNullOrWhiteSpace(value.DevFactoryNo) ||
-                    string.IsNullOrWhiteSpace(value.SpecSource) ||
-                    string.IsNullOrWhiteSpace(value.Brand))
+                // 1. 驗證 UI 參數
+                if (string.IsNullOrWhiteSpace(uiParam.DevelopmentNo))
+                    return (false, "DevelopmentNo 不可為空");
+                if (string.IsNullOrWhiteSpace(uiParam.DevelopmentColorNo))
+                    return (false, "DevelopmentColorNo 不可為空");
+                if (string.IsNullOrWhiteSpace(uiParam.Stage))
+                    return (false, "Stage 不可為空");
+
+                // 2. 驗證 Excel 參數
+                var validationResults = new List<(int Index, string Error)>();
+                for (int i = 0; i < excelParams.Count; i++)
                 {
-                    return (false, "Missing required parameters.");
-                }
+                    var param = excelParams[i];
+                    var errors = new List<string>();
 
-                // 查詢 StageCode
-                var stageCode = await (from n in _pcms_Pdm_TestContext.pdm_namevalue_new
-                                       where n.group_key == "stage" && n.text == value.Stage
-                                       select n.value_desc).FirstOrDefaultAsync();
+                    if (string.IsNullOrWhiteSpace(param.Sort))
+                        errors.Add("Sort 不可為空");
+                    if (string.IsNullOrWhiteSpace(param.Group))
+                        errors.Add("Group 不可為空");
 
-                if (string.IsNullOrEmpty(stageCode))
-                {
-                    return (false, "Invalid Stage provided.");
-                }
+                    if (HasFullWidthOrControlChars(param.Sort) || HasFullWidthOrControlChars(param.Group))
+                        errors.Add("SORT 或 GROUP 欄位有全型字元或控制字元");
 
-                // 查詢 plm_product_head, plm_product_item, plm_spec_head，確保產品與規格匹配
-                var productData = await (from ph in _pcms_Pdm_TestContext.plm_product_head
-                                         join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                                         join sh in _pcms_Pdm_TestContext.plm_spec_head on pi.product_d_id equals sh.product_d_id
-                                         join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.value_desc
-                                         where ph.development_no == value.DevelopmentNo
-                                         && pi.development_color_no == value.DevelopmentColorNo
-                                         && n.text == value.Brand
-                                         select new { pi.product_d_id, sh.spec_m_id }).ToListAsync();
-
-                if (!productData.Any())
-                {
-                    return (false, "No matching records found in plm_product_item or plm_spec_head.");
-                }
-
-                var productDId = productData.First().product_d_id;
-                var specIds = productData.First().spec_m_id;
-
-                // 建立新 pcg_spec_head 記錄
-                var newSpecHead = new pcg_spec_head
-                {
-                    spec_m_id = Guid.NewGuid().ToString(), // 產生新的 SPEC 主鍵
-                    product_d_id = productDId,
-                    stage_code = stageCode,
-                    ver = 0,
-                    create_mode = value.SpecSource == "NEW" ? "B" : "A",
-                    create_date = DateTime.Now,
-                    create_user_id = pccuid,
-                    create_user_nm = name,
-                    remarks_prohibit = value.DevFactoryNo == "6400" ? "※所有材質的使用，均需符合\"ASICS 化學物質管理運用方針\"之規定。" : null
-                };
-
-                _pcms_Pdm_TestContext.pcg_spec_head.Add(newSpecHead);
-
-                // 若 SpecSource 為 "原文SPEC"，則需同步插入 pcg_spec_item
-                if (value.SpecSource == "原文SPEC")
-                {
-                    // 查詢對應的規格項目
-                    var specData = await (from si in _pcms_Pdm_TestContext.plm_spec_item
-                                          where specIds.Contains(si.spec_m_id)
-                                          select si).ToListAsync();
-
-                    if (!specData.Any())
+                    if (errors.Any())
                     {
-                        return (false, "No matching records found in plm_spec_item.");
+                        validationResults.Add((i + 1, string.Join(", ", errors)));
+                    }
+                }
+
+                if (validationResults.Any())
+                {
+                    var errorMessage = string.Join("\n", validationResults.Select(x => $"第 {x.Index} 行: {x.Error}"));
+                    return (false, $"資料驗證失敗:\n{errorMessage}");
+                }
+
+                // 3. 查詢規格資訊
+                var specInfo = await (from sh in _pcms_Pdm_TestContext.plm_spec_head
+                                      join ph in _pcms_Pdm_TestContext.plm_product_head
+                                      on sh.development_no equals ph.development_no
+                                      join pi in _pcms_Pdm_TestContext.plm_product_item
+                                      on ph.product_m_id equals pi.product_m_id
+                                      where sh.development_no == uiParam.DevelopmentNo
+                                      && pi.development_color_no == uiParam.DevelopmentColorNo
+                                      && sh.stage == uiParam.Stage
+                                      select new
+                                      {
+                                          sh.spec_m_id,
+                                          ph.stage_code,
+                                          pi.colorway,
+                                          pi.development_color_no,
+                                          pi.color_code
+                                      }).FirstOrDefaultAsync();
+
+                string specMId;
+                if (specInfo != null)
+                {
+                    // 更新現有規格
+                    specMId = specInfo.spec_m_id;
+                    var existingSpec = await _pcms_Pdm_TestContext.plm_spec_head
+                        .FirstOrDefaultAsync(x => x.spec_m_id == specInfo.spec_m_id);
+
+                    existingSpec.stage_code = specInfo.stage_code;
+                    existingSpec.colorway = specInfo.colorway;
+                    existingSpec.development_color = specInfo.development_color_no;
+                    existingSpec.colorcode = specInfo.color_code;
+                    existingSpec.update_date = DateTime.Now;
+                    existingSpec.update_user = name;
+                }
+                else
+                {
+                    // 建立新規格
+                    specMId = Guid.NewGuid().ToString("N");
+                    var newSpecHead = new plm_spec_head
+                    {
+                        spec_m_id = specMId,
+                        development_no = uiParam.DevelopmentNo,
+                        stage = uiParam.Stage,
+                        stage_code = specInfo.stage_code,
+                        colorway = specInfo.colorway,
+                        development_color = specInfo.development_color_no,
+                        colorcode = specInfo.color_code,
+                        create_date = DateTime.Now,
+                        create_user = name
+                    };
+                    _pcms_Pdm_TestContext.plm_spec_head.Add(newSpecHead);
+                }
+
+                // 4. 處理規格項目
+                foreach (var param in excelParams)
+                {
+                    var specItem = new plm_spec_item
+                    {
+                        spec_m_id = specMId,
+                        spec_d_id = Guid.NewGuid().ToString("N"),
+                        material_sort = int.Parse(param.Sort),
+                        material_group = param.Group,
+                        parts_no = param.No,
+                        material_new = param.New,
+                        parts = param.Parts,
+                        detail = param.Detail,
+                        process_mk = param.ProcessMk,
+                        material = param.Material,
+                        recycle = param.Recycle,
+                        mtrtype = param.Type,
+                        processing = param.Processing,
+                        effect = param.Effect,
+                        releasepaper = param.ReleasePaper,
+                        basecolor = param.BaseColor,
+                        mat_comment = param.MtrComment,
+                        standard = param.Standard,
+                        agent = param.Agent,
+                        supplier = param.Supplier,
+                        hcha = param.Hcha,
+                        sec = param.Sec,
+                        material_color = param.MaterialColor,
+                        clr_comment = param.ClrComment,
+                        add_date = DateTime.Now
+                    };
+
+                    // 處理 ACT_PART_NO 和 ACT_PARTS
+                    if (!string.IsNullOrWhiteSpace(param.No))
+                    {
+                        specItem.act_part_no = param.No;
+                        specItem.act_parts = param.Parts;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(param.Parts))
+                    {
+                        var matchingPart = excelParams.FirstOrDefault(p =>
+                            p.Parts == param.Parts && !string.IsNullOrWhiteSpace(p.No));
+
+                        if (matchingPart != null)
+                        {
+                            specItem.act_part_no = matchingPart.No;
+                            specItem.act_parts = param.Parts;
+                        }
+                        else
+                        {
+                            return (false, $"物料: {param.Material} 需有 NO、PARTS 資訊");
+                        }
                     }
 
-                    // 取得 material_group 的對應名稱
-                    var materialGroupData = await (from n in _pcms_Pdm_TestContext.pdm_namevalue_new
-                                                   where n.group_key == "material_group"
-                                                   && specData.Select(si => si.material_group).Contains(n.value_desc)
-                                                   select new { n.value_desc, n.text }).ToListAsync();
-
-                    // 生成新的 pcg_spec_item 記錄
-                    var newSpecItems = specData.Select(si => new pcg_spec_item
-                    {
-                        spec_d_id = Guid.NewGuid().ToString(),
-                        spec_m_id = newSpecHead.spec_m_id,
-                        material_sort = si.material_sort,
-                        material_group = materialGroupData.FirstOrDefault(mg => mg.value_desc == si.material_group)?.text ?? si.material_group,
-                        parts_no = si.parts_no,
-                        material_new = si.material_new,
-                        parts = si.parts,
-                        detail = si.detail,
-                        process_mk = si.process_mk,
-                        material = si.material,
-                        mat_comment = si.mat_comment,
-                        standard = si.standard,
-                        agent = si.agent,
-                        supplier = si.supplier,
-                        quote_supplier = si.quote_supplier,
-                        hcha = si.hcha,
-                        sec = si.sec,
-                        material_color = si.material_color,
-                        clr_comment = si.clr_comment,
-                        add_date = si.add_date,
-                        update_date = si.update_date,
-                        mtrtype = si.mtrtype,
-                        mtrbase = si.mtrbase,
-                        processing = si.processing,
-                        effect = si.effect,
-                        releasepaper = si.releasepaper,
-                        basecolor = si.basecolor,
-                        act_part_no = si.act_part_no,
-                        part_mk = si.part_mk,
-                        recycle = si.recycle
-                    }).ToList();
-
-                    _pcms_Pdm_TestContext.pcg_spec_item.AddRange(newSpecItems);
+                    _pcms_Pdm_TestContext.plm_spec_item.Add(specItem);
                 }
 
-                // 儲存變更
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
-                return (true, "Insert success.");
+                return (true, "匯入成功");
             }
-            catch (DbException ex)
+            catch (Exception ex)
             {
-                return (false, $"Database error occurred: {ex.Message}");
+                return (false, $"匯入過程中發生錯誤: {ex.Message}");
             }
+        }
+
+        // 檢查是否包含全型文字或控制字元
+        private static bool HasFullWidthOrControlChars(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return false;
+
+            return input.Any(c =>
+                (c >= 0xFF01 && c <= 0xFF5E) || // 全型文字範圍
+                char.IsControl(c)); // 控制字元
         }
 
 
