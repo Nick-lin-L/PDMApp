@@ -42,7 +42,7 @@ namespace PDMApp.Service.SPEC
             UIParameter uiParam,
             List<ExcelParameter> excelParams,
             string pccuid,
-            string name)
+            string userid)
         {
             try
             {
@@ -83,21 +83,37 @@ namespace PDMApp.Service.SPEC
 
                 // 3. 查詢規格資訊
                 var specInfo = await (from sh in _pcms_Pdm_TestContext.plm_spec_head
-                                      join ph in _pcms_Pdm_TestContext.plm_product_head
-                                      on sh.development_no equals ph.development_no
-                                      join pi in _pcms_Pdm_TestContext.plm_product_item
-                                      on ph.product_m_id equals pi.product_m_id
                                       where sh.development_no == uiParam.DevelopmentNo
-                                      && pi.development_color_no == uiParam.DevelopmentColorNo
+                                      && sh.development_color == uiParam.DevelopmentColorNo
                                       && sh.stage == uiParam.Stage
                                       select new
                                       {
+                                          sh.product_d_id,
                                           sh.spec_m_id,
-                                          ph.stage_code,
-                                          pi.colorway,
-                                          pi.development_color_no,
-                                          pi.color_code
+                                          sh.development_no,
+                                          sh.stage_code,
+                                          sh.stage,
+                                          sh.colorway,
+                                          sh.development_color,
+                                          sh.colorcode,
+                                          sh.update_date,
+                                          sh.update_user
                                       }).FirstOrDefaultAsync();
+
+                var pph_ppiData = await (from ph in _pcms_Pdm_TestContext.plm_product_head
+                                         join pi in _pcms_Pdm_TestContext.plm_product_item
+                                         on ph.product_m_id equals pi.product_m_id
+                                         where pi.development_color_no == uiParam.DevelopmentColorNo
+                                         && ph.development_no == uiParam.DevelopmentNo
+                                         && ph.stage == uiParam.Stage
+                                         select new
+                                         {
+                                             pi.product_d_id,
+                                             pi.colorway,
+                                             pi.development_color_no,
+                                             ph.stage_code,
+                                             pi.color_code
+                                         }).FirstOrDefaultAsync();
 
                 string specMId;
                 if (specInfo != null)
@@ -105,14 +121,18 @@ namespace PDMApp.Service.SPEC
                     // 更新現有規格
                     specMId = specInfo.spec_m_id;
                     var existingSpec = await _pcms_Pdm_TestContext.plm_spec_head
-                        .FirstOrDefaultAsync(x => x.spec_m_id == specInfo.spec_m_id);
+                        .FirstOrDefaultAsync(x => x.spec_m_id == specMId);
 
-                    existingSpec.stage_code = specInfo.stage_code;
-                    existingSpec.colorway = specInfo.colorway;
-                    existingSpec.development_color = specInfo.development_color_no;
-                    existingSpec.colorcode = specInfo.color_code;
-                    existingSpec.update_date = DateTime.Now;
-                    existingSpec.update_user = name;
+                    if (existingSpec != null)
+                    {
+                        //existingSpec.development_no = uiParam.DevelopmentColorNo;
+                        //existingSpec.stage_code = pph_ppiData.stage_code;
+                        //existingSpec.development_color = pph_ppiData.development_color_no;
+                        existingSpec.colorway = pph_ppiData.colorway;
+                        existingSpec.colorcode = pph_ppiData.color_code;
+                        existingSpec.update_date = DateTime.Now;
+                        existingSpec.update_user = userid;
+                    }
                 }
                 else
                 {
@@ -120,15 +140,18 @@ namespace PDMApp.Service.SPEC
                     specMId = Guid.NewGuid().ToString("N");
                     var newSpecHead = new plm_spec_head
                     {
+                        product_d_id = pph_ppiData.product_d_id,
                         spec_m_id = specMId,
                         development_no = uiParam.DevelopmentNo,
                         stage = uiParam.Stage,
-                        stage_code = specInfo.stage_code,
-                        colorway = specInfo.colorway,
-                        development_color = specInfo.development_color_no,
-                        colorcode = specInfo.color_code,
+                        stage_code = pph_ppiData.stage_code,
+                        colorway = pph_ppiData.colorway,
+                        development_color = pph_ppiData.development_color_no,
+                        colorcode = pph_ppiData.color_code,
                         create_date = DateTime.Now,
-                        create_user = name
+                        create_user = userid,
+                        update_date = DateTime.Now,
+                        update_user = userid
                     };
                     _pcms_Pdm_TestContext.plm_spec_head.Add(newSpecHead);
                 }

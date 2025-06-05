@@ -139,6 +139,7 @@ namespace PDMApp.Controllers.SPEC
                 // 取得當前登入者資訊
                 var currentUser = CurrentUserUtils.Get(HttpContext);
                 var pccuid = currentUser.Pccuid?.ToString();
+                var userid = currentUser.UserId?.ToString();
                 var name = currentUser.Name?.ToString();
 
                 // 呼叫 Service 層的匯入方法
@@ -147,7 +148,7 @@ namespace PDMApp.Controllers.SPEC
                     request.UIParameter,
                     request.ExcelParameter,
                     pccuid,
-                    name
+                    userid
                 );
 
                 if (!success)
