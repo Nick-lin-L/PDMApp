@@ -19,6 +19,7 @@ namespace PDMApp.Service
         public Task<object> Material([Optional] string fact_no);
         public Task<object> Season([Optional] string fact_no);
         public Task<object> OrderStatus();
+        public Task<object> FGType(string fact_no);
 
 
     }

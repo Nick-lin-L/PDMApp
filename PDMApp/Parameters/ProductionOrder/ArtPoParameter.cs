@@ -115,9 +115,19 @@ namespace PDMApp.Parameters.ProductionOrder
             public uint? RowVersion { get; set; }
         }
 
+        public class ProcessParameter
+        {
+            public string? WkMId { get; set; }
+            public uint RowVersion { get; set; }
+        }
         public class SubmitParameter
         {
             public string? WkMId { get; set; }
+        }
+
+        public class Process
+        {
+
         }
     }
 }

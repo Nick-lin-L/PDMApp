@@ -289,5 +289,24 @@ namespace PDMApp.Service
                 throw;
             }
         }
+
+        public async Task<object> FGType(string fact_no)
+        {
+            try
+            {
+                var query = _context.pdm_namevalue_new.AsQueryable().Where(x => x.group_key == "fg_type" && x.status == "Y");
+                query = query.Where(n => n.fact_no == fact_no);
+                var data = query.Select(x => new
+                {
+                    Text = x.text,
+                    Value = x.value_desc
+                });
+                return await data.OrderBy(x => x.Value).ToListAsync();
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
     }
 }
