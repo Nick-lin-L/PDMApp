@@ -3,8 +3,9 @@ using PDMApp.Models;
 using PDMApp.Parameters.Basic;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PDMApp.Service.Basic
@@ -33,15 +34,50 @@ namespace PDMApp.Service.Basic
             { "OrderStatus", "State" }
         };
 
-        // 將字串轉為駝峰式命名
-        private static string ToCamelCase(string input)
+        // 泛型動態屬性條件 where，接受 PascalCase 屬性名，轉 snake_case EF Model 屬性名
+        private static IQueryable<T> WhereDynamicEqual<T>(this IQueryable<T> source, string pascalPropertyName, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return source;
+
+            var snakePropertyName = PascalCaseToSnakeCase(pascalPropertyName);
+
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.PropertyOrField(parameter, snakePropertyName);
+            var constant = Expression.Constant(value);
+            var equality = Expression.Equal(property, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
+
+            return source.Where(lambda);
+        }
+
+        // PascalCase → snake_case
+        private static string PascalCaseToSnakeCase(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
-            input = input.Replace("_", " ");
-            TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
-            var result = textInfo.ToTitleCase(input).Replace(" ", "");
-            return char.ToUpperInvariant(result[0]) + result.Substring(1);
+            var builder = new System.Text.StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                var c = input[i];
+                if (char.IsUpper(c))
+                {
+                    if (i > 0) builder.Append('_');
+                    builder.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+            return builder.ToString();
+        }
+
+        // snake_case → PascalCase (已存在的函式，供動態必填核心欄位用)
+        private static string ToPascalCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            var words = input.Split('_', StringSplitOptions.RemoveEmptyEntries);
+            return string.Concat(words.Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1)));
         }
 
         // 檢查是否含有特殊字元或全形字
@@ -91,14 +127,13 @@ namespace PDMApp.Service.Basic
 
                 foreach (var field in requiredCoreFields)
                 {
-                    string camelCaseField = ToCamelCase(field);  // 轉為駝峰命名格式
-                    var prop = typeof(MaterialUpdateParameter).GetProperties()
-                        .FirstOrDefault(p => p.Name.Equals(camelCaseField, StringComparison.OrdinalIgnoreCase));
+                    string pascalField = ToPascalCase(field);  // snake_case → PascalCase
+                    var prop = typeof(MaterialUpdateParameter).GetProperty(pascalField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
                     var fieldValue = prop?.GetValue(value)?.ToString();
 
                     if (string.IsNullOrWhiteSpace(fieldValue))
                     {
-                        missingFields.Add(camelCaseField);
+                        missingFields.Add(pascalField);
                     }
                 }
 
@@ -186,6 +221,26 @@ namespace PDMApp.Service.Basic
                     if (existsMaterial != null)
                     {
                         return (false, $"已存在物料 PDM 料號 [{existsMaterial.mat_no}]，物料完整說明：[{existsMaterial.mat_full_nm}]");
+                    }
+                }
+                else
+                {
+                    // MatNo 沒填 → 使用 MatNm + Uom [+ 核心欄位] 查重
+                    var coreKeyProps = requiredCoreFields.Select(ToPascalCase).ToList();
+                    var query = _context.matm.AsQueryable()
+                        .Where(x => x.mat_nm == value.MatNm && x.uom == value.Uom);
+
+                    foreach (var key in coreKeyProps)
+                    {
+                        var prop = typeof(MaterialUpdateParameter).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var val = prop?.GetValue(value)?.ToString()?.Trim();
+                        query = query.WhereDynamicEqual(key, val); // 會自動轉 snake_case
+                    }
+
+                    var duplicate = await query.FirstOrDefaultAsync();
+                    if (duplicate != null)
+                    {
+                        return (false, $"已有相同的資料，禁止重複新增。");
                     }
                 }
 

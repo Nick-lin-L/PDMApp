@@ -12,6 +12,11 @@
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
 
+    public class MatIdParameter
+    {
+        public string MatId { get; set; }
+    }
+
     public class MaterialCreateParameter
     {
         public string? Attyp { get; set; }

@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PDMApp.Service.Basic
@@ -46,6 +48,52 @@ namespace PDMApp.Service.Basic
             }
             reason = null;
             return false;
+        }
+
+        // 泛型動態屬性條件 where，接受 PascalCase 屬性名，轉 snake_case EF Model 屬性名
+        private static IQueryable<T> WhereDynamicEqual<T>(this IQueryable<T> source, string pascalPropertyName, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return source;
+
+            var snakePropertyName = PascalCaseToSnakeCase(pascalPropertyName);
+
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.PropertyOrField(parameter, snakePropertyName);
+            var constant = Expression.Constant(value);
+            var equality = Expression.Equal(property, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
+
+            return source.Where(lambda);
+        }
+
+        // PascalCase → snake_case
+        private static string PascalCaseToSnakeCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            var builder = new System.Text.StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                var c = input[i];
+                if (char.IsUpper(c))
+                {
+                    if (i > 0) builder.Append('_');
+                    builder.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+            return builder.ToString();
+        }
+
+        // snake_case → PascalCase (已存在的函式，供動態必填核心欄位用)
+        private static string ToPascalCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            var words = input.Split('_', StringSplitOptions.RemoveEmptyEntries);
+            return string.Concat(words.Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1)));
         }
 
         public static MemoryStream ExportCreateErrorExcel(List<(MaterialCreateParameter Item, string ErrorMessage)> errorList)
@@ -91,6 +139,7 @@ namespace PDMApp.Service.Basic
             stream.Position = 0;
             return stream;
         }
+
 
         public static async Task<(bool isSuccess, List<MaterialDto> successList, List<(MaterialCreateParameter Item, string ErrorMessage)> errorList)> TryImportCreateAsync(pcms_pdm_testContext _context, List<MaterialCreateParameter> importList, string pccuid)
         {
@@ -155,7 +204,6 @@ namespace PDMApp.Service.Basic
                     // 特殊字元與全形字元檢查
                     var fieldsToCheck = new Dictionary<string, string?>
                     {
-                        { nameof(value.MatNm), value.MatNm?.Trim() },
                         { nameof(value.MatFullNm), value.MatFullNm?.Trim() },
                         { nameof(value.Memo), value.Memo?.Trim() },
                         { nameof(value.ColorNm), value.ColorNm?.Trim() }
@@ -188,6 +236,27 @@ namespace PDMApp.Service.Basic
                         if (existsMaterial != null)
                         {
                             errorList.Add((value, $"已存在物料 PDM 料號 [{value.MatNo}] 已存在，物料完整說明：[{existsMaterial.mat_full_nm}]"));
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // MatNo 沒填 → 使用 MatFullNm + Uom [+ 核心欄位] 查重
+                        var coreKeyProps = requiredCoreFields.Select(ToPascalCase).ToList();
+                        var query = _context.matm.AsQueryable()
+                            .Where(x => x.mat_nm == value.MatFullNm && x.uom == value.Uom);
+
+                        foreach (var key in coreKeyProps)
+                        {
+                            var prop = typeof(MaterialCreateParameter).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            var val = prop?.GetValue(value)?.ToString()?.Trim();
+                            query = query.WhereDynamicEqual(key, val); // 會自動轉 snake_case
+                        }
+
+                        var duplicate = await query.FirstOrDefaultAsync();
+                        if (duplicate != null)
+                        {
+                            errorList.Add((value, $"已有相同的資料，禁止重複新增。"));
                             continue;
                         }
                     }
