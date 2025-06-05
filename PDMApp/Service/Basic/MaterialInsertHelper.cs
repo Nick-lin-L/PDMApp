@@ -3,15 +3,16 @@ using PDMApp.Models;
 using PDMApp.Parameters.Basic;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PDMApp.Service.Basic
 {
     public static class MaterialInsertHelper
     {
-        // 欄位顯示名稱對照表
+        // 欄位顯示名稱對照表 (前端用 PascalCase Key)
         private static readonly Dictionary<string, string> FieldDisplayNames = new()
         {
             { "Attyp", "MATL Type" },
@@ -32,14 +33,27 @@ namespace PDMApp.Service.Basic
             { "StopDate", "Close Date" },
             { "OrderStatus", "State" }
         };
-        // 將字串轉為駝峰式命名
-        private static string ToCamelCase(string input)
+
+        // PascalCase → snake_case
+        private static string PascalCaseToSnakeCase(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
-            input = input.Replace("_", " "); // 暫時空白避免干擾
-            TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
-            var result = textInfo.ToTitleCase(input).Replace(" ", "");
-            return char.ToUpperInvariant(result[0]) + result.Substring(1);
+
+            var builder = new System.Text.StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                var c = input[i];
+                if (char.IsUpper(c))
+                {
+                    if (i > 0) builder.Append('_');
+                    builder.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+            return builder.ToString();
         }
 
         private static bool ContainsFullWidthOrSpecialChar(string input, List<int> specialChars, out string? reason)
@@ -66,20 +80,44 @@ namespace PDMApp.Service.Basic
             return false;
         }
 
+        // 泛型動態屬性條件 where，接受 PascalCase 屬性名，轉 snake_case EF Model 屬性名
+        private static IQueryable<T> WhereDynamicEqual<T>(this IQueryable<T> source, string pascalPropertyName, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return source;
+
+            var snakePropertyName = PascalCaseToSnakeCase(pascalPropertyName);
+
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.PropertyOrField(parameter, snakePropertyName);
+            var constant = Expression.Constant(value);
+            var equality = Expression.Equal(property, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
+
+            return source.Where(lambda);
+        }
+
+        // snake_case → PascalCase (已存在的函式，供動態必填核心欄位用)
+        private static string ToPascalCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            var words = input.Split('_', StringSplitOptions.RemoveEmptyEntries);
+            return string.Concat(words.Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1)));
+        }
+
         public static async Task<(bool, string)> InsertMaterialAsync(pcms_pdm_testContext _context, MaterialCreateParameter value, string pccuid)
         {
             try
             {
                 var missingFields = new List<string>();
 
-                // 固定欄位檢查
+                // 固定欄位檢查 (前端傳 PascalCase)
                 if (string.IsNullOrWhiteSpace(value.Attyp)) missingFields.Add(nameof(value.Attyp));
                 if (string.IsNullOrWhiteSpace(value.MatNm)) missingFields.Add(nameof(value.MatNm));
                 if (string.IsNullOrWhiteSpace(value.MatFullNm)) missingFields.Add(nameof(value.MatFullNm));
                 if (string.IsNullOrWhiteSpace(value.Uom)) missingFields.Add(nameof(value.Uom));
                 if (string.IsNullOrWhiteSpace(value.Status)) missingFields.Add(nameof(value.Status));
 
-                // 取得動態必填欄位（根據工廠定義）
+                // 取得工廠核心欄位（動態必填，snake_case 從 DB 讀出，轉 PascalCase）
                 var requiredCoreFields = await _context.pdm_namevalue_new
                     .Where(x => x.fact_no == value.DevFactoryNo && x.group_key.Trim() == "mat_key" && x.status == "Y")
                     .Select(x => x.value_desc.Trim().ToLower())
@@ -87,15 +125,12 @@ namespace PDMApp.Service.Basic
 
                 foreach (var field in requiredCoreFields)
                 {
-                    string camelCaseField = ToCamelCase(field);  // 轉為駝峰命名格式
-                    var prop = typeof(MaterialCreateParameter).GetProperties()
-                        .FirstOrDefault(p => p.Name.Equals(camelCaseField, StringComparison.OrdinalIgnoreCase));
+                    var pascalField = ToPascalCase(field); // snake_case → PascalCase
+                    var prop = typeof(MaterialCreateParameter).GetProperty(pascalField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
                     var fieldValue = prop?.GetValue(value)?.ToString();
 
                     if (string.IsNullOrWhiteSpace(fieldValue))
-                    {
-                        missingFields.Add(camelCaseField);
-                    }
+                        missingFields.Add(pascalField);
                 }
 
                 if (missingFields.Any())
@@ -105,18 +140,15 @@ namespace PDMApp.Service.Basic
                     return (false, $"缺少必填欄位或工廠核心值欄位：{string.Join(", ", displayNames)}");
                 }
 
-                // 查詢特殊字元清單（需先轉成 List<string> 再 TryParse）
-                var dataNoList = await _context.sys_namevalue
+                // 特殊字元、全形符號檢查
+                var specialCharList = (await _context.sys_namevalue
                     .Where(x => x.group_key == "spl_char" && x.status == "Y")
                     .Select(x => x.data_no)
-                    .ToListAsync();
-
-                var specialCharList = dataNoList
+                    .ToListAsync())
                     .Select(x => int.TryParse(x, out var n) ? n : -1)
                     .Where(n => n != -1)
                     .ToList();
 
-                // 欄位特殊字元 & 全形符號檢查
                 var fieldsToCheck = new Dictionary<string, string?>
                 {
                     { nameof(value.MatNm), value.MatNm?.Trim() },
@@ -135,13 +167,13 @@ namespace PDMApp.Service.Basic
                     }
                 }
 
-                // 新增判斷：ColorNo 與 ColorNm 需同時有值或同時為空
+                // ColorNo 與 ColorNm 同時有值或同時為空
                 if (!string.IsNullOrWhiteSpace(value.ColorNo) ^ !string.IsNullOrWhiteSpace(value.ColorNm))
                 {
                     return (false, "顏色代號 (ColorNo) 與顏色說明 (ColorNm) 必須同時填寫或同時留空。");
                 }
 
-                // 判斷有填 MatNo 時，檢查是否已存在
+                // 判斷 MatNo 重複
                 if (!string.IsNullOrWhiteSpace(value.MatNo))
                 {
                     var existsMaterial = await _context.matm
@@ -154,8 +186,28 @@ namespace PDMApp.Service.Basic
                         return (false, $"已存在物料 PDM 料號 [{existsMaterial.mat_no}]，物料完整說明：[{existsMaterial.mat_full_nm}]");
                     }
                 }
+                else
+                {
+                    // MatNo 沒填 → 使用 MatNm + Uom [+ 核心欄位] 查重
+                    var coreKeyProps = requiredCoreFields.Select(ToPascalCase).ToList();
+                    var query = _context.matm.AsQueryable()
+                        .Where(x => x.mat_nm == value.MatNm && x.uom == value.Uom);
 
-                // 新增資料
+                    foreach (var key in coreKeyProps)
+                    {
+                        var prop = typeof(MaterialCreateParameter).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var val = prop?.GetValue(value)?.ToString()?.Trim();
+                        query = query.WhereDynamicEqual(key, val); // 會自動轉 snake_case
+                    }
+
+                    var duplicate = await query.FirstOrDefaultAsync();
+                    if (duplicate != null)
+                    {
+                        return (false, $"已有相同的資料，禁止重複新增。");
+                    }
+                }
+
+                // 實際新增資料 (這裡要用 snake_case EF 屬性名)
                 var newMaterial = new matm
                 {
                     attyp = value.Attyp?.Split('-')[0],
@@ -172,7 +224,8 @@ namespace PDMApp.Service.Basic
                     scm_mclass_no = value.ScmMclassNo?.Split('-')[0]?.Trim(),
                     scm_sclass_no = value.ScmSclassNo?.Split('-')[0]?.Trim(),
                     memo = value.Memo?.Trim(),
-                    order_status = "OPEN", // 預設給 OPEN
+                    order_status = "OPEN",
+                    status = value.Status?.Trim(),
                     create_user = pccuid,
                     modify_user = pccuid,
                     fact_no = value.DevFactoryNo,
@@ -186,12 +239,13 @@ namespace PDMApp.Service.Basic
             catch (DbUpdateException dbEx)
             {
                 var errorMessage = dbEx.InnerException?.Message ?? dbEx.Message;
-                return (false, $"資料儲存錯誤，可能是欄位長度限制問題{errorMessage}");
+                return (false, $"資料儲存錯誤，可能是欄位長度限制問題：{errorMessage}");
             }
             catch (Exception ex)
             {
                 return (false, $"Unhandled error: {ex.Message}");
             }
         }
+
     }
 }

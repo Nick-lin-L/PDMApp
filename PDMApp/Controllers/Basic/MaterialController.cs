@@ -63,6 +63,48 @@ namespace PDMApp.Controllers.Basic
             }
         }
 
+        // POST api/v1/Basic/Material/by-id
+        [HttpPost("by-id")]
+        public async Task<ActionResult<APIStatusResponse<MaterialDto>>> PostByMatId([FromBody] MatIdParameter value)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var (isSuccess, message, query) = await Service.Basic.MaterialQueryHelper.QueryMaterialByMatId(_pcms_Pdm_TestContext, value.MatId);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message
+                    });
+                }
+
+                var material = await query.FirstOrDefaultAsync();
+
+                return Ok(new
+                {
+                    ErrorCode = "OK",
+                    Message = "",
+                    Data = material
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
+
+
         // POST api/v1/Basic/Material/initial
         [HttpPost("initial")]
         public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> GetComboData()
