@@ -15,6 +15,7 @@ using NPOI.SS.Formula.Functions;
 using PDMApp.Models;
 using PDMApp.Service.Basic;
 using SixLabors.ImageSharp;
+using StackExchange.Profiling.Internal;
 
 namespace PDMApp.Service.ProductionOrder
 {
@@ -113,13 +114,15 @@ namespace PDMApp.Service.ProductionOrder
                             WkDId = d.wk_d_id,
                             Sort = d.sort,
                             TransMk = d.trans_mk,
-                            ShoeKind = d.shoe_kind,
+                            ShoeKind = (from nv in _context.pdm_namevalue_new where nv.group_key == "shoe_kind" && nv.status == "Y" && nv.value_desc == d.shoe_kind && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
                             SizeNo = d.size_no,
                             Qty = d.qty,
                             DelMk = d.del_mk.ToString(),
                             RowVersion = d.RowVersion,
                         };
-            return await query.ToListAsync();
+            var data = await query.ToListAsync();
+            data = data.OrderBy(d => decimal.Parse(d.Sort)).ThenBy(d => d.Sort).ToList();
+            return data;
         }
         public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> CreateMainData(Parameters.ProductionOrder.ArtPoParameter.MainDataParameter parameter)
         {
@@ -180,6 +183,8 @@ namespace PDMApp.Service.ProductionOrder
                     data.last_no = parameter.LastNo;
                     data.last_width = parameter.LastWidth;
                     data.style_id = parameter.StyleId;
+                    data.wk_memo = parameter.Memo;
+                    data.step_memo = parameter.StepMemo;
                     data.txt_attrib_01 = parameter.Memo1;
                     data.txt_attrib_02 = parameter.Memo2;
                     data.txt_attrib_03 = parameter.Memo3;
@@ -337,6 +342,8 @@ namespace PDMApp.Service.ProductionOrder
                     data.mold_no = parameter.MoldNo;
                     data.last_no = parameter.LastNo;
                     data.last_width = parameter.LastWidth;
+                    data.wk_memo = parameter.Memo;
+                    data.step_memo = parameter.StepMemo;
                     data.txt_attrib_01 = parameter.Memo1;
                     data.txt_attrib_02 = parameter.Memo2;
                     data.txt_attrib_03 = parameter.Memo3;
@@ -404,7 +411,7 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"Data never change !");
                     }
-                    return await GetDataById(data.fact_no, data.wk_m_id);
+                    return await GetDisplayDataById(data.fact_no, data.wk_m_id);
                 }
             }
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
@@ -499,7 +506,7 @@ namespace PDMApp.Service.ProductionOrder
                     }
 
                     await transaction.CommitAsync();
-                    return await GetDetailById(parameter.WkMId);
+                    return await GetDisplayDetailById(parameter.WkMId);
                 }
                 catch
                 {
@@ -620,7 +627,7 @@ namespace PDMApp.Service.ProductionOrder
                         throw new Exception($"No Data Need Change");
                     }
                     await transaction.CommitAsync();
-                    return await GetDetailById(parameter.WkMId);
+                    return await GetDisplayDetailById(parameter.WkMId);
                 }
                 catch
                 {
@@ -662,7 +669,7 @@ namespace PDMApp.Service.ProductionOrder
                     }
 
                     await transaction.CommitAsync();
-                    return await GetDetailById(parameter.WkMId);
+                    return await GetDisplayDetailById(parameter.WkMId);
                 }
                 catch
                 {
@@ -701,68 +708,73 @@ namespace PDMApp.Service.ProductionOrder
                         };
             return await query.ToListAsync();
         }
-        public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> ProcessPo(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        public async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDto>> ProcessPo(List<Parameters.ProductionOrder.ArtPoParameter.ProcessParameter> parameter)
         {
+            List<Dtos.ProductionOrder.ArtPoDto.QueryDto> data = new List<Dtos.ProductionOrder.ArtPoDto.QueryDto>();
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    var mainData = await _context.work_order_head.FindAsync(parameter.WkMId);
-                    if (object.ReferenceEquals(mainData, null))
+                    foreach (var item in parameter)
                     {
-                        throw new Exception("main data not found!");
-                    }
-                    if (mainData.order_status == "INPRG")
-                    {
-                        throw new Exception($@"派工單正拋轉SERP中，不可再被異動");
-                    }
-                    if (mainData.order_status == "APPD")
-                    {
-                        throw new Exception($@"派工單已確認派工，不可再派工");
-                    }
-                    if (mainData.RowVersion != parameter.RowVersion)
-                    {
-                        throw new Exception($@"Data has been modified , please Refresh data again !");
-                    }
-                    if (mainData.del_mk == 'Y')
-                    {
-                        throw new Exception($@"Data has been Delete , please check data again !");
-                    }
-                    var detailData = await _context.work_order_item.Where(x => x.wk_m_id == parameter.WkMId && x.del_mk == 'N').ToListAsync();
-                    if (detailData.Count == 0)
-                    {
-                        throw new Exception($@"無派工明細無法派工，請先確認明細資料");
-                    }
-                    mainData.order_status = "APPD";
-                    mainData.order_ver = mainData.order_ver + 1;
-                    if (string.IsNullOrWhiteSpace(mainData.order_no))
-                    {
-                        var workTitle = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_title" && x.status == "Y").FirstOrDefaultAsync();
-                        var workDate = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_date" && x.status == "Y").FirstOrDefaultAsync();
-                        var workSeqno = await _context.pdm_namevalue_new.Where(x => x.fact_no == parameter.DevFactoryNo && x.group_key == "work_seq" && x.status == "Y").FirstOrDefaultAsync();
-                        if (workTitle == null || workDate == null || workSeqno == null)
+                        var mainData = await _context.work_order_head.FindAsync(item.WkMId);
+                        if (object.ReferenceEquals(mainData, null))
                         {
-                            throw new Exception($@"work_title、work_date、work_seq is not exist，please contact IT");
+                            throw new Exception("main data not found!");
                         }
-                        if (workDate.value_desc != DateTime.Now.ToString("yyyyMMdd"))
+                        if (mainData.order_status == "INPRG")
                         {
-                            workDate.value_desc = DateTime.Now.ToString("yyyyMMdd");
-                            workSeqno.value_desc = "0000001"; // 重置為 7 位數的起始值
+                            throw new Exception($@"派工單正拋轉SERP中，不可再被異動");
                         }
-                        else
+                        if (mainData.order_status == "APPD")
                         {
-                            // 當日期相同時，序號加1並補零
-                            int seqNo = int.Parse(workSeqno.value_desc) + 1;
-                            workSeqno.value_desc = seqNo.ToString().PadLeft(7, '0');
+                            throw new Exception($@"派工單已確認派工，不可再派工");
                         }
-                        mainData.order_no = workTitle.value_desc + workDate.value_desc + workSeqno.value_desc;
+                        if (mainData.RowVersion != item.RowVersion)
+                        {
+                            throw new Exception($@"Data has been modified , please Refresh data again !");
+                        }
+                        if (mainData.del_mk == 'Y')
+                        {
+                            throw new Exception($@"Data has been Delete , please check data again !");
+                        }
+                        var detailData = await _context.work_order_item.Where(x => x.wk_m_id == item.WkMId && x.del_mk == 'N').ToListAsync();
+                        if (detailData.Count == 0)
+                        {
+                            throw new Exception($@"無派工明細無法派工，請先確認明細資料");
+                        }
+                        mainData.order_status = "APPD";
+                        mainData.order_ver = mainData.order_ver + 1;
+                        if (string.IsNullOrWhiteSpace(mainData.order_no))
+                        {
+                            var workTitle = await _context.pdm_namevalue_new.Where(x => x.fact_no == mainData.fact_no && x.group_key == "work_title" && x.status == "Y").FirstOrDefaultAsync();
+                            var workDate = await _context.pdm_namevalue_new.Where(x => x.fact_no == mainData.fact_no && x.group_key == "work_date" && x.status == "Y").FirstOrDefaultAsync();
+                            var workSeqno = await _context.pdm_namevalue_new.Where(x => x.fact_no == mainData.fact_no && x.group_key == "work_seq" && x.status == "Y").FirstOrDefaultAsync();
+                            if (workTitle == null || workDate == null || workSeqno == null)
+                            {
+                                throw new Exception($@"work_title、work_date、work_seq is not exist，please contact IT");
+                            }
+                            if (workDate.value_desc != DateTime.Now.ToString("yyyyMMdd"))
+                            {
+                                workDate.value_desc = DateTime.Now.ToString("yyyyMMdd");
+                                workSeqno.value_desc = "0000001"; // 重置為 7 位數的起始值
+                            }
+                            else
+                            {
+                                // 當日期相同時，序號加1並補零
+                                int seqNo = int.Parse(workSeqno.value_desc) + 1;
+                                workSeqno.value_desc = seqNo.ToString().PadLeft(7, '0');
+                            }
+                            mainData.order_no = workTitle.value_desc + workDate.value_desc + workSeqno.value_desc;
+                            await _context.SaveChangesAsync();
+                        }
+                        mainData.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
+                        mainData.modify_time = DateTime.Now;
                         await _context.SaveChangesAsync();
+                        data.Add(await GetDisplayDataById(mainData.fact_no, mainData.wk_m_id));
                     }
-                    mainData.modify_user = _currentUserService.UserId == null ? 0 : decimal.Parse(_currentUserService.PccUid);
-                    mainData.modify_time = DateTime.Now;
-                    await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    return await GetDataById(mainData.fact_no, mainData.wk_m_id);
+                    return data;
                 }
                 catch
                 {
@@ -771,7 +783,58 @@ namespace PDMApp.Service.ProductionOrder
                 }
             }
         }
+        public async Task<List<Dtos.ProductionOrder.ArtPoDto.ExcelDto>> ExportData(List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameters)
+        {
+            try
+            {
 
+                List<Dtos.ProductionOrder.ArtPoDto.ExcelDto> workOrderData = await (from m in _context.work_order_head
+                                                                                    where parameters.Select(p => p.WkMId).Contains(m.wk_m_id)
+                                                                                    select new Dtos.ProductionOrder.ArtPoDto.ExcelDto
+                                                                                    {
+                                                                                        WkMId = m.wk_m_id,
+                                                                                        Stage = (from nv in _context.pdm_namevalue_new where nv.group_key == "stage" && nv.status == "Y" && nv.value_desc == m.stage && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
+                                                                                        OrderNo = m.order_no,
+                                                                                        CreateTime = m.create_time.ToString("yyyyMMdd"),
+                                                                                        CreateUser = m.create_user.ToString(),
+                                                                                        StyleNo = m.style_no + "-" + m.color_no,
+                                                                                        ColorNo = m.color_no,
+                                                                                        MoldNo = m.mold_no,
+                                                                                        Season = m.season,
+                                                                                        SizeNo = "",
+                                                                                        Qty = "",
+                                                                                        ShoeKind = "",
+                                                                                        WkMemo = m.wk_memo,
+                                                                                        StepMemo = m.step_memo,
+                                                                                    }).ToListAsync();
+                foreach (var item in workOrderData)
+                {
+                    var detail = await (from d in _context.work_order_item where d.wk_m_id == item.WkMId select d).ToListAsync();
+                    string size = string.Empty;
+                    string qty = string.Empty;
+                    string shoeKind = string.Empty;
+                    int i = 1;
+                    foreach (var d in detail)
+                    {
+                        string tempSize = $@"SIZE號: {d.size_no}";
+                        string tempQty = $@"派工數: {d.qty}";
+                        string tempShoeKind = $@"    鞋型: {d.shoe_kind}";
+                        size = (size + tempSize).PadRight(i * 15, ' ');
+                        qty = (qty + tempQty).PadRight(i * 14, ' ');
+                        shoeKind = (shoeKind + tempShoeKind).PadRight(i * 15, ' '); ;
+                        i++;
+                    }
+                    item.SizeNo = size;
+                    item.Qty = qty;
+                    item.ShoeKind = shoeKind;
+                }
+                return workOrderData;
+            }
+            catch
+            {
+                throw;
+            }
+        }
         public async Task<object> SubmitToSerp(List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameters)
         {
             string fact_no = "";
@@ -936,7 +999,7 @@ namespace PDMApp.Service.ProductionOrder
                 throw;
             }
         }
-        public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> GetDataById(string DevFactoryNo, string wk_m_id)
+        public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> GetDisplayDataById(string DevFactoryNo, string wk_m_id)
         {
             return await (from m in _context.work_order_head
                           where (m.fact_no == DevFactoryNo) &&
@@ -971,6 +1034,69 @@ namespace PDMApp.Service.ProductionOrder
                               DelMk = m.del_mk.ToString(),
                               DelDate = m.del_date.ToString(),
                               SerpErrorMsg = m.err_msg,
+                              Memo = m.wk_memo,
+                              StepMemo = m.step_memo,
+                              Memo1 = m.txt_attrib_01,
+                              Memo2 = m.txt_attrib_02,
+                              Memo3 = m.txt_attrib_03,
+                              Memo4 = m.txt_attrib_04,
+                              Memo5 = m.txt_attrib_05,
+                              Memo6 = m.txt_attrib_06,
+                              Memo7 = m.txt_attrib_07,
+                              Memo8 = m.txt_attrib_08,
+                              Memo9 = m.txt_attrib_09,
+                              Memo10 = m.txt_attrib_10,
+                              Memo11 = m.txt_attrib_11,
+                              Memo12 = m.txt_attrib_12,
+                              Memo13 = m.txt_attrib_13,
+                              Memo14 = m.txt_attrib_14,
+                              Memo15 = m.txt_attrib_15,
+                              Memo16 = m.txt_attrib_16,
+                              Memo17 = m.txt_attrib_17,
+                              Memo18 = m.txt_attrib_18,
+                              Memo19 = m.txt_attrib_19,
+                              Memo20 = m.txt_attrib_20,
+                              StyleId = m.style_id,
+                              RowVersion = m.RowVersion,
+                          }).FirstOrDefaultAsync();
+        }
+        public async Task<Dtos.ProductionOrder.ArtPoDto.QueryDto> GetDataById(string DevFactoryNo, string wk_m_id)
+        {
+            return await (from m in _context.work_order_head
+                          where (m.fact_no == DevFactoryNo) &&
+                                (m.wk_m_id == wk_m_id)
+                          select new Dtos.ProductionOrder.ArtPoDto.QueryDto
+                          {
+                              DevFactoryNo = m.fact_no,
+                              WkMId = m.wk_m_id,
+                              Brand = (from nv in _context.pdm_namevalue_new where nv.group_key == "brand" && nv.status == "Y" && nv.value_desc == m.brand_no && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
+                              OrderNo = m.order_no,
+                              OrderPurchase = m.purpose,
+                              OrderKind = m.order_kind, //(from nv in _context.pdm_namevalue_new where nv.group_key == "order_kind" && nv.status == "Y" && nv.value_desc == m.order_kind && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
+                              DevelopmentNo = m.dev_no,
+                              Season = m.season,
+                              ModelName = m.model_nm,
+                              ColorNo = m.color_no,
+                              ColorWay = m.colorway,
+                              Stage = (from nv in _context.pdm_namevalue_new where nv.group_key == "stage" && nv.status == "Y" && nv.value_desc == m.stage && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
+                              OrderStatus = (from sv in _context.sys_namevalue where sv.group_key == "wkorder_status" && sv.status == "Y" && sv.data_no == m.order_status select sv.text).FirstOrDefault(),
+                              ArticleNo = m.article_no,
+                              Category = m.category,
+                              Gender = m.gender,
+                              MoldNo = m.mold_no,
+                              LastNo = m.last_no,
+                              LastWidth = m.last_width,
+                              ReqDate = m.req_date.ToString(),
+                              Definition = m.type_definition,
+                              CustomSr = m.cust_sr,
+                              CustomPm = m.b_pm,
+                              SampleSize = m.sample_size,
+                              FGType = m.fg_type,//(from nv in _context.pdm_namevalue_new where nv.group_key == "fg_type" && nv.status == "Y" && nv.value_desc == m.fg_type && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
+                              DelMk = m.del_mk.ToString(),
+                              DelDate = m.del_date.ToString(),
+                              SerpErrorMsg = m.err_msg,
+                              Memo = m.wk_memo,
+                              StepMemo = m.step_memo,
                               Memo1 = m.txt_attrib_01,
                               Memo2 = m.txt_attrib_02,
                               Memo3 = m.txt_attrib_03,
@@ -1019,7 +1145,7 @@ namespace PDMApp.Service.ProductionOrder
                 return (0, 0);
             }
         }
-        private async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDetailDto>> GetDetailById(string Id)
+        public async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDetailDto>> GetDetailById(string Id)
         {
             // decimal sortNum;
             var query = from d in _context.work_order_item
@@ -1035,6 +1161,31 @@ namespace PDMApp.Service.ProductionOrder
                             Sort = d.sort,
                             TransMk = d.trans_mk,
                             ShoeKind = d.shoe_kind,
+                            SizeNo = d.size_no,
+                            Qty = d.qty,
+                            DelMk = d.del_mk.ToString(),
+                            RowVersion = d.RowVersion,
+                        };
+            var data = await query.ToListAsync();
+            data = data.OrderBy(d => decimal.Parse(d.Sort)).ToList();
+            return data;
+        }
+        public async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDetailDto>> GetDisplayDetailById(string Id)
+        {
+            // decimal sortNum;
+            var query = from d in _context.work_order_item
+                        join m in _context.work_order_head
+                        on d.wk_m_id equals m.wk_m_id
+                        where d.wk_m_id == Id
+                        orderby d.sort
+                        select new Dtos.ProductionOrder.ArtPoDto.QueryDetailDto
+                        {
+                            DevFactoryNo = m.fact_no,
+                            WkMId = d.wk_m_id,
+                            WkDId = d.wk_d_id,
+                            Sort = d.sort,
+                            TransMk = d.trans_mk,
+                            ShoeKind = (from nv in _context.pdm_namevalue_new where nv.group_key == "shoe_kind" && nv.status == "Y" && nv.value_desc == d.shoe_kind && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
                             SizeNo = d.size_no,
                             Qty = d.qty,
                             DelMk = d.del_mk.ToString(),

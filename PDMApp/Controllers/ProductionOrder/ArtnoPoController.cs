@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MiniExcelLibs;
+using MiniExcelLibs.OpenXml;
 using Npgsql;
 using PDMApp.Extensions;
 using PDMApp.Models;
 using PDMApp.Utils;
+using NPOI.XSSF.UserModel;
+using NPOI.SS.UserModel;
 
 namespace PDMApp.Controllers.ProductionOrder
 {
@@ -42,6 +47,7 @@ namespace PDMApp.Controllers.ProductionOrder
                 resultData["OrderStatusCombo"] = await _icomboService.OrderStatus();
                 resultData["StageCombo"] = await _icomboService.Stage();
                 resultData["SeasonCombo"] = await _artnoPoService.GetSeason(value.DevFactoryNo);
+                resultData["FGTypeCombo"] = await _icomboService.FGType(value.DevFactoryNo);
                 resultData["ShoeKindCombo"] = await _artnoPoService.GetShoeKind(value.DevFactoryNo);
                 resultData["OrderKindCombo"] = (await _artnoPoService.GetNameValueByKey(value.DevFactoryNo, "order_kind")).Select(x => new { Text = x.text, Value = x.value_desc }).ToList();
                 // 封裝結果並回傳
@@ -134,6 +140,48 @@ namespace PDMApp.Controllers.ProductionOrder
         }
 
         [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<object>>> GetUpdateMainData(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        {
+            var response = new APIStatusResponse<object>();
+            try
+            {
+                var data = await _artnoPoService.GetDataById(parameter.DevFactoryNo, parameter.WkMId);
+                response.Data = data;
+                response.ErrorCode = "OK";
+                return response;
+            }
+            catch (Exception e)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Details = ""
+                });
+            }
+        }
+        [HttpPost]
+        public async Task<ActionResult<APIStatusResponse<object>>> GetUpdateDetail(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        {
+            var response = new APIStatusResponse<object>();
+            try
+            {
+                var data = await _artnoPoService.GetDetailById(parameter.WkMId);
+                response.Data = data;
+                response.ErrorCode = "OK";
+                return response;
+            }
+            catch (Exception e)
+            {
+                return StatusCode(200, new
+                {
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Details = ""
+                });
+            }
+        }
+        [HttpPost]
         public async Task<ActionResult<APIStatusResponse<object>>> CreateMainData(Parameters.ProductionOrder.ArtPoParameter.MainDataParameter parameter)
         {
             var response = new APIStatusResponse<object>();
@@ -152,7 +200,6 @@ namespace PDMApp.Controllers.ProductionOrder
                     Message = e.Message,
                     Details = ""
                 });
-
             }
         }
         [HttpPost]
@@ -200,7 +247,7 @@ namespace PDMApp.Controllers.ProductionOrder
             }
         }
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<object>>> ProcessPo(Parameters.ProductionOrder.ArtPoParameter.DetailDataParameter parameter)
+        public async Task<ActionResult<APIStatusResponse<object>>> ProcessPo(List<Parameters.ProductionOrder.ArtPoParameter.ProcessParameter> parameter)
         {
             var response = new APIStatusResponse<object>();
             try
@@ -279,6 +326,217 @@ namespace PDMApp.Controllers.ProductionOrder
 
             }
         }
+        [HttpPost]
+        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> Export([FromBody] List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
+        // public async Task<ActionResult<object>> Export(List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
+        {
+            try
+            {
+                // var response = new APIStatusResponse<object>();
+                var excelData = await _artnoPoService.ExportData(parameter);
+                var tempStreams = new List<(string SheetName, MemoryStream Stream)>();
+                foreach (var item in excelData)
+                {
+                    string sheetName = item.OrderNo;
+                    // 讓樣板渲染該筆資料
+                    var ms = new MemoryStream();
+                    MiniExcel.SaveAsByTemplate(ms, @"ExportedFiles\SampleProductionOrderTemplate.xlsx", item);
+                    ms.Position = 0;
+                    tempStreams.Add((sheetName, ms));
+                }
+                var finalStream = MergeSheetsWithNPOI(tempStreams);
+                finalStream.Position = 0;
+                string base64File = Convert.ToBase64String(finalStream.ToArray());
+                var response = new Dtos.ExportFileResponseDto
+                {
+                    FileName = $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                    FileContent = base64File
+                };
+
+                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                // return File(finalStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                // response.ErrorCode = "OK";
+                // return response;
+            }
+            catch
+            {
+                throw;
+            }
+
+        }
+        [HttpPost]
+        public IActionResult FileResult()
+        {
+            OpenXmlConfiguration configuration = new OpenXmlConfiguration()
+            {
+                EnableWriteNullValueCell = false, // Default value.
+                IgnoreTemplateParameterMissing = false,
+                EnableSharedStringCache = true,
+                BufferSize = 8192 * 4
+            };
+            var tempStreams = new List<(string SheetName, MemoryStream Stream)>();
+
+            MemoryStream memoryStream = new MemoryStream();
+            var listData = new List<Dtos.ProductionOrder.ArtPoDto.ExcelDto>();
+            Dtos.ProductionOrder.ArtPoDto.ExcelDto data = new Dtos.ProductionOrder.ArtPoDto.ExcelDto();
+            data.Qty = "派工數: 5        派工數: 5        派工數: 5        派工數: 5        ";
+            data.SizeNo = "SIZE號: 10.5     SIZE號: 10       SIZE號: 12       SIZE號: 11       ";
+            data.ShoeKind = "　鞋型: FG       鞋型: FG       鞋型: FG         鞋型: FG       ";
+            data.OrderNo = "WK25120001";
+            data.Stage = "010";
+            Dtos.ProductionOrder.ArtPoDto.ExcelDto data2 = new Dtos.ProductionOrder.ArtPoDto.ExcelDto();
+            data2.Qty = "派工數: 5        派工數: 5        派工數: 5        派工數: 5        ";
+            data2.SizeNo = "SIZE號: 10.5     SIZE號: 10       SIZE號: 12       SIZE號: 11       ";
+            data2.ShoeKind = "　鞋型: FG       鞋型: FG       鞋型: FG         鞋型: FG       ";
+            data2.OrderNo = "WK25120002";
+            data2.Stage = "030";
+            var sheets = new Dictionary<string, object>();
+            listData.Add(data);
+            listData.Add(data2);
+            foreach (var item in listData)
+            {
+                string sheetName = item.OrderNo;
+
+                // 讓樣板渲染該筆資料
+                var ms = new MemoryStream();
+                MiniExcel.SaveAsByTemplate(ms, @"ExportedFiles\SampleProductionOrderTemplate.xlsx", item);
+                ms.Position = 0;
+                tempStreams.Add((sheetName, ms));
+            }
+
+            try
+            {
+                var finalStream = MergeSheetsWithNPOI(tempStreams);
+                finalStream.Position = 0;
+
+                return File(finalStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+
+        }
+
+        private MemoryStream MergeSheetsWithNPOI(List<(string SheetName, MemoryStream Stream)> sheets)
+        {
+            var finalWorkbook = new XSSFWorkbook();
+
+            foreach (var (sheetName, stream) in sheets)
+            {
+                stream.Position = 0;
+                var tempWorkbook = new XSSFWorkbook(stream);
+                var tempSheet = tempWorkbook.GetSheetAt(0);
+                var newSheet = finalWorkbook.CreateSheet(sheetName);
+                CopySheet(tempSheet, newSheet, finalWorkbook, tempWorkbook);
+            }
+
+            var outputStream = new MemoryStream();
+            finalWorkbook.Write(outputStream, leaveOpen: true);
+            outputStream.Position = 0;
+            return outputStream;
+        }
+
+        private void CopySheet(ISheet source, ISheet target, IWorkbook targetWb, IWorkbook sourceWb)
+        {
+            // 複製列寬
+            for (int i = 0; i < 100; i++) // 假設最多100列,可以依需求調整
+            {
+                target.SetColumnWidth(i, source.GetColumnWidth(i));
+            }
+
+            // 複製合併區域
+            foreach (var mergedRegion in source.MergedRegions)
+            {
+                target.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(
+                    mergedRegion.FirstRow,
+                    mergedRegion.LastRow,
+                    mergedRegion.FirstColumn,
+                    mergedRegion.LastColumn
+                ));
+            }
+
+            // 複製列高和儲存格內容
+            for (int i = 0; i <= source.LastRowNum; i++)
+            {
+                var srcRow = source.GetRow(i);
+                if (srcRow == null) continue;
+
+                var newRow = target.CreateRow(i);
+                newRow.Height = srcRow.Height;
+
+                // 複製列格式
+                if (srcRow.RowStyle != null)
+                {
+                    var newRowStyle = targetWb.CreateCellStyle();
+                    newRowStyle.CloneStyleFrom(srcRow.RowStyle);
+                    newRow.RowStyle = newRowStyle;
+                }
+
+                for (int j = 0; j < srcRow.LastCellNum; j++)
+                {
+                    var srcCell = srcRow.GetCell(j);
+                    if (srcCell == null) continue;
+
+                    var newCell = newRow.CreateCell(j);
+
+                    // 複製儲存格格式
+                    if (srcCell.CellStyle != null)
+                    {
+                        var newStyle = targetWb.CreateCellStyle();
+                        newStyle.CloneStyleFrom(srcCell.CellStyle);
+
+                        // 複製字型
+                        if (srcCell.CellStyle.GetFont(sourceWb) != null)
+                        {
+                            var srcFont = srcCell.CellStyle.GetFont(sourceWb);
+                            var newFont = targetWb.CreateFont();
+                            newFont.FontName = srcFont.FontName;
+                            newFont.FontHeightInPoints = srcFont.FontHeightInPoints;
+                            newFont.IsBold = srcFont.IsBold;
+                            newFont.IsItalic = srcFont.IsItalic;
+                            newFont.Color = srcFont.Color;
+                            newStyle.SetFont(newFont);
+                        }
+
+                        newCell.CellStyle = newStyle;
+                    }
+
+                    // 複製儲存格值
+                    CopyCellValue(srcCell, newCell);
+                }
+            }
+
+            // 複製列印設定
+            if (source.PrintSetup != null)
+            {
+                target.PrintSetup.Landscape = source.PrintSetup.Landscape;
+                target.PrintSetup.PaperSize = source.PrintSetup.PaperSize;
+                target.PrintSetup.Scale = source.PrintSetup.Scale;
+                target.PrintSetup.FitHeight = source.PrintSetup.FitHeight;
+                target.PrintSetup.FitWidth = source.PrintSetup.FitWidth;
+            }
+
+            // 複製工作表屬性
+            target.DisplayGridlines = source.DisplayGridlines;
+            target.DisplayRowColHeadings = source.DisplayRowColHeadings;
+
+        }
+
+
+        private void CopyCellValue(ICell srcCell, ICell newCell)
+        {
+            switch (srcCell.CellType)
+            {
+                case CellType.String: newCell.SetCellValue(srcCell.StringCellValue); break;
+                case CellType.Numeric: newCell.SetCellValue(srcCell.NumericCellValue); break;
+                case CellType.Boolean: newCell.SetCellValue(srcCell.BooleanCellValue); break;
+                case CellType.Formula: newCell.SetCellFormula(srcCell.CellFormula); break;
+                default: newCell.SetCellValue(srcCell.ToString()); break;
+            }
+        }
+
 
     }
 }

@@ -78,6 +78,24 @@ namespace PDMApp.Dtos.ProductionOrder
             public uint? RowVersion { get; set; }
         }
 
+        public class ExcelDto
+        {
+            public string? WkMId { get; set; } = "";
+            public string? Stage { get; set; } = "";
+            public string? OrderNo { get; set; } = "";
+            public string? CreateTime { get; set; } = "";
+            public string? CreateUser { get; set; } = "";
+            public string? StyleNo { get; set; } = "";
+            public string? ColorNo { get; set; } = "";
+            public string? MoldNo { get; set; } = "";
+            public string? Season { get; set; } = "";
+            public string? SizeNo { get; set; } = "";
+            public string? Qty { get; set; } = "";
+            public string? ShoeKind { get; set; } = "";
+            public string? WkMemo { get; set; } = "";
+            public string? StepMemo { get; set; } = "";
+        }
+
         public class QueryPickerDto
         {
             public string? Season { get; set; }
