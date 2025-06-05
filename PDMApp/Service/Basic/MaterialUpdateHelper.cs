@@ -237,7 +237,8 @@ namespace PDMApp.Service.Basic
                         query = query.WhereDynamicEqual(key, val); // 會自動轉 snake_case
                     }
 
-                    var duplicate = await query.FirstOrDefaultAsync();
+                    var duplicate = await query.Where(x => x.mat_id != value.MatId).FirstOrDefaultAsync();
+
                     if (duplicate != null)
                     {
                         return (false, $"已有相同的資料，禁止重複新增。");
