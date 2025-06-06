@@ -140,7 +140,7 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"Stage: {parameter.Brand} not exist System");
                     }
-                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.text == parameter.OrderKind).FirstOrDefault()?.value_desc;
+                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.value_desc == parameter.OrderKind).FirstOrDefault()?.value_desc;
                     if (string.IsNullOrWhiteSpace(OrderKind))
                     {
                         throw new Exception($@"OrderKind: {parameter.OrderKind} not exist System");
@@ -297,7 +297,7 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"Stage: {parameter.Brand} not exist System");
                     }
-                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.text == parameter.OrderKind).FirstOrDefault()?.value_desc;
+                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.value_desc == parameter.OrderKind).FirstOrDefault()?.value_desc;
                     if (string.IsNullOrWhiteSpace(OrderKind))
                     {
                         throw new Exception($@"OrderKind: {parameter.OrderKind} not exist System");
@@ -310,7 +310,7 @@ namespace PDMApp.Service.ProductionOrder
                         string.IsNullOrWhiteSpace(parameter.ModelName) ||
                         string.IsNullOrWhiteSpace(parameter.ArticleNo))
                     {
-                        throw new Exception($@"Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo is can be empty !");
+                        throw new Exception($@"Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo can't be empty !");
                     }
                     if (data.RowVersion != parameter.RowVersion)
                     {
@@ -691,6 +691,7 @@ namespace PDMApp.Service.ProductionOrder
                               (string.IsNullOrWhiteSpace(parameter.ColorWay) || d.colorway.Contains(parameter.ColorWay))
                         select new Dtos.ProductionOrder.ArtPoDto.QueryPickerDto
                         {
+                            PKey = d.product_d_id,
                             Season = m.season,
                             DevelopmentNo = m.development_no,
                             ModelName = m.working_name,
@@ -1120,30 +1121,6 @@ namespace PDMApp.Service.ProductionOrder
                               StyleId = m.style_id,
                               RowVersion = m.RowVersion,
                           }).FirstOrDefaultAsync();
-        }
-        private (decimal unixTimestamp, int month) ConvertReqDateToUnixTimestamp(string reqDate)
-        {
-            if (string.IsNullOrWhiteSpace(reqDate))
-                return (0, 0);
-
-            try
-            {
-                // 解析 yyyyMMdd 格式的字串
-                if (DateTime.TryParseExact(reqDate, "yyyyMMdd",
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None,
-                    out DateTime dateTime))
-                {
-                    // 轉換為 Unix timestamp (毫秒)
-                    var unixTimestamp = new DateTimeOffset(dateTime).ToUnixTimeMilliseconds();
-                    return (Convert.ToDecimal(unixTimestamp), dateTime.Month);
-                }
-                return (0, 0);
-            }
-            catch
-            {
-                return (0, 0);
-            }
         }
         public async Task<List<Dtos.ProductionOrder.ArtPoDto.QueryDetailDto>> GetDetailById(string Id)
         {
