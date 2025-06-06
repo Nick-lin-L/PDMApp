@@ -274,8 +274,9 @@ namespace PDMApp.Service.Basic
                 material.scm_mclass_no = value.ScmMclassNo?.Split('-')[0]?.Trim();
                 material.scm_sclass_no = value.ScmSclassNo?.Split('-')[0]?.Trim();
                 material.memo = value.Memo?.Trim();
-                material.order_status = value.OrderStatus?.Split('-')[0]?.Trim(); ;
+                material.order_status = value.OrderStatus?.Split('-')[0]?.Trim();
                 material.modify_user = pccuid;
+                material.modify_tm = DateTime.Now;
 
                 await _context.SaveChangesAsync();
                 return (true, "Update success.");
