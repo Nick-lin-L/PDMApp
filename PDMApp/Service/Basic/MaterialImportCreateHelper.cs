@@ -355,27 +355,41 @@ namespace PDMApp.Service.Basic
                     {
                         FactNo = m.fact_no,
                         MatId = m.mat_id,
-                        Attyp = m.attyp + "-" + attypName.text,
+                        Attyp = (!string.IsNullOrWhiteSpace(m.attyp) && !string.IsNullOrWhiteSpace(attypName.text))
+                                        ? m.attyp + "-" + attypName.text
+                                        : null,
                         SerpMatNo = m.serp_mat_no,
                         MatNo = m.mat_no,
                         MatNm = m.mat_nm,
                         MatFullNm = m.mat_full_nm,
-                        Uom = m.uom + "-" + uomName.text,
+                        Uom = (!string.IsNullOrWhiteSpace(m.uom) && !string.IsNullOrWhiteSpace(uomName.text))
+                                        ? m.uom + "-" + uomName.text
+                                        : null,
                         ColorNo = m.color_no,
                         ColorNm = m.color_nm,
                         Standard = m.standard,
                         CustNo = m.cust_no,
                         Matnr = m.matnr,
-                        ScmBclassNo = m.scm_bclass_no + "-" + bclass.class_name_zh_tw,
-                        ScmMclassNo = m.scm_mclass_no + "-" + mclass.class_name_zh_tw,
-                        ScmSclassNo = m.scm_sclass_no + "-" + sclass.class_name_zh_tw,
+                        ScmBclassNo = (!string.IsNullOrWhiteSpace(m.scm_bclass_no) && !string.IsNullOrWhiteSpace(bclass.class_name_zh_tw))
+                                        ? m.scm_bclass_no + "-" + bclass.class_name_zh_tw
+                                        : null,
+                        ScmMclassNo = (!string.IsNullOrWhiteSpace(m.scm_mclass_no) && !string.IsNullOrWhiteSpace(mclass.class_name_zh_tw))
+                                        ? m.scm_mclass_no + "-" + mclass.class_name_zh_tw
+                                        : null,
+                        ScmSclassNo = (!string.IsNullOrWhiteSpace(m.scm_sclass_no) && !string.IsNullOrWhiteSpace(sclass.class_name_zh_tw))
+                                        ? m.scm_sclass_no + "-" + sclass.class_name_zh_tw
+                                        : null,
                         Status = m.status,
-                        StopDate = m.stop_date.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd") : null,
+                        StopDate = m.stop_date.HasValue
+                                        ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd")
+                                        : null,
                         Memo = m.memo,
                         ModifyTime = m.modify_tm,
                         ModifyUser = user != null ? user.username : m.modify_user,
                         Locked = m.locked,
-                        OrderStatus = m.order_status + "-" + orderStatusName.text,
+                        OrderStatus = (!string.IsNullOrWhiteSpace(m.order_status) && !string.IsNullOrWhiteSpace(orderStatusName.text))
+                                        ? m.order_status + "-" + orderStatusName.text
+                                        : null,
                         TransMsg = m.trans_msg
                     }
                 ).ToListAsync();
