@@ -32,7 +32,7 @@ namespace PDMApp.Parameters.ProductionOrder
         }
         public class QueryPickerParameter
         {
-            public string? DevFactoryNo { get; set; }
+            [Required] public string? DevFactoryNo { get; set; }
             public string? Season { get; set; }
             public string? DevelopmentNo { get; set; }
             public string? ModelName { get; set; }

@@ -98,6 +98,7 @@ namespace PDMApp.Dtos.ProductionOrder
 
         public class QueryPickerDto
         {
+            public string? PKey { get; set; }
             public string? Season { get; set; }
             public string? DevelopmentNo { get; set; }
             public string? ModelName { get; set; }

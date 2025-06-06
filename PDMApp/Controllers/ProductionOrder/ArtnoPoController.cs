@@ -37,12 +37,15 @@ namespace PDMApp.Controllers.ProductionOrder
         }
 
         [HttpPost]
-        public async Task<ActionResult<APIStatusResponse<IDictionary<string, object>>>> Initial(Parameters.ProductionOrder.ArtPoParameter.InitialParameter value)
+        public async Task<ActionResult<APIStatusResponse<object>>> Initial(Parameters.ProductionOrder.ArtPoParameter.InitialParameter value)
         {
             var response = new APIStatusResponse<object>();
             try
             {
                 var resultData = new Dictionary<string, object>();
+                response.Data = resultData;
+                response.Message = "OK";
+                response.ErrorCode = "OK";
                 resultData["BrandCombo"] = await _icomboService.BrandNo(value.DevFactoryNo);
                 resultData["OrderStatusCombo"] = await _icomboService.OrderStatus();
                 resultData["StageCombo"] = await _icomboService.Stage();
@@ -51,7 +54,8 @@ namespace PDMApp.Controllers.ProductionOrder
                 resultData["ShoeKindCombo"] = await _artnoPoService.GetShoeKind(value.DevFactoryNo);
                 resultData["OrderKindCombo"] = (await _artnoPoService.GetNameValueByKey(value.DevFactoryNo, "order_kind")).Select(x => new { Text = x.text, Value = x.value_desc }).ToList();
                 // 封裝結果並回傳
-                return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
+                return response;
+                // return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
             }
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
             {
@@ -305,15 +309,16 @@ namespace PDMApp.Controllers.ProductionOrder
         {
             try
             {
+                // 至少需輸入3個條件
+                if (!parameter.ValidationParameter(2))
+                {
+                    throw new Exception("查詢條件不可以都為空");
+                }
                 var response = new APIStatusResponse<object>();
                 response.Data = await _artnoPoService.QueryPicker(parameter);
                 response.ErrorCode = "OK";
                 return response;
-                //至少需輸入3個條件
-                // if (!parameter.ValidationParameter(3))
-                // {
-                //     throw new Exception("查詢條件不可以都為空");
-                // }
+
             }
             catch (Exception e)
             {
@@ -364,61 +369,6 @@ namespace PDMApp.Controllers.ProductionOrder
             }
 
         }
-        [HttpPost]
-        public IActionResult FileResult()
-        {
-            OpenXmlConfiguration configuration = new OpenXmlConfiguration()
-            {
-                EnableWriteNullValueCell = false, // Default value.
-                IgnoreTemplateParameterMissing = false,
-                EnableSharedStringCache = true,
-                BufferSize = 8192 * 4
-            };
-            var tempStreams = new List<(string SheetName, MemoryStream Stream)>();
-
-            MemoryStream memoryStream = new MemoryStream();
-            var listData = new List<Dtos.ProductionOrder.ArtPoDto.ExcelDto>();
-            Dtos.ProductionOrder.ArtPoDto.ExcelDto data = new Dtos.ProductionOrder.ArtPoDto.ExcelDto();
-            data.Qty = "派工數: 5        派工數: 5        派工數: 5        派工數: 5        ";
-            data.SizeNo = "SIZE號: 10.5     SIZE號: 10       SIZE號: 12       SIZE號: 11       ";
-            data.ShoeKind = "　鞋型: FG       鞋型: FG       鞋型: FG         鞋型: FG       ";
-            data.OrderNo = "WK25120001";
-            data.Stage = "010";
-            Dtos.ProductionOrder.ArtPoDto.ExcelDto data2 = new Dtos.ProductionOrder.ArtPoDto.ExcelDto();
-            data2.Qty = "派工數: 5        派工數: 5        派工數: 5        派工數: 5        ";
-            data2.SizeNo = "SIZE號: 10.5     SIZE號: 10       SIZE號: 12       SIZE號: 11       ";
-            data2.ShoeKind = "　鞋型: FG       鞋型: FG       鞋型: FG         鞋型: FG       ";
-            data2.OrderNo = "WK25120002";
-            data2.Stage = "030";
-            var sheets = new Dictionary<string, object>();
-            listData.Add(data);
-            listData.Add(data2);
-            foreach (var item in listData)
-            {
-                string sheetName = item.OrderNo;
-
-                // 讓樣板渲染該筆資料
-                var ms = new MemoryStream();
-                MiniExcel.SaveAsByTemplate(ms, @"ExportedFiles\SampleProductionOrderTemplate.xlsx", item);
-                ms.Position = 0;
-                tempStreams.Add((sheetName, ms));
-            }
-
-            try
-            {
-                var finalStream = MergeSheetsWithNPOI(tempStreams);
-                finalStream.Position = 0;
-
-                return File(finalStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
-
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-
-        }
-
         private MemoryStream MergeSheetsWithNPOI(List<(string SheetName, MemoryStream Stream)> sheets)
         {
             var finalWorkbook = new XSSFWorkbook();
