@@ -125,6 +125,15 @@ namespace PDMApp.Service.SPEC
 
                     if (existingSpec != null)
                     {
+                        // 先刪除相關的 plm_spec_item 資料
+                        var existingItems = await _pcms_Pdm_TestContext.plm_spec_item
+                            .Where(x => x.spec_m_id == specMId)
+                            .ToListAsync();
+
+                        if (existingItems.Any())
+                        {
+                            _pcms_Pdm_TestContext.plm_spec_item.RemoveRange(existingItems);
+                        }
                         //existingSpec.development_no = uiParam.DevelopmentColorNo;
                         //existingSpec.stage_code = pph_ppiData.stage_code;
                         //existingSpec.development_color = pph_ppiData.development_color_no;
@@ -157,6 +166,7 @@ namespace PDMApp.Service.SPEC
                 }
 
                 // 4. 處理規格項目
+                plm_spec_item previousItem = null; // 用於記錄前一列的資料
                 foreach (var param in excelParams)
                 {
                     var specItem = new plm_spec_item
@@ -191,11 +201,13 @@ namespace PDMApp.Service.SPEC
                     // 處理 ACT_PART_NO 和 ACT_PARTS
                     if (!string.IsNullOrWhiteSpace(param.No))
                     {
+                        // 規則 4.5.2.1：NO 有值
                         specItem.act_part_no = param.No;
                         specItem.act_parts = param.Parts;
                     }
                     else if (!string.IsNullOrWhiteSpace(param.Parts))
                     {
+                        // 規則 4.5.2.2：NO 沒值但 PARTS 有值
                         var matchingPart = excelParams.FirstOrDefault(p =>
                             p.Parts == param.Parts && !string.IsNullOrWhiteSpace(p.No));
 
@@ -209,8 +221,24 @@ namespace PDMApp.Service.SPEC
                             return (false, $"物料: {param.Material} 需有 NO、PARTS 資訊");
                         }
                     }
+                    else
+                    {
+                        // 規則 4.5.2.3：NO 和 PARTS 都沒值
+                        if (previousItem != null && !string.IsNullOrWhiteSpace(previousItem.act_part_no))
+                        {
+                            // 使用前一列的 ACT_PART_NO
+                            specItem.act_part_no = previousItem.act_part_no;
+                            specItem.act_parts = previousItem.act_parts;
+                        }
+                        else
+                        {
+                            // 如果沒有前一列或前一列也沒有 ACT_PART_NO，則報錯
+                            return (false, $"物料: {param.Material} 需有 NO、PARTS 資訊，且無法從前一列取得");
+                        }
+                    }
 
                     _pcms_Pdm_TestContext.plm_spec_item.Add(specItem);
+                    previousItem = specItem; // 記錄當前項目作為下一列的參考
                 }
 
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
