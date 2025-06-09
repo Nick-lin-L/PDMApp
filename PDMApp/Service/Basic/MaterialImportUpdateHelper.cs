@@ -379,13 +379,27 @@ namespace PDMApp.Service.Basic
             {
                 var message = ex.InnerException?.Message ?? ex.Message;
 
-                var failed = updateList.Select(i => (
-                    new MaterialUpdateParameter { MatNo = i.mat_no, MatFullNm = i.mat_full_nm },
+                var failed = updateList.Select(p => (
+                    new MaterialUpdateParameter
+                    {
+                        MatNo = p.mat_no,
+                        SerpMatNo = p.serp_mat_no,
+                        MatFullNm = p.mat_full_nm,
+                        ColorNo = p.color_no,
+                        ColorNm = p.color_nm,
+                        Standard = p.standard,
+                        Memo = p.memo,
+                        Matnr = p.matnr,
+                        ScmBclassNo = p.scm_bclass_no,
+                        ScmMclassNo = p.scm_mclass_no,
+                        ScmSclassNo = p.scm_sclass_no
+                    },
                     $"整批更新失敗：{message}"
                 )).ToList();
 
                 return (false, new(), failed);
             }
+
         }
     }
 }

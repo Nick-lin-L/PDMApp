@@ -321,14 +321,16 @@ namespace PDMApp.Controllers.Basic
                 var base64String = Convert.ToBase64String(stream.ToArray());
 
                 // 準備回傳的 ResponseDto
-                var response = new Dtos.ExportFileResponseDto
+                return StatusCode(200, new
                 {
-                    FileName = $"MaterialList_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
-                    FileContent = base64String
-                };
-
-                // 回傳 API 狀態
-                return APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                    ErrorCode = "OK",
+                    Message = "",
+                    File = new Dtos.ExportFileResponseDto
+                    {
+                        FileName = $"MaterialList_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                        FileContent = base64String
+                    }
+                });
             }
             catch (Exception ex)
             {

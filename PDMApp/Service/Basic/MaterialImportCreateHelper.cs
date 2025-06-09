@@ -401,10 +401,25 @@ namespace PDMApp.Service.Basic
             {
                 var message = ex.InnerException?.Message ?? ex.Message;
                 return (false, new(), insertList.Select(i => (
-                    new MaterialCreateParameter { MatNo = i.mat_no, MatFullNm = i.mat_full_nm },
+                    new MaterialCreateParameter
+                    {
+                        Attyp = i.attyp,
+                        MatNo = i.mat_no,
+                        MatFullNm = i.mat_full_nm,
+                        ColorNo = i.color_no,
+                        ColorNm = i.color_nm,
+                        Standard = i.standard,
+                        Uom = i.uom,
+                        Memo = i.memo,
+                        Matnr = i.matnr,
+                        ScmBclassNo = i.scm_bclass_no,
+                        ScmMclassNo = i.scm_mclass_no,
+                        ScmSclassNo = i.scm_sclass_no
+                    },
                     $"整批寫入失敗：{message}"
                 )).ToList());
             }
+
         }
     }
 }

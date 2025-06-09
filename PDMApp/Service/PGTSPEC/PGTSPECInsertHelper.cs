@@ -56,6 +56,15 @@ namespace PDMApp.Service.PGTSPEC
                 var productDId = productData.First().product_d_id;
                 var specIds = productData.First().spec_m_id;
 
+                // 確認是否已有相同 productDId  的 pcg_spec_head
+                bool exists = await _pcms_Pdm_TestContext.pcg_spec_head
+                    .AnyAsync(x => x.product_d_id == productDId);
+
+                if (exists)
+                {
+                    return (false, "該型體&階段已存在於系統中，若要進版請使用 CHECK OUT 功能。");
+                }
+
                 // 建立新 pcg_spec_head 記錄
                 var newSpecHead = new pcg_spec_head
                 {

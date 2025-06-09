@@ -78,6 +78,62 @@ namespace PDMApp.Controllers.PGTSPEC
             }
         }
 
+        // POST api/v1/PGTSpecHead/CheckSpecExist
+        [HttpPost("CheckSpecExist")]
+        public async Task<ActionResult<APIStatusResponse<string>>> CheckSpecExist([FromBody] CheckSpecExistParameter value)
+        {
+            try
+            {
+                // 驗證必要欄位
+                if (string.IsNullOrWhiteSpace(value.DevelopmentNo) ||
+                    string.IsNullOrWhiteSpace(value.DevelopmentColorNo) ||
+                    string.IsNullOrWhiteSpace(value.Stage))
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = "缺少必要欄位 DevelopmentNo / DevelopmentColorNo / Stage"
+                    });
+                }
+
+                // 執行查詢判斷是否存在符合條件的資料
+                var exists = await (from ph in _pcms_Pdm_TestContext.plm_product_head
+                                    join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
+                                    join sh in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals sh.product_d_id
+                                    join n_stage in _pcms_Pdm_TestContext.pdm_namevalue_new on sh.stage_code equals n_stage.value_desc
+                                    where n_stage.group_key == "stage"
+                                       && ph.development_no == value.DevelopmentNo
+                                       && pi.development_color_no == value.DevelopmentColorNo
+                                       && n_stage.text == value.Stage
+                                    select sh.spec_m_id).AnyAsync();
+
+                if (exists)
+                {
+                    return StatusCode(200, new
+                    {
+                        ErrorCode = "SPEC_EXISTS",
+                        Message = "該型體&階段已存在資料，是否要直接進版"
+                    });
+                }
+
+                return StatusCode(200, new
+                {
+                    ErrorCode = "OK",
+                    Message = ""
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Details = ex.Message
+                });
+            }
+        }
+
+
 
 
         // POST api/v1/PGTSpecHead/InsertSpec
