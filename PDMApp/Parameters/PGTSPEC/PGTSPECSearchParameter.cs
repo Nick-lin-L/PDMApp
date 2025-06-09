@@ -16,6 +16,12 @@ namespace PDMApp.Parameters.PGTSPEC
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
 
+    public class CheckSpecExistParameter
+    {
+        public string? DevelopmentNo { get; set; }
+        public string? DevelopmentColorNo { get; set; }
+        public string? Stage { get; set; }
+    }
 
 
     public class InsertSpecParameter

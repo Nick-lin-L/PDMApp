@@ -161,7 +161,6 @@ namespace PDMApp.Service.PGTSPEC
         {
             try
             {
-
                 if (string.IsNullOrWhiteSpace(value.ModelName) &&
                     string.IsNullOrWhiteSpace(value.Colorway) &&
                     string.IsNullOrWhiteSpace(value.DevelopmentNo) &&
@@ -279,6 +278,7 @@ namespace PDMApp.Service.PGTSPEC
                 return (false, $"Database error: {ex.Message}", null);
             }
         }
+
 
 
         public static IQueryable<SpecBasicDTO> GetSpecBasicResponse(pcms_pdm_testContext _pcms_pdm_testContext)
