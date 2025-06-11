@@ -58,8 +58,7 @@ namespace PDMApp.Service.PGTSPEC
 
                 // 查詢是否已有相同 DevelopmentNo + DevelopmentColorNo + StageCode 的資料
                 var existingVers = await (from sh in _pcms_Pdm_TestContext.pcg_spec_head
-                                          where sh.ref_dev_no == value.DevelopmentNo
-                                                && sh.product_d_id == productDId
+                                          where sh.product_d_id == productDId
                                                 && sh.stage_code == stageCode
                                           select sh.ver).ToListAsync();
 
