@@ -15,7 +15,7 @@ namespace PDMApp.Parameters.ProductionOrder
         }
         public class QueryParameter
         {
-            public string? DevFactoryNo { get; set; }
+            [Required] public string? DevFactoryNo { get; set; }
             public string? Brand { get; set; }
             public string? OrderNo { get; set; }
             public string? ModelName { get; set; }
