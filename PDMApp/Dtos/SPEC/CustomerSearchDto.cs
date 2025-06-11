@@ -1,6 +1,8 @@
-﻿using System;
+﻿using PDMApp.Utils.Converters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PDMApp.Dtos.SPEC
@@ -14,10 +16,13 @@ namespace PDMApp.Dtos.SPEC
         public string? DevelopmentColor { get; set; }
         public string? ColorCode { get; set; }
         public string? Colorway { get; set; }
+        [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? CreateDate { get; set; } 
         public string? CreateUser { get; set; }
+        [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? UpdateDate { get; set; }
         public string? UpdateUser { get; set; }
+        [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? LastUpdate { get; set; }
         public string? LoginFactory { get; set; }
     }
