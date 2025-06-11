@@ -718,7 +718,7 @@ namespace PDMApp.Utils
         public static async Task<Dictionary<string, List<DevelopmentNoDto>>> QueryDevelopmentNo(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             var query = (from ph in _pcms_Pdm_TestContext.plm_product_head
-                         join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.text
+                         join n in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.brand_no equals n.value_desc
                          where n.group_key == "brand"
                          select new
                          {
@@ -776,6 +776,39 @@ namespace PDMApp.Utils
 
             return groupedData;
         }
+
+        public static IQueryable<ComboDto> QuerySeason(pcms_pdm_testContext _pcms_Pdm_TestContext, CustomerInitialParameter value)
+        {
+            var query = from ph in _pcms_Pdm_TestContext.plm_product_head
+                        select new
+                        {
+                            Season = ph.season,
+                            FactNo = ph.factory
+                        };
+
+            // 根據 FactNo 過濾
+            if (!string.IsNullOrWhiteSpace(value.DevFactoryNo))
+            {
+                query = query.Where(ph => ph.FactNo == value.DevFactoryNo);
+            }
+
+            // 去除重複值
+            query = query.Distinct();
+
+            // 排除空值
+            query = query.Where(ph => !string.IsNullOrEmpty(ph.Season));
+
+            // 排序 (按照 Season 排序)
+            query = query.OrderBy(ph => ph.Season);
+
+            // 轉換成 ComboDto
+            return query.Select(ph => new ComboDto
+            {
+                Text = ph.Season,
+                Value = ph.Season
+            });
+        }
+
 
         public static IQueryable<CustomerSearchDto> QueryCustomer(pcms_pdm_testContext _pcms_Pdm_TestContext, CustomerSpecsSearchParameter searchParams)
         {

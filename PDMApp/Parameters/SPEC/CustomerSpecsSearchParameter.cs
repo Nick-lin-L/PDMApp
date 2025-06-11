@@ -28,36 +28,6 @@ namespace PDMApp.Parameters.SPEC
     {
         public string? DevFactoryNo { get; set; }
     }
-    /*
-    public class CustomerImportParameter
-    {
-        public string? DevelopmentNo { get; set; }
-        public string? DevelopmentColorNo { get; set; }
-        public string? Stage { get; set; }
-
-        public string? Sort { get; set; }
-        public string? Group { get; set; }
-        public string? No { get; set; }
-        public string? New { get; set; }
-        public string? Parts { get; set; }
-        public string? Detail { get; set; }
-        public string? Puls { get; set; }
-        public string? Recycle { get; set; }
-        public string? Type { get; set; }
-        public string? Material { get; set; }
-        public string? Processing { get; set; }
-        public string? Effect { get; set; }
-        public string? ReleasePaper { get; set; }
-        public string? BaseColor { get; set; }
-        public string? MTRComment { get; set; }
-        public string? Standard { get; set; }
-        public string? Agent { get; set; }
-        public string? Supplier { get; set; }
-        public string? HCHA { get; set; }
-        public string? SEC { get; set; }
-        public string? MaterialColor { get; set; }
-        public string? CLRComment { get; set; }
-    }*/
 
     public class CustomerImportParameter
     {
