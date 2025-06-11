@@ -101,10 +101,17 @@ namespace PDMApp.Controllers.ProductionOrder
             try
             {
                 //至少需輸入3個條件
-                // if (!parameter.ValidationParameter(3))
-                // {
-                //     throw new Exception("查詢條件不可以都為空");
-                // }
+                if (!parameter.ValidationParameter(2))
+                {
+                    throw new Exception("查詢條件不可以都為空");
+                }
+                if (string.IsNullOrWhiteSpace(parameter.ArticleNo) &&
+                    string.IsNullOrWhiteSpace(parameter.OrderNo) &&
+                    string.IsNullOrWhiteSpace(parameter.ModelName) &&
+                    string.IsNullOrWhiteSpace(parameter.DevelopmentNo))
+                {
+                    throw new Exception("ORDER NO、MODEL NAME、DEVELOPMENT NO、ARTICLE NO需擇一有值");
+                }
                 var query = await _artnoPoService.Search(parameter);
                 var data = await query.ToPagedResultAsync(parameter.Pagination.PageNumber, parameter.Pagination.PageSize);
                 return APIResponseHelper.HandlePagedApiResponse(data);
@@ -332,12 +339,12 @@ namespace PDMApp.Controllers.ProductionOrder
             }
         }
         [HttpPost]
-        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> Export([FromBody] List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
+        public async Task<ActionResult<Utils.APIStatusResponse<Dtos.ExportFileResponseDto>>> Export([FromBody] List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
         // public async Task<ActionResult<object>> Export(List<Parameters.ProductionOrder.ArtPoParameter.SubmitParameter> parameter)
         {
             try
             {
-                // var response = new APIStatusResponse<object>();
+                var response = new APIStatusResponse<object>();
                 var excelData = await _artnoPoService.ExportData(parameter);
                 var tempStreams = new List<(string SheetName, MemoryStream Stream)>();
                 foreach (var item in excelData)
@@ -352,13 +359,19 @@ namespace PDMApp.Controllers.ProductionOrder
                 var finalStream = MergeSheetsWithNPOI(tempStreams);
                 finalStream.Position = 0;
                 string base64File = Convert.ToBase64String(finalStream.ToArray());
-                var response = new Dtos.ExportFileResponseDto
+                var file = new Dtos.ExportFileResponseDto
                 {
                     FileName = $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
                     FileContent = base64File
                 };
 
-                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                return StatusCode(200, new
+                {
+                    ErrorCode = "Ok",
+                    Message = "",
+                    File = file
+                });
+
                 // return File(finalStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
                 // response.ErrorCode = "OK";
                 // return response;

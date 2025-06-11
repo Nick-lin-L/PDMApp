@@ -318,7 +318,7 @@ namespace PDMApp.Service.ProductionOrder
                     }
                     var orderCount = _context.work_order_head.Where(x => x.fact_no == parameter.DevFactoryNo &&
                                                                          x.wk_m_id != parameter.WkMId &&
-                                                                         x.order_no != parameter.OrderNo).Count();
+                                                                         x.order_no == parameter.OrderNo).Count();
                     if (!string.IsNullOrWhiteSpace(parameter.OrderNo) && orderCount > 0)
                     {
                         throw new Exception($@"系統已存在派工單號：{parameter.OrderNo}，請重新確認單據號碼");
@@ -378,7 +378,8 @@ namespace PDMApp.Service.ProductionOrder
                     }
                     if (!string.IsNullOrWhiteSpace(parameter.ReqDate))
                     {
-                        var req_date = DateTime.Parse(parameter.ReqDate);
+                        var req_date = DateTime.ParseExact(parameter.ReqDate, "yyyyMMdd",
+                            System.Globalization.CultureInfo.InvariantCulture);
                         bool isDifferentYearOrMonth = req_date.Year != data.req_date?.Year || req_date.Month != data.req_date?.Month;
                         if (isDifferentYearOrMonth)
                         {
@@ -885,6 +886,10 @@ namespace PDMApp.Service.ProductionOrder
                     head.Add(data);
                 }
                 int i = await _context.SaveChangesAsync();
+                if (i == 0)
+                {
+                    throw new Exception($"No Data Need Trans SERP");
+                }
                 string apiUrl = $"{url}?FACT_NO={fact_no}&TRANS_ID={timestamp}";
                 var response = await _httpClient.GetAsync(apiUrl);
                 var apiResult = await response.Content.ReadAsStringAsync();
@@ -916,6 +921,7 @@ namespace PDMApp.Service.ProductionOrder
                         var entity = await _context.work_order_head.FindAsync(item.wk_m_id);
                         if (entity != null)
                         {
+                            entity.proc_mk = 'Y';
                             entity.trans_id = null;
                         }
                     }
