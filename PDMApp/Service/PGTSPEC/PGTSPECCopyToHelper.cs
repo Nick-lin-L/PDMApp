@@ -56,6 +56,15 @@ namespace PDMApp.Service.PGTSPEC
                     return (false, "No matching spec_m_id found.");
                 }
 
+                // 查詢是否已有相同 DevelopmentNo + DevelopmentColorNo + StageCode 的資料
+                var existingVers = await (from sh in _pcms_Pdm_TestContext.pcg_spec_head
+                                          where sh.ref_dev_no == value.DevelopmentNo
+                                                && sh.product_d_id == productDId
+                                                && sh.stage_code == stageCode
+                                          select sh.ver).ToListAsync();
+
+                int newVer = (int)(existingVers.Any() ? existingVers.Max() + 1 : 0); // 若找不到會是 0 ；若已有資料，則最大版本 +1
+
                 // 產生新的 SPEC_M_ID
                 var newSpecMId = Guid.NewGuid().ToString();
                 var newSpecHead = new pcg_spec_head
@@ -63,7 +72,7 @@ namespace PDMApp.Service.PGTSPEC
                     spec_m_id = newSpecMId,
                     product_d_id = productDId,
                     stage_code = stageCode,
-                    ver = 0,
+                    ver = newVer,
                     create_mode = "C",
                     create_date = DateTime.Now,
                     create_user_id = pccuid, // 這裡應該改為 USER ID
