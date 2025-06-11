@@ -75,6 +75,7 @@ namespace PDMApp.Controllers.SPEC
                 resultData["StageCombo"] = await QueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["DevelopmentNoCombo"] = await QueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
                 resultData["DevelopmentColorNoCombo"] = await QueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
+                resultData["SeasonCombo"] = await QueryHelper.QuerySeason(_pcms_Pdm_TestContext, value).ToListAsync();
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
