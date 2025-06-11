@@ -165,7 +165,58 @@ namespace PDMApp.Service.Basic
                 .ToListAsync();
 
             // ────────────────────────────────────────────────
-            // 🔸 逐筆驗證與新增
+            // 🔸 內部匯入資料重複性檢查
+            // ────────────────────────────────────────────────
+            var seenCombinations = new HashSet<string>();
+            var internalDuplicateErrors = new List<(MaterialCreateParameter, string)>();
+
+            // We need to iterate through the list to identify duplicates based on MatFullNm, Uom, and dynamic core fields
+            // To do this effectively, we'll create a dictionary to group items by their unique key combination.
+            var groupedItems = importList.GroupBy(value =>
+            {
+                // Construct a key based on MatFullNm, Uom, and dynamic core fields
+                var keyBuilder = new System.Text.StringBuilder();
+                keyBuilder.Append(value.MatFullNm?.Trim().ToLower());
+                keyBuilder.Append("|");
+                keyBuilder.Append(value.Uom?.Split('-')[0]?.Trim().ToLower());
+                keyBuilder.Append("|");
+
+                var requiredCoreFieldsForGrouping = allFactoryCoreFields
+                    .Where(x => x.fact_no == value.DevFactoryNo)
+                    .Select(x => x.value_desc.Trim()) // Keep original case for reflection later if needed, but for key build, use lowercase
+                    .ToList();
+
+                foreach (var field in requiredCoreFieldsForGrouping)
+                {
+                    string pascalCaseField = ToPascalCase(field); // Convert to PascalCase for property access
+                    var prop = typeof(MaterialCreateParameter).GetProperty(pascalCaseField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    var fieldValue = prop?.GetValue(value)?.ToString()?.Trim().ToLower();
+                    keyBuilder.Append(fieldValue);
+                    keyBuilder.Append("|");
+                }
+                return keyBuilder.ToString();
+            })
+            .Where(g => g.Count() > 1) // Only interested in groups with more than one item (duplicates)
+            .ToList();
+
+            foreach (var group in groupedItems)
+            {
+                foreach (var duplicateItem in group)
+                {
+                    internalDuplicateErrors.Add((duplicateItem, $"匯入資料中存在重複項目：MatFullNm='{duplicateItem.MatFullNm}', Uom='{duplicateItem.Uom}' 及工廠核心欄位組合重複。"));
+                }
+            }
+
+            // Add internal duplicates to the main error list and filter them out from further processing
+            foreach (var error in internalDuplicateErrors)
+            {
+                errorList.Add(error);
+            }
+
+
+
+            // ────────────────────────────────────────────────
+            // 🔸 逐筆驗證與新增 
             // ────────────────────────────────────────────────
             foreach (var value in importList)
             {
@@ -421,5 +472,6 @@ namespace PDMApp.Service.Basic
             }
 
         }
+
     }
 }
