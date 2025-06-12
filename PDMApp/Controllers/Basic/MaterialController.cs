@@ -246,7 +246,7 @@ namespace PDMApp.Controllers.Basic
 
         // POST api/v1/Basic/Material/export
         [HttpPost("export")]
-        public async Task<ActionResult<APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] MaterialSearchParameter value)
+        public async Task<ActionResult<APIStatusResponse<object>>> ExportToExcel([FromBody] MaterialSearchParameter value)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -272,17 +272,17 @@ namespace PDMApp.Controllers.Basic
                 // 設定標題（僅保留指定欄位）
                 string[] headers = new[]
                 {
-                    "PDM MATL NO",      // MatNo
-                    "SERP MATL No",     // SerpMatNo
-                    "MATL Full Info",   // MatFullNm
-                    "Color No",         // ColorNo
-                    "Color Info",       // ColorNm
-                    "STANDARD",         // Standard
-                    "MATL Note",        // Memo
-                    "MDA MATL No.",     // Matnr
-                    "Primary Cat",      // ScmBclassNo
-                    "Secondary Cat",    // ScmMclassNo
-                    "Minor Cat."        // ScmSclassNo
+                    "PDM MATL NO",       // MatNo
+                    "SERP MATL No",      // SerpMatNo
+                    "MATL Full Info",    // MatFullNm
+                    "Color No",          // ColorNo
+                    "Color Info",        // ColorNm
+                    "STANDARD",          // Standard
+                    "MATL Note",         // Memo
+                    "MDA MATL No.",      // Matnr
+                    "Primary Cat",       // ScmBclassNo
+                    "Secondary Cat",     // ScmMclassNo
+                    "Minor Cat."         // ScmSclassNo
                 };
 
                 for (int col = 0; col < headers.Length; col++)
@@ -320,15 +320,20 @@ namespace PDMApp.Controllers.Basic
                 // 轉換為 Base64 字串
                 var base64String = Convert.ToBase64String(stream.ToArray());
 
-                // 準備回傳的 ResponseDto
-                var response = new Dtos.ExportFileResponseDto
+                // 準備回傳的 ExportFileResponseDto
+                var responseFileDto = new Dtos.ExportFileResponseDto
                 {
                     FileName = $"MaterialList_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
                     FileContent = base64String
                 };
 
-                // 回傳 API 狀態
-                return APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "OK",
+                    Message = "匯出成功", // 可以根據需求設定訊息
+                    Data = responseFileDto // 直接賦值為單一物件
+                });
             }
             catch (Exception ex)
             {
@@ -357,23 +362,23 @@ namespace PDMApp.Controllers.Basic
                     var stream = Service.Basic.MaterialImportCreateHelper.ExportCreateErrorExcel(errorList);
                     var base64 = Convert.ToBase64String(stream.ToArray());
 
-                    // 準備回傳的 ResponseDto (統一格式)
-                    var response = new Dtos.ExportFileResponseDto
+                    // 準備回傳的 ExportFileResponseDto
+                    var responseFileDto = new Dtos.ExportFileResponseDto
                     {
                         FileName = $"MaterialCreateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
                         FileContent = base64
                     };
 
-                    // 直接建構 APIStatusResponse<object> 物件並回傳
+                    // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
                     return Ok(new APIStatusResponse<object>
                     {
                         ErrorCode = "IMPORT_FAILED",
                         Message = "匯入失敗，請檢查系統導出的 Excel",
-                        Data = new[] { response } // 將 ExportFileResponseDto 包裝在陣列中，並賦予 Data (object 型別)
+                        Data = responseFileDto // 直接賦值為單一物件
                     });
-
                 }
 
+                // 成功匯入時不包含文件，保持原有的成功回傳格式
                 return StatusCode(200, new
                 {
                     ErrorCode = "OK",
@@ -410,19 +415,19 @@ namespace PDMApp.Controllers.Basic
                     var stream = Service.Basic.MaterialImportUpdateHelper.ExportUpdateErrorExcel(errorList);
                     var base64 = Convert.ToBase64String(stream.ToArray());
 
-                    // 準備回傳的 ResponseDto (統一格式)
-                    var response = new Dtos.ExportFileResponseDto
+                    // 準備回傳的 ExportFileResponseDto
+                    var responseFileDto = new Dtos.ExportFileResponseDto
                     {
                         FileName = $"MaterialUpdateFailed_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
                         FileContent = base64
                     };
 
-                    // 直接建構 APIStatusResponse<object> 物件並回傳
+                    // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
                     return Ok(new APIStatusResponse<object>
                     {
                         ErrorCode = "IMPORT_FAILED",
                         Message = "匯入失敗，請檢查系統導出的 Excel",
-                        Data = new[] { response } // 將 ExportFileResponseDto 包裝在陣列中，並賦予 Data (object 型別)
+                        Data = responseFileDto // 直接賦值為單一物件
                     });
                 }
 
@@ -459,8 +464,8 @@ namespace PDMApp.Controllers.Basic
                 var base64 = Convert.ToBase64String(stream.ToArray());
                 var fileName = $"MaterialPurchasePreview_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
 
-                // 準備回傳的 ResponseDto
-                var response = new Dtos.ExportFileResponseDto
+                // 準備回傳的 ExportFileResponseDto
+                var responseFileDto = new Dtos.ExportFileResponseDto
                 {
                     FileName = fileName,
                     FileContent = base64
@@ -469,12 +474,12 @@ namespace PDMApp.Controllers.Basic
                 string errorCode = isSuccess ? "OK" : "VALIDATION_FAILED";
                 string message = isSuccess ? "預覽產生成功" : "部分資料不合法，請參考 Excel";
 
-                // 直接建構 APIStatusResponse<object> 物件並回傳
+                // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
                 return Ok(new APIStatusResponse<object>
                 {
                     ErrorCode = errorCode,
                     Message = message,
-                    Data = new[] { response } // 將 ExportFileResponseDto 包裝在陣列中，並賦予 Data (object 型別)
+                    Data = responseFileDto // 直接賦值為單一物件
                 });
 
                 //return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "1122.xlsx");
@@ -489,8 +494,5 @@ namespace PDMApp.Controllers.Basic
                 });
             }
         }
-
-
-
     }
 }
