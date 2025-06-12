@@ -81,7 +81,7 @@ namespace PDMApp.Service.SPEC
                     return (false, $"資料驗證失敗:\n{errorMessage}");
                 }
 
-                // 3. 查詢規格資訊
+                // 3. 查詢規格資訊時需要卡stage
                 var specInfo = await (from sh in _pcms_Pdm_TestContext.plm_spec_head
                                       where sh.development_no == uiParam.DevelopmentNo
                                       && sh.development_color == uiParam.DevelopmentColorNo
@@ -99,13 +99,12 @@ namespace PDMApp.Service.SPEC
                                           sh.update_date,
                                           sh.update_user
                                       }).FirstOrDefaultAsync();
-
+                // 4.查詢型體資料時不卡stage
                 var pph_ppiData = await (from ph in _pcms_Pdm_TestContext.plm_product_head
                                          join pi in _pcms_Pdm_TestContext.plm_product_item
                                          on ph.product_m_id equals pi.product_m_id
                                          where pi.development_color_no == uiParam.DevelopmentColorNo
                                          && ph.development_no == uiParam.DevelopmentNo
-                                         && ph.stage == uiParam.Stage
                                          select new
                                          {
                                              pi.product_d_id,
