@@ -136,7 +136,7 @@ namespace PDMApp.Controllers.SPEC
 
         // POST api/v1/PGTSpec5Sheets/Export
         [HttpPost("Export")]
-        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value)
+        public async Task<ActionResult<Utils.APIStatusResponse<object>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value) // 將返回型別改為 object
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -160,13 +160,20 @@ namespace PDMApp.Controllers.SPEC
 
                 string base64File = Convert.ToBase64String(fileContent); // 轉 Base64
 
-                var response = new Dtos.ExportFileResponseDto
+                // 準備回傳的 ExportFileResponseDto
+                var responseFileDto = new Dtos.ExportFileResponseDto
                 {
                     FileName = fileName,
                     FileContent = base64File
                 };
 
-                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
+                return Ok(new Utils.APIStatusResponse<object>
+                {
+                    ErrorCode = "OK",
+                    Message = "匯出成功", // 可以根據需求設定訊息
+                    Data = responseFileDto // 直接賦值為單一物件
+                });
             }
             catch (DbException ex)
             {
@@ -176,7 +183,6 @@ namespace PDMApp.Controllers.SPEC
                     data: null
                 ));
             }
-
         }
     }
 }
