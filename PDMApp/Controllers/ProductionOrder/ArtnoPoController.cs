@@ -367,9 +367,9 @@ namespace PDMApp.Controllers.ProductionOrder
 
                 return StatusCode(200, new
                 {
-                    ErrorCode = "Ok",
+                    ErrorCode = "OK",
                     Message = "",
-                    File = file
+                    Data = file
                 });
 
                 // return File(finalStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
