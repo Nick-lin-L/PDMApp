@@ -123,13 +123,20 @@ namespace PDMApp.Controllers.Cbd
                 memoryStream.SaveAsByTemplate(@"ExportedFiles\CbdExcelTemplate.xlsx", value, configuration: configuration);
                 memoryStream.Seek(0, SeekOrigin.Begin);
                 string base64File = Convert.ToBase64String(memoryStream.ToArray());
-                var response = new Dtos.ExportFileResponseDto
+
+                var file = new Dtos.ExportFileResponseDto
                 {
                     FileName = fileName,
                     FileContent = base64File
                 };
 
-                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                return StatusCode(200, new
+                {
+                    ErrorCode = "OK",
+                    Message = "",
+                    Data = file
+                });
+                // return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
                 // return File(memoryStream, mimeType, fileName);
             }
             catch (Exception e)
