@@ -221,40 +221,42 @@ namespace PDMApp.Controllers.PGTSPEC
         // POST api/v1/PGTSpecHead/CheckoutSpec
         [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("CheckoutSpec")]
-        public async Task<ActionResult<APIStatusResponse<string>>> CheckoutSpec([FromBody] CheckoutSpecParameter value)
+        public async Task<ActionResult<APIStatusResponse<PGTSPECHeaderDto>>> CheckoutSpec([FromBody] CheckoutSpecParameter value) // 修改回傳型別
         {
             try
             {
                 // 取得當前登入者資訊
                 var currentUser = CurrentUserUtils.Get(HttpContext);
-                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
-                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
-                var nameEn = currentUser.NameEn?.ToString();  // 從 currentUser 取得 name_en
+                var pccuid = currentUser.Pccuid?.ToString(); // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();     // 從 currentUser 取得 name
+                var nameEn = currentUser.NameEn?.ToString(); // 從 currentUser 取得 name_en
 
-                var (isSuccess, message) = await Service.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
+                var (isSuccess, message, specHeaderDto) = await Service.PGTSPEC.PGTSPECCheckoutHelper.CheckoutSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name, nameEn);
 
                 if (!isSuccess)
                 {
-                    return StatusCode(200, new
+                    return StatusCode(200, new APIStatusResponse<PGTSPECHeaderDto> // 使用泛型 APIStatusResponse
                     {
                         ErrorCode = "BUSINESS_ERROR",
-                        Message = message
+                        Message = message,
+                        Data = null // 失敗時 Data 為 null
                     });
                 }
 
-                return StatusCode(200, new
+                return StatusCode(200, new APIStatusResponse<PGTSPECHeaderDto> // 成功時回傳 Data
                 {
                     ErrorCode = "OK",
-                    Message = ""
+                    Message = "CHECKOUT 成功。",
+                    Data = specHeaderDto // 回傳 Checkout 成功的 SPEC 資料
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
+                return StatusCode(500, new APIStatusResponse<PGTSPECHeaderDto> // 使用泛型 APIStatusResponse
                 {
-                    ErrorCode = "Server_ERROR",
+                    ErrorCode = "SERVER_ERROR",
                     Message = "ServerError",
-                    Details = ex.Message
+                    Data = null // 錯誤時 Data 為 null
                 });
             }
         }
