@@ -124,8 +124,25 @@ namespace PDMApp.Service.Basic
                 if (!string.IsNullOrWhiteSpace(param.MatNo))
                     baseQuery = baseQuery.Where(x => x.MatNo.Contains(param.MatNo));
 
+                // 僅根據是否包含 '%' 來決定使用 Like 還是 Contains (隱式 Like)
                 if (!string.IsNullOrWhiteSpace(param.MatFullNm))
-                    baseQuery = baseQuery.Where(x => x.MatFullNm.Contains(param.MatFullNm));
+                {
+                    string searchInput = param.MatFullNm.Trim();
+
+                    // 檢查輸入字串是否包含 '%' 萬用字元
+                    bool hasPercentWildcard = searchInput.Contains('%');
+
+                    if (hasPercentWildcard)
+                    {
+                        // 如果包含 '%' 萬用字元，則直接使用 EF.Functions.Like
+                        baseQuery = baseQuery.Where(x => EF.Functions.Like(x.MatFullNm, searchInput));
+                    }
+                    else
+                    {
+                        // 如果不包含 '%' 萬用字元，則使用 Contains (EF Core 會將其轉換為 LIKE '%value%')
+                        baseQuery = baseQuery.Where(x => x.MatFullNm.Contains(searchInput));
+                    }
+                }
 
                 if (!string.IsNullOrWhiteSpace(param.Status))
                     baseQuery = baseQuery.Where(x => x.Status == param.Status);
