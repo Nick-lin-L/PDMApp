@@ -356,6 +356,7 @@ namespace PDMApp.Controllers.ProductionOrder
                     ms.Position = 0;
                     tempStreams.Add((sheetName, ms));
                 }
+                _logger.LogInformation($"tempStreams.Count: {tempStreams.Count}");
                 var finalStream = MergeSheetsWithNPOI(tempStreams);
                 finalStream.Position = 0;
                 string base64File = Convert.ToBase64String(finalStream.ToArray());
@@ -376,9 +377,15 @@ namespace PDMApp.Controllers.ProductionOrder
                 // response.ErrorCode = "OK";
                 // return response;
             }
-            catch
+            catch (Exception e)
             {
-                throw;
+                _logger.LogError($"Exception : {e.Message}");
+                return StatusCode(200, new
+                {
+                    ErrorCode = "21001",
+                    Message = e.Message,
+                    Details = ""
+                });
             }
 
         }

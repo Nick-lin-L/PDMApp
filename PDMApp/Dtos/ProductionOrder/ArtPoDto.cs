@@ -94,6 +94,8 @@ namespace PDMApp.Dtos.ProductionOrder
             public string? ShoeKind { get; set; } = "";
             public string? WkMemo { get; set; } = "";
             public string? StepMemo { get; set; } = "";
+            public string? OrderStatus { get; set; } = "";
+            public string? DelMk { get; set; } = "";
         }
 
         public class QueryPickerDto
