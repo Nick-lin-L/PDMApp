@@ -795,22 +795,36 @@ namespace PDMApp.Service.ProductionOrder
                                                                                     select new Dtos.ProductionOrder.ArtPoDto.ExcelDto
                                                                                     {
                                                                                         WkMId = m.wk_m_id,
-                                                                                        Stage = (from nv in _context.pdm_namevalue_new where nv.group_key == "stage" && nv.status == "Y" && nv.value_desc == m.stage && nv.fact_no == m.fact_no select nv.text).FirstOrDefault(),
-                                                                                        OrderNo = m.order_no,
+                                                                                        Stage = (from nv in _context.pdm_namevalue_new where nv.group_key == "stage" && nv.status == "Y" && nv.value_desc == m.stage && nv.fact_no == m.fact_no select nv.text).FirstOrDefault() ?? "",
+                                                                                        OrderNo = m.order_no ?? "",
                                                                                         CreateTime = m.create_time.ToString("yyyyMMdd"),
                                                                                         CreateUser = m.create_user.ToString(),
-                                                                                        StyleNo = m.style_no + "-" + m.color_no,
-                                                                                        ColorNo = m.color_no,
-                                                                                        MoldNo = m.mold_no,
-                                                                                        Season = m.season,
+                                                                                        StyleNo = (m.style_no ?? "") + "-" + (m.color_no ?? ""),
+                                                                                        ColorNo = m.color_no ?? "",
+                                                                                        MoldNo = m.mold_no ?? "",
+                                                                                        Season = m.season ?? "",
                                                                                         SizeNo = "",
                                                                                         Qty = "",
                                                                                         ShoeKind = "",
-                                                                                        WkMemo = m.wk_memo,
-                                                                                        StepMemo = m.step_memo,
+                                                                                        WkMemo = m.wk_memo ?? "",
+                                                                                        StepMemo = m.step_memo ?? "",
+                                                                                        OrderStatus = m.order_status ?? "",
+                                                                                        DelMk = m.del_mk.ToString(),
                                                                                     }).ToListAsync();
                 foreach (var item in workOrderData)
                 {
+                    if (string.IsNullOrWhiteSpace(item.OrderNo))
+                    {
+                        throw new Exception("OrderNo can't be empty");
+                    }
+                    if (item.DelMk == "Y")
+                    {
+                        throw new Exception("DelMk can't be Y ");
+                    }
+                    if (item.OrderStatus != "APPD")
+                    {
+                        throw new Exception("ORDER_STATUS must be APPD ");
+                    }
                     var detail = await (from d in _context.work_order_item where d.wk_m_id == item.WkMId select d).ToListAsync();
                     string size = string.Empty;
                     string qty = string.Empty;
