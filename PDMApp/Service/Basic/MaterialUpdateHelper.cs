@@ -227,14 +227,34 @@ namespace PDMApp.Service.Basic
                 {
                     // MatNo 沒填 → 使用 MatNm + Uom [+ 核心欄位] 查重
                     var coreKeyProps = requiredCoreFields.Select(ToPascalCase).ToList();
+
+                    // 在查詢前先處理 Uom 的值
+                    var uomValueForQuery = value.Uom?.Split('-')[0]?.Trim();
+
+                    // **重要修正：在查詢時也對 MatNm 和 Uom 進行相同的處理**
                     var query = _context.matm.AsQueryable()
-                        .Where(x => x.mat_nm == value.MatNm && x.uom == value.Uom);
+                        .Where(x => x.mat_nm == value.MatNm && x.uom == uomValueForQuery);
 
                     foreach (var key in coreKeyProps)
                     {
-                        var prop = typeof(MaterialUpdateParameter).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                        var val = prop?.GetValue(value)?.ToString()?.Trim();
-                        query = query.WhereDynamicEqual(key, val); // 會自動轉 snake_case
+                        var prop = typeof(MaterialCreateParameter).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        string? val = null;
+                        if (prop != null)
+                        {
+                            // 對特定的欄位應用 Split('-')[0]
+                            if (key == nameof(MaterialCreateParameter.Attyp) ||
+                                key == nameof(MaterialCreateParameter.ScmBclassNo) ||
+                                key == nameof(MaterialCreateParameter.ScmMclassNo) ||
+                                key == nameof(MaterialCreateParameter.ScmSclassNo))
+                            {
+                                val = prop.GetValue(value)?.ToString()?.Split('-')[0]?.Trim();
+                            }
+                            else
+                            {
+                                val = prop.GetValue(value)?.ToString()?.Trim();
+                            }
+                        }
+                        query = query.WhereDynamicEqual(key, val);
                     }
 
                     var duplicate = await query.Where(x => x.mat_id != value.MatId).FirstOrDefaultAsync();
