@@ -1,28 +1,28 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using PDMApp.Configurations;
-using System;
-using System.Linq;
-using System.Text;
-using PDMApp.Utils;
 using PDMApp.Models;
 using PDMApp.Service;
-using System.Net.Http;
-using System.Text.Json;
 using PDMApp.Service.Basic;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Net.Http.Headers;
+using PDMApp.Utils;
 using PDMApp.Utils.BasicProgram;
-using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Memory;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace PDMApp.Controllers
 {
@@ -69,7 +69,6 @@ namespace PDMApp.Controllers
             // 傳回登入 URL，供前端重定向
             return Challenge(authProperties, OpenIdConnectDefaults.AuthenticationScheme);
         }
-
 
         /// <summary>
         /// 取得用戶詳細資訊
@@ -238,93 +237,97 @@ namespace PDMApp.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("callback")]
-        //public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
         public async Task<IActionResult> Callback([FromQuery] string mode = "redirect")
         {
-            var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
-            var accessToken = await HttpContext.GetTokenAsync("access_token");
-            var idToken = await HttpContext.GetTokenAsync("id_token");
-            var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");
-            if (string.IsNullOrEmpty(accessToken))
+            try
             {
-                return BadRequest(new { error = "Access Token not found" });
-            }
-            //return Ok(new { message = "Login successful", accessToken, idToken });
-
-            // **呼叫 SSO userinfo API取得該使用者資訊**
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var userInfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
-            var response = await httpClient.GetAsync(userInfoEndpoint);
-            var userInfoJson = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return BadRequest(new { error = "Failed to fetch user info", details = userInfoJson });
-            }
-
-            //解析userinfo JSON
-            var userInfo = JsonSerializer.Deserialize<UserInfo>(userInfoJson);
-
-            if (string.IsNullOrWhiteSpace(userInfo.pccuid) || !decimal.TryParse(userInfo.pccuid, out decimal pccuid))
-            {
-                return BadRequest(new { error = "Invalid PCCUID format" });
-            }
-            //抓取userinfo後判斷是否有存在DB，有就update last_login，沒有就新增
-            var user = await _pdmUsersRepository.GetByPccuid(pccuid);
-            if (user == null)
-            {
-                user = new pdm_users
+                var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
+                var accessToken = await HttpContext.GetTokenAsync("access_token");
+                var idToken = await HttpContext.GetTokenAsync("id_token");
+                var expiresAtStr = await HttpContext.GetTokenAsync("expires_at");
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    pccuid = pccuid, // 這裡使用 decimal
-                    username = userInfo.family_name,
-                    local_name = userInfo.family_name + "(" + userInfo.uid.ToUpper() + ")",
-                    sso_acct = userInfo.uid.ToUpper(),
-                    email = userInfo.email,
-                    password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
-                    keycloak_iam_sub = userInfo.sub,
-                    //keycloak_iam_sub = Guid.NewGuid().ToString(),
-                    last_login = DateTime.UtcNow,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
+                    return BadRequest(new { error = "Access Token not found" });
+                }
+                //return Ok(new { message = "Login successful", accessToken, idToken });
+
+                // **呼叫 SSO userinfo API取得該使用者資訊**
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var userInfoEndpoint = $"{_config.Authority}/protocol/openid-connect/userinfo";
+                var response = await httpClient.GetAsync(userInfoEndpoint);
+                var userInfoJson = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest(new { error = "Failed to fetch user info", details = userInfoJson });
+                }
+
+                //解析userinfo JSON
+                var userInfo = JsonSerializer.Deserialize<UserInfo>(userInfoJson);
+
+                if (string.IsNullOrWhiteSpace(userInfo.pccuid) || !decimal.TryParse(userInfo.pccuid, out decimal pccuid))
+                {
+                    return BadRequest(new { error = "Invalid PCCUID format" });
+                }
+                //抓取userinfo後判斷是否有存在DB，有就update last_login，沒有就新增
+                var user = await _pdmUsersRepository.GetByPccuid(pccuid);
+                if (user == null)
+                {
+                    user = new pdm_users
+                    {
+                        pccuid = pccuid, // 這裡使用 decimal
+                        username = userInfo.family_name,
+                        local_name = userInfo.family_name + "(" + userInfo.uid.ToUpper() + ")",
+                        sso_acct = userInfo.uid.ToUpper(),
+                        email = userInfo.email,
+                        password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString()), //必要時可以用BCrypt.Verify來驗證密碼,可以設定編碼強度4-14僅接受偶數，如 password_hash = BCrypt.Net.BCrypt.HashPassword(userInfo.pccuid.ToString(), workFactor: 12);
+                        keycloak_iam_sub = userInfo.sub,
+                        //keycloak_iam_sub = Guid.NewGuid().ToString(),
+                        last_login = DateTime.UtcNow,
+                        created_at = DateTime.UtcNow,
+                        updated_at = DateTime.UtcNow
+                    };
+                    await _pdmUsersRepository.AddUser(user);
+                }
+                else
+                {
+                    user.last_login = DateTime.UtcNow;
+                    user.updated_at = DateTime.UtcNow;
+                    await _pdmUsersRepository.UpdateUser(user);
+                }
+
+                // 產生後端自訂的JWT Token
+                var userToken = GenerateJwtToken(userInfo, expiresAtStr, user.user_id);
+
+                // 設定 cookie 選項
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true, // 防止 JavaScript 存取
+                    Secure = true,   // 若使用 HTTPS 就設定 true
+                    SameSite = SameSiteMode.Lax, // 根據需求調整
+                    Expires = DateTimeOffset.UtcNow.AddHours(1) // 與 JWT 的過期時間一致
                 };
-                await _pdmUsersRepository.AddUser(user);
-            }
-            else
-            {
-                user.last_login = DateTime.UtcNow;
-                user.updated_at = DateTime.UtcNow;
-                await _pdmUsersRepository.UpdateUser(user);
-            }
 
-            // 產生後端自訂的JWT Token
-            var userToken = GenerateJwtToken(userInfo, expiresAtStr, user.user_id);
+                // 將JWT寫入cookie，這裡cookie名稱可以自訂，例如"PDMToken"
+                HttpContext.Response.Cookies.Append("PDMToken", userToken, cookieOptions);
+                //回傳給前端
+                /*
+                return Ok(new
+                {
+                    message = "Login successful",
+                    PDMtoken = userToken,
+                    userInfo
+                });*/
+                //return Redirect("/api/auth/close-window");轉址導向別的API
+                // 回傳 HTML 給前端，並執行 window.close()
+                //Console.WriteLine("PCCUID: " + userInfo?.pccuid);
+                //Console.WriteLine("Parsed PCCUID: " + pccuid);
 
-            // 設定 cookie 選項
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true, // 防止 JavaScript 存取
-                Secure = true,   // 若使用 HTTPS 就設定 true
-                SameSite = SameSiteMode.Lax, // 根據需求調整
-                Expires = DateTimeOffset.UtcNow.AddHours(1) // 與 JWT 的過期時間一致
-            };
-
-            // 將JWT寫入cookie，這裡cookie名稱可以自訂，例如"PDMToken"
-            HttpContext.Response.Cookies.Append("PDMToken", userToken, cookieOptions);
-            //回傳給前端
-            /*
-            return Ok(new
-            {
-                message = "Login successful",
-                PDMtoken = userToken,
-                userInfo
-            });*/
-            //return Redirect("/api/auth/close-window");轉址導向別的API
-            // 回傳 HTML 給前端，並執行 window.close()
-            if (mode == "close-window")
-            {
-                return Content(@"
+                if (mode == "close-window")
+                {
+                    return Content(@"
                     <!DOCTYPE html>
                     <html>
                         <head><meta charset='UTF-8'></head>
@@ -336,10 +339,10 @@ namespace PDMApp.Controllers
                         </body>
                     </html>
                 ", "text/html");
-            }
+                }
 
-            // 一般轉址模式
-            return Content(@"
+                // 一般轉址模式
+                return Content(@"
                 <!DOCTYPE html>
                 <html>
                     <head><meta charset='UTF-8'></head>
@@ -350,9 +353,18 @@ namespace PDMApp.Controllers
                     </body>
                 </html>
             ", "text/html");
-
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    code = "SERVER_ERROR",
+                    message = "發生伺服器錯誤",
+                    details = ex.Message,
+                    stack = ex.StackTrace
+                });
+            }
         }
-
 
         /// <summary>
         /// 登出，讓前端登出並清除登入狀態
@@ -373,12 +385,8 @@ namespace PDMApp.Controllers
                 RedirectUri = _config.PostLogoutRedirectUri
             };
 
-
             return SignOut(authProperties, CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme);
-
         }
-
-
 
         // UserInfo 類別
         public class UserInfo
@@ -673,5 +681,4 @@ namespace PDMApp.Controllers
             }
         }
     }
-
 }
