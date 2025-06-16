@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Linq;
+using PDMApp.Dtos.Basic;
 
 namespace PDMApp.Service.Basic
 {
@@ -33,9 +35,108 @@ namespace PDMApp.Service.Basic
             return (newMatNo, null, seqRow);
         }
 
-        public static async Task<(bool isSuccess, string message)> SubmitMultipleToSerpAsync(pcms_pdm_testContext context, List<MaterialSubmitParameter> requestList)
+        // 輔助查詢
+        private static IQueryable<MaterialDto> GetMaterialBaseQuery(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        {
+            var baseQuery = from m in _pcms_Pdm_TestContext.matm
+
+                                // Join attyp name
+                            join attypName in _pcms_Pdm_TestContext.sys_namevalue
+                                on new { Key = m.attyp, Group = "attyp" }
+                                equals new { Key = attypName.data_no, Group = attypName.group_key }
+                                into attypJoin
+                            from attypName in attypJoin.DefaultIfEmpty()
+
+                                // Join order_status name
+                            join orderStatusName in _pcms_Pdm_TestContext.sys_namevalue
+                                on new { Key = m.order_status, Group = "mat_status" }
+                                equals new { Key = orderStatusName.data_no, Group = orderStatusName.group_key }
+                                into orderStatusJoin
+                            from orderStatusName in orderStatusJoin.DefaultIfEmpty()
+
+                                // Join UOM name
+                            join uomName in _pcms_Pdm_TestContext.sys_namevalue
+                                on new { Key = m.uom, Group = "uom" }
+                                equals new { Key = uomName.data_no, Group = uomName.group_key }
+                                into uomJoin
+                            from uomName in uomJoin.DefaultIfEmpty()
+
+                                // Join sys_material_large_class (ScmBclassNoName)
+                            join bclass in _pcms_Pdm_TestContext.sys_material_large_class
+                                on m.scm_bclass_no equals bclass.class_l_no
+                                into bclassJoin
+                            from bclass in bclassJoin.DefaultIfEmpty()
+
+                                // Join sys_material_medium_class (ScmMclassNoName)
+                            join mclass in _pcms_Pdm_TestContext.sys_material_medium_class
+                                on new { L = m.scm_bclass_no, M = m.scm_mclass_no }
+                                equals new { L = mclass.class_l_no, M = mclass.class_m_no }
+                                into mclassJoin
+                            from mclass in mclassJoin.DefaultIfEmpty()
+
+                                // Join sys_material_small_class (ScmSclassNoName)
+                            join sclass in _pcms_Pdm_TestContext.sys_material_small_class
+                                on new { L = m.scm_bclass_no, M = m.scm_mclass_no, S = m.scm_sclass_no }
+                                equals new { L = sclass.class_l_no, M = sclass.class_m_no, S = sclass.class_s_no }
+                                into sclassJoin
+                            from sclass in sclassJoin.DefaultIfEmpty()
+
+                                // Join pdm_users to get ModifyUserName
+                            join user in _pcms_Pdm_TestContext.pdm_users
+                                on m.modify_user equals user.pccuid.ToString()
+                                into userJoin
+                            from user in userJoin.DefaultIfEmpty()
+
+                            select new MaterialDto
+                            {
+                                FactNo = m.fact_no,
+                                MatId = m.mat_id,
+                                Attyp = (!string.IsNullOrWhiteSpace(m.attyp) && !string.IsNullOrWhiteSpace(attypName.text))
+                                        ? m.attyp + "-" + attypName.text
+                                        : null,
+                                SerpMatNo = m.serp_mat_no,
+                                MatNo = m.mat_no,
+                                MatNm = m.mat_nm,
+                                MatFullNm = m.mat_full_nm,
+                                Uom = (!string.IsNullOrWhiteSpace(m.uom) && !string.IsNullOrWhiteSpace(uomName.text))
+                                        ? m.uom + "-" + uomName.text
+                                        : null,
+                                ColorNo = m.color_no,
+                                ColorNm = m.color_nm,
+                                Standard = m.standard,
+                                CustNo = m.cust_no,
+                                Matnr = m.matnr,
+                                ScmBclassNo = (!string.IsNullOrWhiteSpace(m.scm_bclass_no) && !string.IsNullOrWhiteSpace(bclass.class_name_zh_tw))
+                                                ? m.scm_bclass_no + "-" + bclass.class_name_zh_tw
+                                                : null,
+                                ScmMclassNo = (!string.IsNullOrWhiteSpace(m.scm_mclass_no) && !string.IsNullOrWhiteSpace(mclass.class_name_zh_tw))
+                                                ? m.scm_mclass_no + "-" + mclass.class_name_zh_tw
+                                                : null,
+                                ScmSclassNo = (!string.IsNullOrWhiteSpace(m.scm_sclass_no) && !string.IsNullOrWhiteSpace(sclass.class_name_zh_tw))
+                                                ? m.scm_sclass_no + "-" + sclass.class_name_zh_tw
+                                                : null,
+                                Status = m.status,
+                                StopDate = m.stop_date.HasValue
+                                        ? DateTimeOffset.FromUnixTimeMilliseconds((long)m.stop_date.Value).ToString("yyyy-MM-dd")
+                                        : null,
+                                Memo = m.memo,
+                                ModifyTime = m.modify_tm,
+                                ModifyUser = user != null ? user.username : m.modify_user,
+                                Locked = m.locked,
+                                OrderStatus = (!string.IsNullOrWhiteSpace(m.order_status) && !string.IsNullOrWhiteSpace(orderStatusName.text))
+                                                ? m.order_status + "-" + orderStatusName.text
+                                                : null,
+                                TransMsg = m.trans_msg
+                            };
+            return baseQuery;
+        }
+
+        public static async Task<(bool isSuccess, string message, List<MaterialDto> updatedMaterialDtos)> SubmitMultipleToSerpAsync(pcms_pdm_testContext context, List<MaterialSubmitParameter> requestList)
         {
             using var transaction = await context.Database.BeginTransactionAsync();
+
+            // 定義 finalMaterialDtos，預設為 null，只在成功時或特定需要時賦值
+            List<MaterialDto> finalMaterialDtos = null;
 
             try
             {
@@ -45,15 +146,17 @@ namespace PDMApp.Service.Basic
                 var updatedMaterials = new List<matm>();
                 var updatedSeqRows = new List<sys_namevalue>();
 
-                // 先檢查是否有任何一筆已送出過
+                // 收集所有 MatId，以便後續查詢
+                var matIds = requestList.Select(r => r.MatId).ToList();
+
                 foreach (var req in requestList)
                 {
                     var material = await context.matm.FirstOrDefaultAsync(m => m.mat_id == req.MatId);
                     if (material == null)
-                        return (false, $"找不到指定的物料資料{material.mat_no}。");
+                        return (false, $"找不到指定的物料資料{material.mat_no}。", null);
 
                     if (!string.IsNullOrEmpty(material.trans_id))
-                        return (false, $"料號{material.mat_no}已送出過，請勿重複送出。");
+                        return (false, $"料號{material.mat_no}已送出過，請勿重複送出。", null);
                 }
 
                 // 所有資料都合法，開始處理送出
@@ -65,7 +168,7 @@ namespace PDMApp.Service.Basic
                     {
                         var (newMatNo, generateErrMsg, updatedSeqRow) = await GenerateMatNoWithoutSaveAsync(context);
                         if (newMatNo == null)
-                            return (false, generateErrMsg);
+                            return (false, generateErrMsg, null);
 
                         material.mat_no = newMatNo;
                         updatedSeqRows.Add(updatedSeqRow); // 收集更新的流水號設定
@@ -96,6 +199,7 @@ namespace PDMApp.Service.Basic
 
                 if (status != "Y")
                 {
+                    // SERP 呼叫失敗，需要回滾資料庫狀態
                     foreach (var material in updatedMaterials)
                     {
                         material.order_status = "REJD";
@@ -104,17 +208,22 @@ namespace PDMApp.Service.Basic
                     }
 
                     context.matm.UpdateRange(updatedMaterials);
-                    await context.SaveChangesAsync();
+                    await context.SaveChangesAsync(); // 儲存回滾後的狀態
 
-                    return (false, $"送出失敗：{apiErrorMsg}");
+                    return (false, $"送出失敗：{apiErrorMsg}", null);
                 }
 
-                return (true, "送出成功");
+
+                // SERP 呼叫成功，查詢並返回成功訊息和更新後的資料
+                var materialQuery = GetMaterialBaseQuery(context).Where(m => matIds.Contains(m.MatId));
+                finalMaterialDtos = await materialQuery.ToListAsync();
+                return (true, "送出成功", finalMaterialDtos);
+
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return (false, $"處理過程中發生錯誤: {ex.Message}");
+                return (false, $"處理過程中發生錯誤: {ex.Message}", null);
             }
         }
     }

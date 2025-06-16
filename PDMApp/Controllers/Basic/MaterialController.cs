@@ -212,34 +212,37 @@ namespace PDMApp.Controllers.Basic
 
         // POST api/v1/Basic/Material/submit
         [HttpPost("submit")]
-        public async Task<ActionResult<APIStatusResponse<object>>> SubmitToSerp([FromBody] List<MaterialSubmitParameter> requestList)
+        public async Task<ActionResult<APIStatusResponse<List<MaterialDto>>>> SubmitToSerp([FromBody] List<MaterialSubmitParameter> requestList)
         {
             try
             {
-                var (isSuccess, message) = await Service.Basic.MaterialSubmitHelper.SubmitMultipleToSerpAsync(_pcms_Pdm_TestContext, requestList);
+                var (isSuccess, message, updatedMaterialDtos) = await Service.Basic.MaterialSubmitHelper.SubmitMultipleToSerpAsync(_pcms_Pdm_TestContext, requestList);
 
                 if (!isSuccess)
                 {
-                    return StatusCode(200, new
+                    return StatusCode(200, new APIStatusResponse<List<MaterialDto>>
                     {
                         ErrorCode = "BUSINESS_ERROR",
-                        Message = message
+                        Message = message,
+                        Data = null // 錯誤時 Data 為 null
                     });
                 }
 
-                return StatusCode(200, new
+                // 成功時，回傳 MaterialDto 列表
+                return StatusCode(200, new APIStatusResponse<List<MaterialDto>>
                 {
                     ErrorCode = "OK",
-                    Message = message
+                    Message = message,
+                    Data = updatedMaterialDtos
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
+                return StatusCode(500, new APIStatusResponse<List<MaterialDto>>
                 {
                     ErrorCode = "Server_ERROR",
                     Message = "ServerError",
-                    Details = ex.Message
+                    Data = null 
                 });
             }
         }
