@@ -66,6 +66,7 @@ namespace PDMApp.Models
         public virtual DbSet<sys_menu_i18n> sys_menu_i18n { get; set; }
         public virtual DbSet<sys_menus> sys_menus { get; set; }
         public virtual DbSet<sys_namevalue> sys_namevalue { get; set; }
+        public virtual DbSet<sys_namevalue_group> sys_namevalue_group { get; set; }
         public virtual DbSet<tbldept> tbldept { get; set; }
         public virtual DbSet<tblfa> tblfa { get; set; }
         public virtual DbSet<tblfadet> tblfadet { get; set; }
@@ -504,6 +505,10 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.lan).HasMaxLength(5);
 
+                entity.Property(e => e.mail_cc).HasMaxLength(50);
+
+                entity.Property(e => e.mail_to).HasMaxLength(50);
+
                 entity.Property(e => e.mold_no1).HasMaxLength(80);
 
                 entity.Property(e => e.mold_no2).HasMaxLength(80);
@@ -811,7 +816,8 @@ namespace PDMApp.Models
 
             modelBuilder.Entity<pdm_namevalue_new>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.pkid)
+                    .HasName("pdm_namevalue_new_pk");
 
                 entity.ToTable("pdm_namevalue_new", "asics_pdm");
 
@@ -821,13 +827,11 @@ namespace PDMApp.Models
 
                 entity.HasIndex(e => new { e.value_desc, e.group_key }, "idx_pdm_namevalue_new_value_desc_group_key");
 
+                entity.Property(e => e.pkid).HasMaxLength(4);
+
                 entity.Property(e => e.fact_no).HasMaxLength(4);
 
                 entity.Property(e => e.group_key).HasMaxLength(30);
-
-                entity.Property(e => e.pkid)
-                    .IsRequired()
-                    .HasMaxLength(4);
 
                 entity.Property(e => e.status)
                     .HasMaxLength(1)
@@ -2972,6 +2976,14 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.modified_by).HasMaxLength(30);
 
+                entity.Property(e => e.modify_user)
+                    .HasMaxLength(50)
+                    .HasComment("異動人");
+
+                entity.Property(e => e.mold_no)
+                    .HasMaxLength(50)
+                    .HasComment("模具代號");
+
                 entity.Property(e => e.mold_set)
                     .HasMaxLength(120)
                     .HasComment("MOLD BOM代號");
@@ -3594,6 +3606,8 @@ namespace PDMApp.Models
 
                 entity.Property(e => e.group_key).HasMaxLength(30);
 
+                entity.Property(e => e.modify_user).HasMaxLength(20);
+
                 entity.Property(e => e.status)
                     .HasMaxLength(1)
                     .HasDefaultValueSql("'Y'::character varying");
@@ -3601,6 +3615,35 @@ namespace PDMApp.Models
                 entity.Property(e => e.text).HasMaxLength(100);
 
                 entity.Property(e => e.text_en).HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<sys_namevalue_group>(entity =>
+            {
+                entity.HasKey(e => e.pkid)
+                    .HasName("sys_namevalue_group_pk");
+
+                entity.ToTable("sys_namevalue_group", "asics_pdm");
+
+                entity.Property(e => e.pkid)
+                    .HasPrecision(4)
+                    .HasComment("PKID");
+
+                entity.Property(e => e.group_key)
+                    .IsRequired()
+                    .HasMaxLength(30)
+                    .HasComment("群組代號");
+
+                entity.Property(e => e.group_name)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment("群組名稱");
+
+                entity.Property(e => e.modify_user).HasMaxLength(30);
+
+                entity.Property(e => e.type)
+                    .IsRequired()
+                    .HasMaxLength(2)
+                    .HasComment("類別(1.sys參數 2.廠層級參數)");
             });
 
             modelBuilder.Entity<tbldept>(entity =>
@@ -3935,6 +3978,8 @@ namespace PDMApp.Models
                     .HasMaxLength(10)
                     .HasComment("季節");
 
+                entity.Property(e => e.serp_req_date).HasComputedColumnSql("(EXTRACT(epoch FROM req_date) * (1000)::numeric)", true);
+
                 entity.Property(e => e.spec_m_id).HasMaxLength(36);
 
                 entity.Property(e => e.stage)
@@ -4051,7 +4096,7 @@ namespace PDMApp.Models
                 entity.ToTable("work_order_item", "asics_pdm");
 
                 entity.Property(e => e.wk_d_id)
-                    .HasMaxLength(22)
+                    .HasMaxLength(36)
                     .HasComment("派工單子檔ID");
 
                 entity.Property(e => e.del_mk)

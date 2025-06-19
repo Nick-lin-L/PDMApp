@@ -39,6 +39,8 @@ namespace PDMApp.Models
         public string update_user_nm { get; set; }
         public string filename { get; set; }
         public int? vssver { get; set; }
+        public string mail_to { get; set; }
+        public string mail_cc { get; set; }
 
         public virtual ICollection<pcg_spec_item> pcg_spec_item { get; set; }
     }
