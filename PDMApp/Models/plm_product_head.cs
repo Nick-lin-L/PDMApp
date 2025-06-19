@@ -114,5 +114,7 @@ namespace PDMApp.Models
         public string brand_no { get; set; }
         public string season { get; set; }
         public string factory { get; set; }
+        public string mold_no { get; set; }
+        public string modify_user { get; set; }
     }
 }
