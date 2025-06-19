@@ -64,8 +64,8 @@ namespace PDMApp.Service.Basic
 
         private static readonly Dictionary<string, string> PropertyDisplayNamesZhTw = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["SerpMatNo"] = "PLM物料編號",
-            ["MatNo"] = "物料編號",
+            ["SerpMatNo"] = "物料編號",
+            ["MatNo"] = "PLM物料編號",
             ["OrderQty"] = "採購數量",
             ["Price"] = "單價",
             ["RequiredDate"] = "需求日期",
