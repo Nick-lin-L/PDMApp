@@ -130,21 +130,6 @@ namespace PDMApp.Service.ProductionOrder
             {
                 using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
-                    var brand = await GetBrand(parameter.DevFactoryNo, parameter.Brand);
-                    if (string.IsNullOrWhiteSpace(brand))
-                    {
-                        throw new Exception($@"Brand: {parameter.Brand} not exist");
-                    }
-                    var stage = (await GetNameValueByKey(parameter.DevFactoryNo, "stage")).Where(x => x.text == parameter.Stage).FirstOrDefault()?.value_desc;
-                    if (string.IsNullOrWhiteSpace(stage))
-                    {
-                        throw new Exception($@"Stage: {parameter.Brand} not exist System");
-                    }
-                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.value_desc == parameter.OrderKind).FirstOrDefault()?.value_desc;
-                    if (string.IsNullOrWhiteSpace(OrderKind))
-                    {
-                        throw new Exception($@"OrderKind: {parameter.OrderKind} not exist System");
-                    }
                     if (string.IsNullOrWhiteSpace(parameter.DevFactoryNo) ||
                         string.IsNullOrWhiteSpace(parameter.OrderKind) ||
                         string.IsNullOrWhiteSpace(parameter.DevelopmentNo) ||
@@ -153,7 +138,22 @@ namespace PDMApp.Service.ProductionOrder
                         string.IsNullOrWhiteSpace(parameter.ModelName) ||
                         string.IsNullOrWhiteSpace(parameter.ArticleNo))
                     {
-                        throw new Exception($@"Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo is can be empty !");
+                        throw new Exception($@"DevFactoryNo、Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo is can't be empty !");
+                    }
+                    var brand = await GetBrand(parameter.DevFactoryNo, parameter.Brand);
+                    if (string.IsNullOrWhiteSpace(brand))
+                    {
+                        throw new Exception($@"Brand: {parameter.Brand} not exist");
+                    }
+                    var stage = (await GetNameValueByKey(parameter.DevFactoryNo, "stage")).Where(x => x.text?.ToUpper() == parameter.Stage?.ToUpper()).FirstOrDefault()?.value_desc;
+                    if (string.IsNullOrWhiteSpace(stage))
+                    {
+                        throw new Exception($@"Stage: {parameter.Stage} not exist System");
+                    }
+                    var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.value_desc == parameter.OrderKind).FirstOrDefault()?.value_desc;
+                    if (string.IsNullOrWhiteSpace(OrderKind))
+                    {
+                        throw new Exception($@"OrderKind: {parameter.OrderKind} not exist System");
                     }
                     //若ORDER_NO不為空，則需判斷不存在系統，若存在系統，則跳出訊息：″系統已存在派工單號：XXXXXX，請重新確認單據號碼″。
                     var orderCount = _context.work_order_head.Where(x => x.fact_no == parameter.DevFactoryNo && x.order_no == parameter.OrderNo).Count();
@@ -271,6 +271,16 @@ namespace PDMApp.Service.ProductionOrder
 
                 using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
+                    if (string.IsNullOrWhiteSpace(parameter.DevFactoryNo) ||
+                        string.IsNullOrWhiteSpace(parameter.OrderKind) ||
+                        string.IsNullOrWhiteSpace(parameter.DevelopmentNo) ||
+                        string.IsNullOrWhiteSpace(parameter.Stage) ||
+                        string.IsNullOrWhiteSpace(parameter.Season) ||
+                        string.IsNullOrWhiteSpace(parameter.ModelName) ||
+                        string.IsNullOrWhiteSpace(parameter.ArticleNo))
+                    {
+                        throw new Exception($@"DevFactoryNo、Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo can't be empty !");
+                    }
                     var data = await _context.work_order_head.Where(x => x.wk_m_id == parameter.WkMId && x.fact_no == parameter.DevFactoryNo).FirstOrDefaultAsync();
                     if (data == null)
                     {
@@ -292,25 +302,15 @@ namespace PDMApp.Service.ProductionOrder
                     {
                         throw new Exception($@"Brand: {parameter.Brand} not exist");
                     }
-                    var stage = (await GetNameValueByKey(parameter.DevFactoryNo, "stage")).Where(x => x.text == parameter.Stage).FirstOrDefault()?.value_desc;
+                    var stage = (await GetNameValueByKey(parameter.DevFactoryNo, "stage")).Where(x => x.text?.ToUpper() == parameter.Stage?.ToUpper()).FirstOrDefault()?.value_desc;
                     if (string.IsNullOrWhiteSpace(stage))
                     {
-                        throw new Exception($@"Stage: {parameter.Brand} not exist System");
+                        throw new Exception($@"Stage: {parameter.Stage} not exist System");
                     }
                     var OrderKind = (await GetNameValueByKey(parameter.DevFactoryNo, "order_kind")).Where(x => x.value_desc == parameter.OrderKind).FirstOrDefault()?.value_desc;
                     if (string.IsNullOrWhiteSpace(OrderKind))
                     {
                         throw new Exception($@"OrderKind: {parameter.OrderKind} not exist System");
-                    }
-                    if (string.IsNullOrWhiteSpace(parameter.DevFactoryNo) ||
-                        string.IsNullOrWhiteSpace(parameter.OrderKind) ||
-                        string.IsNullOrWhiteSpace(parameter.DevelopmentNo) ||
-                        string.IsNullOrWhiteSpace(parameter.Stage) ||
-                        string.IsNullOrWhiteSpace(parameter.Season) ||
-                        string.IsNullOrWhiteSpace(parameter.ModelName) ||
-                        string.IsNullOrWhiteSpace(parameter.ArticleNo))
-                    {
-                        throw new Exception($@"Stage、OrderKind、DevelopmentNo、Season、ModelName、ArticleNo can't be empty !");
                     }
                     if (data.RowVersion != parameter.RowVersion)
                     {
@@ -957,7 +957,7 @@ namespace PDMApp.Service.ProductionOrder
         public async Task<string> GetBrand(string fact_no, string text)
         {
             var query = (from n in _context.pdm_namevalue_new
-                         where n.group_key == "brand" && n.fact_no == fact_no && n.text == text
+                         where n.group_key == "brand" && n.fact_no == fact_no && (n.text == text || n.text.ToUpper() == text.ToUpper())
                          select n.value_desc).FirstOrDefaultAsync();
             return await query;
         }
