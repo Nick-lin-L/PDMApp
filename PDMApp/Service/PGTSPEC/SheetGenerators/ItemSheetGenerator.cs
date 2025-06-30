@@ -53,7 +53,7 @@ namespace Service.PGTSPEC.SheetGenerators
             var heelHeight = firstItem.GetType().GetProperty("HeelHeight")?.GetValue(firstItem, null)?.ToString() ?? "";
             var colorNameEng = firstItem.GetType().GetProperty("ColorEng")?.GetValue(firstItem, null)?.ToString() ?? "";
 
-            int dataCount = data.Count();// 計算筆數
+            int dataCount = data.Count()+1;// 計算筆數
 
             // 計算總頁數
             int totalPages = (int)Math.Ceiling((double)dataCount / pageLimit);

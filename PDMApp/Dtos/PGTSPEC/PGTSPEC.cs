@@ -118,6 +118,7 @@ namespace Dtos.PGTSPEC
         public string? Parts { get; set; } // PARTS
         public string? Detail { get; set; } // DETAIL
         public string? ProcessMk { get; set; } // PROCESS_MK
+        public string? SerpMatNo { get; set; }
         public string? MaterialNo { get; set; } // SERP_MATERIAL_NO (需關聯 MATERIAL 取得)
         public string? Material { get; set; } // MATERIAL
         public string? Recycle { get; set; } // RECYCLE
@@ -206,6 +207,19 @@ namespace Dtos.PGTSPEC
         public string? Supplier { get; set; }    // 供應商
         public object ActNo { get; internal set; }
         public string RemarksProhibit { get; internal set; }
+    }
+
+    public class MatmResultDto
+    {
+        public string? SerpMatNo { get; set; }   
+        public string? MaterialNo { get; set; }      
+        public string? MatFullNm { get; set; }  
+        public string? ColorNo { get; set; }
+        public string? ColorNm { get; set; }
+        public string? Uom { get; set; }         
+        public string? Memo { get; set; }
+        public string? Standard { get; set; }    
+        public string? Colors { get; set; }      // COLOR + " " + COLOR_NM
     }
 
 
