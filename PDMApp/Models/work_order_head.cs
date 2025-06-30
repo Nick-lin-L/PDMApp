@@ -72,5 +72,6 @@ namespace PDMApp.Models
         public string wk_memo { get; set; }
         public string step_memo { get; set; }
         public long? serp_req_date { get; set; }
+        public char? pl_mk { get; set; }
     }
 }

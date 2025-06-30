@@ -16,7 +16,7 @@ namespace PDMApp
         {
             CreateHostBuilder(args).Build().Run();
             // ©I¥s MainTotp ¶i¦æ´ú¸Õ
-            PDMApp.Totp.MainTotp.RunTop(args);
+            //PDMApp.Totp.MainTotp.RunTop(args);
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

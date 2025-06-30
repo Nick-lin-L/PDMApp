@@ -25,14 +25,15 @@ namespace PDMApp.Utils.BasicProgram
                    from updatedBy in updatedByJoin.DefaultIfEmpty()
                    select new UserRoleDto
                    {
-                       UserRoleId = ur.user_role_id,
-                       UserId = ur.user_id.Value,
-                       RoleId = ur.role_id.Value,
+                       RoleId = ur.role_id.ToString(),
+                       DevFactoryNo = r.dev_factory_no,
+                       PccuId = u.pccuid.ToString(),
+                       SsoAcct = u.sso_acct,
+                       IsSso = u.is_sso,
+                       IsActive = u.is_active,
                        UserName = u.username,
                        LocalName = u.local_name,
                        Email = u.email,
-                       RoleName = r.role_name,
-                       DevFactoryNo = r.dev_factory_no,
                        CreatedBy = createdBy != null ? createdBy.username : string.Empty,
                        CreatedAt = ur.created_at,
                        UpdatedBy = updatedBy != null ? updatedBy.username : string.Empty,
@@ -41,19 +42,11 @@ namespace PDMApp.Utils.BasicProgram
         }
 
         /// <summary>
-        /// 查詢特定使用者的角色
-        /// </summary>
-        public static IQueryable<UserRoleDto> QueryUserRolesByUserId(pcms_pdm_testContext context, long userId)
-        {
-            return QueryUserRoles(context).Where(ur => ur.UserId == userId);
-        }
-
-        /// <summary>
         /// 查詢特定角色的使用者
         /// </summary>
         public static IQueryable<UserRoleDto> QueryUserRolesByRoleId(pcms_pdm_testContext context, int roleId)
         {
-            return QueryUserRoles(context).Where(ur => ur.RoleId == roleId);
+            return QueryUserRoles(context).Where(ur => ur.RoleId.Equals(roleId));
         }
 
         /// <summary>

@@ -11,18 +11,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace PDMApp.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     public class AccountMaintenanceController : ControllerBase
     {
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
+        private readonly IUserManagementService _userManagementService;
 
-        public AccountMaintenanceController(pcms_pdm_testContext pcms_Pdm_TestContext)
+        public AccountMaintenanceController(pcms_pdm_testContext pcms_Pdm_TestContext, IUserManagementService userManagementService)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_TestContext;
+            _userManagementService = userManagementService;
         }
 
         // POST api/accountmaintenance/initial
@@ -33,7 +36,7 @@ namespace PDMApp.Controllers
             {
                 // 創建字典來儲存查詢結果
                 var resultData = new Dictionary<string, object>();
-          
+
                 // 依序執行查詢，確保每次只有一個查詢在執行
                 resultData["DevFactoryNo"] = await AccountMaintenanceQueryHelper.QueryDevFactoryNo(_pcms_Pdm_TestContext).ToListAsync(); ;
                 resultData["Roles"] = await AccountMaintenanceQueryHelper.QueryRoles(_pcms_Pdm_TestContext);
@@ -192,6 +195,158 @@ namespace PDMApp.Controllers
             }
         }
 
+        // POST api/accountmaintenance/check-user
+        [HttpPost("check-user")]
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        public async Task<ActionResult<APIStatusResponse<object>>> CheckUser([FromBody] SearchUserBySSOParameter SsoParam)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var normalizedSsoAcct = SsoParam.SsoAcct?.Trim()?.ToUpper();
+
+            if (string.IsNullOrWhiteSpace(normalizedSsoAcct))
+            {
+                return APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10001",
+                    message: "請輸入有效的SSO帳號",
+                    data: null
+                );
+            }
+
+            try
+            {
+                // 檢查是否已存在於 DB
+                bool isExist = await _userManagementService.IsUserExistsBySSOAsync(normalizedSsoAcct);
+                if (isExist)
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        errorCode: "10002",
+                        message: "此SSO帳號已存在於系統中",
+                        data: null
+                    );
+                }
+
+                // 從 SSO 查詢使用者資訊
+                var userInfo = await _userManagementService.GetUserInfoFromSSOAsync(normalizedSsoAcct);
+                if (userInfo == null)
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        errorCode: "10004",
+                        message: $"找不到SSO帳號為 {normalizedSsoAcct} 的使用者資訊",
+                        data: null
+                    );
+                }
+
+                // 回傳使用者資訊供前端確認
+                var userData = new
+                {
+                    SsoAcct = userInfo.sso_acct ?? normalizedSsoAcct,
+                    UserName = userInfo.chinese_nm,
+                    LocalName = userInfo.local_pnl_nm,
+                    Email = userInfo.contact_mail,
+                    Pccuid = userInfo.pccuid.ToString()
+                };
+
+                return APIResponseHelper.GenerateApiResponse<object>("OK", "使用者資訊查詢成功", userData);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10006",
+                    message: "伺服器發生錯誤",
+                    data: null
+                );
+            }
+        }
+
+        // POST api/accountmaintenance/create-users
+        [HttpPost("create-users")]
+        [Authorize(AuthenticationSchemes = "PDMToken")]
+        public async Task<ActionResult<APIStatusResponse<object>>> CreateUsers([FromBody] List<CreateUserBySSOParameter> SsoParams)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var userid = currentUser.UserId;
+
+                var userRequests = new List<UserCreateRequest>();
+                var errors = new List<string>();
+
+                // 驗證所有使用者
+                foreach (var ssoParam in SsoParams)
+                {
+                    if (string.IsNullOrWhiteSpace(ssoParam.SsoAcct))
+                    {
+                        errors.Add($"SSO帳號 {ssoParam.SsoAcct} 無效");
+                        continue;
+                    }
+
+                    // 檢查是否已存在
+                    bool isExist = await _userManagementService.IsUserExistsBySSOAsync(ssoParam.SsoAcct);
+                    if (isExist)
+                    {
+                        errors.Add($"SSO帳號 {ssoParam.SsoAcct} 已存在");
+                        continue;
+                    }
+
+                    // 從 SSO 查詢使用者資訊
+                    var userInfo = await _userManagementService.GetUserInfoFromSSOAsync(ssoParam.SsoAcct);
+                    if (userInfo == null)
+                    {
+                        errors.Add($"找不到SSO帳號 {ssoParam.SsoAcct} 的使用者資訊");
+                        continue;
+                    }
+
+                    userRequests.Add(new UserCreateRequest
+                    {
+                        SsoAcct = userInfo.sso_acct ?? ssoParam.SsoAcct,
+                        FirstName = userInfo.english_nm?.Split(' ').FirstOrDefault() ?? "",
+                        LastName = userInfo.english_nm?.Split(' ').Skip(1).FirstOrDefault() ?? "",
+                        Email = userInfo.contact_mail,
+                        Pccuid = userInfo.pccuid.ToString(),
+                        KeycloakSub = ""
+                    });
+                }
+
+                if (errors.Any())
+                {
+                    return APIResponseHelper.HandleApiError<object>(
+                        errorCode: "10007",
+                        message: "部分使用者驗證失敗",
+                        data: new { Errors = errors }
+                    );
+                }
+
+                // 批次建立使用者
+                var createdUsers = await _userManagementService.BatchCreateUsersFromSSOAsync(userRequests, userid);
+
+                var successData = new
+                {
+                    CreatedCount = createdUsers.Count,
+                    Users = createdUsers.Select(u => new
+                    {
+                        UserId = u.user_id,
+                        Username = u.username,
+                        SsoAcct = u.sso_acct,
+                        Email = u.email
+                    }).ToList()
+                };
+
+                return APIResponseHelper.GenerateApiResponse("OK", $"成功建立 {createdUsers.Count} 個使用者", (dynamic)successData);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<object>(
+                    errorCode: "10006",
+                    message: "伺服器發生錯誤",
+                    data: null
+                );
+            }
+        }
 
         // DELETE api/accountmaintenance/DeleteRole
         [Authorize(AuthenticationSchemes = "PDMToken")]
