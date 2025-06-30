@@ -121,9 +121,5 @@ namespace PDMApp.Service.Basic
 
             return query;
         }
-
-
-
-
     }
 }

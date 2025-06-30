@@ -10,8 +10,8 @@ namespace PDMApp.Dtos.BasicProgram
     /// </summary>
     public class UserRoleAssignRequest
     {
-        public long UserId { get; set; }
-        public int RoleId { get; set; }
+        public string UserId { get; set; }
+        public string RoleId { get; set; }
         public string DevFactoryNo { get; set; }
     }
 
@@ -30,14 +30,15 @@ namespace PDMApp.Dtos.BasicProgram
     /// </summary>
     public class UserRoleDto
     {
-        public int UserRoleId { get; set; }
-        public long UserId { get; set; }
-        public int RoleId { get; set; }
+        public string DevFactoryNo { get; set; }
+        public string RoleId { get; set; }
+        public string PccuId { get; set; }
         public string UserName { get; set; }
         public string LocalName { get; set; }
+        public string SsoAcct { get; set; }
         public string Email { get; set; }
-        public string RoleName { get; set; }
-        public string DevFactoryNo { get; set; }
+        public string IsSso { get; set; }
+        public string IsActive { get; set; }
         public string CreatedBy { get; set; }
         [JsonConverter(typeof(DateTimeConverterHms))]
         public DateTime? CreatedAt { get; set; }

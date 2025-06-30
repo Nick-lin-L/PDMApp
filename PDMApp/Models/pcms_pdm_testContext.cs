@@ -49,6 +49,7 @@ namespace PDMApp.Models
         public virtual DbSet<pdm_spec_standard_factory> pdm_spec_standard_factory { get; set; }
         public virtual DbSet<pdm_user_roles> pdm_user_roles { get; set; }
         public virtual DbSet<pdm_users> pdm_users { get; set; }
+        public virtual DbSet<pl_main> pl_main { get; set; }
         public virtual DbSet<plm_cbd_head> plm_cbd_head { get; set; }
         public virtual DbSet<plm_cbd_item> plm_cbd_item { get; set; }
         public virtual DbSet<plm_cbd_moldcharge> plm_cbd_moldcharge { get; set; }
@@ -2527,6 +2528,50 @@ namespace PDMApp.Models
                     .HasComment("User名稱");
             });
 
+            modelBuilder.Entity<pl_main>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("pl_main", "asics_pdm");
+
+                entity.Property(e => e.dept)
+                    .HasMaxLength(30)
+                    .HasComment("領用部門");
+
+                entity.Property(e => e.modify_time).HasComment("異動時間");
+
+                entity.Property(e => e.note)
+                    .HasMaxLength(300)
+                    .HasComment("備註");
+
+                entity.Property(e => e.pl_main_id)
+                    .IsRequired()
+                    .HasMaxLength(36)
+                    .HasComment("領料單ID");
+
+                entity.Property(e => e.pl_order_no)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasComment("領料單號");
+
+                entity.Property(e => e.pl_reason)
+                    .HasMaxLength(50)
+                    .HasComment("領用原因");
+
+                entity.Property(e => e.serp_pl_no)
+                    .HasMaxLength(23)
+                    .HasComment("SERP領用單號");
+
+                entity.Property(e => e.trans_id)
+                    .HasMaxLength(22)
+                    .HasComment("拋轉SERP的批次號");
+
+                entity.Property(e => e.wk_m_id)
+                    .IsRequired()
+                    .HasMaxLength(36)
+                    .HasComment("派工單主檔id");
+            });
+
             modelBuilder.Entity<plm_cbd_head>(entity =>
             {
                 entity.HasKey(e => e.data_m_id)
@@ -3950,6 +3995,11 @@ namespace PDMApp.Models
                     .HasPrecision(5)
                     .HasDefaultValueSql("0")
                     .HasComment("派工單版本(SERP用，確認派工時+1)");
+
+                entity.Property(e => e.pl_mk)
+                    .HasMaxLength(1)
+                    .HasDefaultValueSql("'N'::bpchar")
+                    .HasComment("領料單產生註記");
 
                 entity.Property(e => e.plm_spec_m_id)
                     .HasMaxLength(32)

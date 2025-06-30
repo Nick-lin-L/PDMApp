@@ -11,6 +11,7 @@ namespace PDMApp.Parameters.Basic
     public class ShoeShapeImportHeadParameter
     {
         public string Product_M_Id { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
         public bool Active { get; set; }
         public string Assigned_Agents { get; set; }
         public string Working_Name { get; set; }
@@ -31,11 +32,13 @@ namespace PDMApp.Parameters.Basic
         public string LP01_Factory_Yearly_Forecast { get; set; }
         public string LP02_Factory_Yearly_Forecast { get; set; }
         public string LP03_Factory_Yearly_Forecast { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
         public string Silver_Flag { get; set; }
         public string Account_Code { get; set; }
         public string Account_Name { get; set; }
         public string Account_Exclusivity { get; set; }
         public string Region_Exclusivity { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
         public string Regional_SMU_Team_Approval { get; set; }
         public string Stage { get; set; }
         public string Latest_BOM { get; set; }
@@ -59,6 +62,7 @@ namespace PDMApp.Parameters.Basic
         public string TDM_Date { get; set; }
         public string SFM_Date { get; set; }
         public string Production_Lead_Time { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
         public string Production_Approval { get; set; }
         public string Production_Approval_Date { get; set; }
         public string MOQ_Per_Item { get; set; }
@@ -95,6 +99,7 @@ namespace PDMApp.Parameters.Basic
         public string Distribution_Tier { get; set; }
         public string Price_Tier { get; set; }
         public string Global_SRP { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
         public string Key_Item { get; set; }
         public string Target_Of_Colors { get; set; }
         public string Jump_To_Merch_Plan { get; set; }

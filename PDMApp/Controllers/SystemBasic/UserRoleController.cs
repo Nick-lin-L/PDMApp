@@ -19,7 +19,7 @@ using System.Transactions;
 
 namespace PDMApp.Controllers
 {
-    [Route("api/v1/Basic/[controller]")]
+    [Route("api/v1/SystemBasic/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "PDMToken")]
     public class UserRoleController : ControllerBase
@@ -44,35 +44,26 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="parameter">查詢參數</param>
         /// <returns>使用者角色列表</returns>
-        [RequirePermission(1, "READ")]
+        // [RequirePermission(1, "READ")]
         [HttpPost("list")]
-        public async Task<ActionResult<APIStatusResponse<PagedResult<UserRoleDto>>>> GetUserRoles([FromBody] UserRoleSearchParameter parameter)
+        public async Task<ActionResult<APIStatusResponse<PagedResult<UserRoleDto>>>> GetRoleUsers([FromBody] UserRoleSearchParameter parameter)
         {
             try
             {
                 var query = UserRoleQueryHelper.QueryUserRoles(_pcms_Pdm_TestContext);
 
                 // 套用過濾條件
-                if (parameter.UserId.HasValue)
-                    query = query.Where(ur => ur.UserId == parameter.UserId.Value);
-
-                if (parameter.RoleId.HasValue)
-                    query = query.Where(ur => ur.RoleId == parameter.RoleId.Value);
-
-                if (!string.IsNullOrWhiteSpace(parameter.UserName))
-                    query = query.Where(ur => ur.UserName.Contains(parameter.UserName));
-
-                if (!string.IsNullOrWhiteSpace(parameter.LocalName))
-                    query = query.Where(ur => ur.LocalName.Contains(parameter.LocalName));
-
-                if (!string.IsNullOrWhiteSpace(parameter.RoleName))
-                    query = query.Where(ur => ur.RoleName.Contains(parameter.RoleName));
+                if (!string.IsNullOrWhiteSpace(parameter.RoleId))
+                    query = query.Where(ur => ur.RoleId.Equals(parameter.RoleId));
 
                 if (!string.IsNullOrWhiteSpace(parameter.DevFactoryNo))
                     query = query.Where(ur => ur.DevFactoryNo == parameter.DevFactoryNo);
 
+                if (!string.IsNullOrWhiteSpace(parameter.IsActive))
+                    query = query.Where(ur => ur.IsActive == parameter.IsActive);
+
                 // 排序
-                query = query.OrderBy(ur => ur.UserName).ThenBy(ur => ur.RoleName);
+                query = query.OrderBy(ur => ur.RoleId).ThenBy(ur => ur.RoleId);
 
                 var pagedResult = await query.ToPagedResultAsync(parameter.Pagination.PageNumber, parameter.Pagination.PageSize);
 
@@ -93,7 +84,7 @@ namespace PDMApp.Controllers
         /// </summary>
         /// <param name="request">分配請求</param>
         /// <returns>分配結果</returns>
-        [RequirePermission(1, "CREATE")]
+        //[RequirePermission(1, "CREATE")]
         [HttpPost("assign")]
         public async Task<ActionResult<APIStatusResponse<UserRoleAssignResultDto>>> AssignUserRole([FromBody] UserRoleAssignRequest request)
         {
@@ -113,7 +104,7 @@ namespace PDMApp.Controllers
 
                     // 驗證使用者是否存在
                     var user = await _pcms_Pdm_TestContext.pdm_users
-                        .FirstOrDefaultAsync(u => u.user_id == request.UserId);
+                        .FirstOrDefaultAsync(u => u.user_id.Equals(request.UserId));
 
                     if (user == null)
                     {
@@ -126,7 +117,7 @@ namespace PDMApp.Controllers
 
                     // 驗證角色是否存在
                     var role = await _pcms_Pdm_TestContext.pdm_roles
-                        .FirstOrDefaultAsync(r => r.role_id == request.RoleId);
+                        .FirstOrDefaultAsync(r => r.role_id.Equals(request.RoleId));
 
                     if (role == null)
                     {
@@ -139,7 +130,7 @@ namespace PDMApp.Controllers
 
                     // 檢查是否已存在相同的使用者角色關聯
                     var existingUserRole = await _pcms_Pdm_TestContext.pdm_user_roles
-                        .FirstOrDefaultAsync(ur => ur.user_id == request.UserId && ur.role_id == request.RoleId);
+                        .FirstOrDefaultAsync(ur => ur.user_id.Equals(request.UserId) && ur.role_id.Equals(request.RoleId));
 
                     if (existingUserRole != null)
                     {
@@ -153,8 +144,8 @@ namespace PDMApp.Controllers
                     // 建立新的使用者角色關聯
                     var newUserRole = new pdm_user_roles
                     {
-                        user_id = request.UserId,
-                        role_id = request.RoleId,
+                        user_id = long.TryParse(request.UserId, out var parsedUserId) ? parsedUserId : (long?)null,
+                        role_id = int.TryParse(request.RoleId, out var parsedRoleId) ? parsedRoleId : (int?)null,
                         created_by = currentUser.UserId,
                         created_at = DateTime.UtcNow,
                         updated_by = currentUser.UserId,
@@ -195,11 +186,11 @@ namespace PDMApp.Controllers
         }
 
         /// <summary>
-        /// 批次使用者角色分配
+        /// 批次設定使用者角色
         /// </summary>
         /// <param name="request">批次分配請求</param>
         /// <returns>批次分配結果</returns>
-        [RequirePermission(1, "CREATE")]
+        //[RequirePermission(1, "CREATE")]
         [HttpPost("batch-assign")]
         public async Task<ActionResult<APIStatusResponse<BatchAssignResultDto>>> BatchAssignUserRoles([FromBody] BatchUserRoleAssignRequest request)
         {
@@ -440,31 +431,6 @@ namespace PDMApp.Controllers
         }
 
         /// <summary>
-        /// 取得使用者的所有角色
-        /// </summary>
-        /// <param name="userId">使用者 ID</param>
-        /// <returns>使用者角色列表</returns>
-        [HttpGet("user/{userId}/roles")]
-        public async Task<ActionResult<APIStatusResponse<IEnumerable<UserRoleDto>>>> GetUserRoles(long userId)
-        {
-            try
-            {
-                var userRoles = await UserRoleQueryHelper.QueryUserRolesByUserId(_pcms_Pdm_TestContext, userId)
-                    .ToListAsync();
-
-                return APIResponseHelper.HandleApiResponse(userRoles);
-            }
-            catch (Exception ex)
-            {
-                return APIResponseHelper.HandleApiError<IEnumerable<UserRoleDto>>(
-                    errorCode: "10001",
-                    message: $"查詢使用者角色時發生錯誤: {ex.Message}",
-                    data: null
-                );
-            }
-        }
-
-        /// <summary>
         /// 取得角色的所有使用者
         /// </summary>
         /// <param name="roleId">角色 ID</param>
@@ -519,12 +485,13 @@ namespace PDMApp.Controllers
     /// </summary>
     public class UserRoleSearchParameter
     {
-        public long? UserId { get; set; }
-        public int? RoleId { get; set; }
-        public string UserName { get; set; }
-        public string LocalName { get; set; }
-        public string RoleName { get; set; }
+        //public string? UserId { get; set; }
+        public string? RoleId { get; set; }
+        //public string UserName { get; set; }
+        //public string LocalName { get; set; }
+        //public string RoleName { get; set; }
         public string DevFactoryNo { get; set; }
+        public string IsActive { get; set; } = "Y";
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
 }
