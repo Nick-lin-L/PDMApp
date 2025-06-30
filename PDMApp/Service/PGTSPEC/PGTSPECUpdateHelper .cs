@@ -103,6 +103,8 @@ namespace Service.PGTSPEC
                 // 更新 SPEC_HEAD 相關欄位
                 headEntity.pgt_color_name = headData.PgtColorName?.Trim();
                 headEntity.ref_dev_no = headData.RefDevNo?.Trim();
+                headEntity.mail_to = headData.MailTo?.Trim(); 
+                headEntity.mail_cc = headData.MailCc?.Trim(); 
                 headEntity.mold_no1 = headData.MoldNo1?.Trim();
                 headEntity.mold_no2 = headData.MoldNo2?.Trim();
                 headEntity.mold_no3 = headData.MoldNo3?.Trim();

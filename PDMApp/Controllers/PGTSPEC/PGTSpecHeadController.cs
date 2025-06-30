@@ -397,6 +397,8 @@ namespace PDMApp.Controllers.PGTSPEC
                 resultData["StageCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["DevelopmentNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
                 resultData["DevelopmentColorNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
+                resultData["MailToCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailToCombo(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["MailCcCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailCcCombo(_pcms_Pdm_TestContext, value).ToListAsync();
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
@@ -408,6 +410,86 @@ namespace PDMApp.Controllers.PGTSPEC
                     ErrorCode = "Server_ERROR",
                     Message = "ServerError",
                     Details = ex.Message
+                });
+            }
+        }
+
+
+        // POST api/v1/PGTSpecHead/QueryMatm
+        [HttpPost("QueryMatm")]
+        public async Task<ActionResult<APIStatusResponse<List<MatmResultDto>>>> QueryMatm([FromBody] MatmSearchParameter value)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                // 從 Service 層獲取 IQueryable<MatmResultDto>
+                var (isSuccess, message, query) = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMatmAsync(_pcms_Pdm_TestContext, value);
+
+                if (!isSuccess)
+                {
+                    return StatusCode(200, new APIStatusResponse<List<MatmResultDto>>
+                    {
+                        ErrorCode = "BUSINESS_ERROR",
+                        Message = message,
+                        Data = null
+                    });
+                }
+
+                // 將所有符合條件的原始數據從資料庫載入到記憶體
+                var allMatchingMatmResults = await query.ToListAsync();
+
+                // 在記憶體中進行分組和聚合
+                var finalAggregatedResults = allMatchingMatmResults
+                    .GroupBy(m => m.MatFullNm) // 以 MatFullNm 作為分組鍵
+                    .Select(g => {
+                        // 從組內獲取一個代表元素
+                        var representativeItem = g.First();
+
+                        return new MatmResultDto
+                        {
+                            // 聚合 SerpMatNo: 收集所有非空且不重複的 SerpMatNo，排序後用換行符連接
+                            SerpMatNo = string.Join("\n", g.Where(x => !string.IsNullOrEmpty(x.SerpMatNo))
+                                                              .Select(x => x.SerpMatNo)
+                                                              .Distinct()
+                                                              .OrderBy(s => s) // 確保順序一致
+                                                              .ToList()),
+                            // 聚合 MaterialNo: 收集所有非空且不重複的 MaterialNo，排序後用換行符連接
+                            MaterialNo = string.Join("\n", g.Where(x => !string.IsNullOrEmpty(x.MaterialNo))
+                                                               .Select(x => x.MaterialNo)
+                                                               .Distinct()
+                                                               .OrderBy(s => s) // 確保順序一致
+                                                               .ToList()),
+                            // 其他欄位：從代表元素中取值。
+                            // 注意：如果這些欄位在同一個 MatFullNm 組內有不同值，
+                            // 這裡只會取第一個元素的值。
+                            MatFullNm = g.Key, // MatFullNm 就是分組鍵
+                            ColorNo = representativeItem.ColorNo,
+                            ColorNm = representativeItem.ColorNm,
+                            Uom = representativeItem.Uom,
+                            Memo = representativeItem.Memo,
+                            Standard = representativeItem.Standard,
+                            Colors = representativeItem.Colors // Colors 應該已經在 Service 層的 Select 中處理好
+                        };
+                    })
+                    .OrderBy(m => m.MatFullNm) // 對聚合後的結果進行最終排序
+                    .ToList(); // 轉換為 List<MatmResultDto>
+ 
+                return Ok(new APIStatusResponse<List<MatmResultDto>>
+                {
+                    ErrorCode = "OK",
+                    Message = "查詢成功",
+                    Data = finalAggregatedResults
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new APIStatusResponse<List<MatmResultDto>>
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "ServerError",
+                    Data = null
                 });
             }
         }

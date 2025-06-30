@@ -16,6 +16,15 @@ namespace PDMApp.Parameters.PGTSPEC
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
     }
 
+    public class MatmSearchParameter
+    {
+        public string? SerpMatNo { get; set; }
+        public string? MaterialNo { get; set; }
+        public string? MatFullNm { get; set; }
+        public string? ColorNo { get; set; }
+        public string? ColorNm { get; set; }
+    }
+
     public class CheckSpecExistParameter
     {
         public string? DevelopmentNo { get; set; }
@@ -56,7 +65,12 @@ namespace PDMApp.Parameters.PGTSPEC
     public class CheckoutSpecParameter : SpecOperationParameter { }
     public class CheckinSpecParameter : SpecOperationParameter { }
     public class SpecLockParameter : SpecOperationParameter { }
-    public class PGTSpec5SheetsSearchParameter : SpecOperationParameter { }
+
+    public class PGTSpec5SheetsSearchParameter
+    {
+        public string SpecMId { get; set; }
+        public string? DevFactoryNo { get; set; }
+    }
 
     public class PGTSpec5SheetsUpdateParameter
     {
@@ -76,6 +90,8 @@ namespace PDMApp.Parameters.PGTSPEC
         public string? MoldNo3 { get; set; }
         public string? RemarksSpec { get; set; }
         public string? RemarksProhibit { get; set; }
+        public string? MailTo { get; set; }   
+        public string? MailCc { get; set; }   
     }
 
     public class SpecItemUpdateParameter

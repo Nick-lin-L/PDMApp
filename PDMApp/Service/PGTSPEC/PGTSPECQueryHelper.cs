@@ -155,7 +155,110 @@ namespace PDMApp.Service.PGTSPEC
             return groupedData;
         }
 
+        public static IQueryable<ComboDto> QueryMailToCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
+        {
+            var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
+                        where n.group_key == "mail_to" 
+                        select new
+                        {
+                            Text = n.text,     
+                            Value = n.value_desc, 
+                            FactNo = n.fact_no
+                        };
 
+            if (value != null && !string.IsNullOrWhiteSpace(value.DevFactoryNo))
+            {
+                query = query.Where(n => n.FactNo == value.DevFactoryNo);
+            }
+
+            query = query.OrderBy(n => n.Value);
+
+            // 轉換成 ComboDto
+            return query.Select(n => new ComboDto
+            {
+                Text = n.Text,
+                Value = n.Value
+            });
+        }
+
+        public static IQueryable<ComboDto> QueryMailCcCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
+        {
+            var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
+                        where n.group_key == "mail_cc"
+                        select new
+                        {
+                            Text = n.text,     
+                            Value = n.value_desc, 
+                            FactNo = n.fact_no
+                        };
+
+            if (value != null && !string.IsNullOrWhiteSpace(value.DevFactoryNo))
+            {
+                query = query.Where(n => n.FactNo == value.DevFactoryNo);
+            }
+
+            query = query.OrderBy(n => n.Value);
+
+            // 轉換成 ComboDto
+            return query.Select(n => new ComboDto
+            {
+                Text = n.Text,
+                Value = n.Value
+            });
+        }
+
+        public static async Task<(bool IsSuccess, string Message, IQueryable<MatmResultDto>? Query)> QueryMatmAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, MatmSearchParameter value)
+        {
+            try
+            {
+                var rawMatmQuery = _pcms_Pdm_TestContext.matm.AsQueryable();
+
+                // 套用查詢條件 (這些條件直接在資料庫端執行)
+                if (!string.IsNullOrWhiteSpace(value.SerpMatNo))
+                {
+                    rawMatmQuery = rawMatmQuery.Where(m => m.serp_mat_no != null && m.serp_mat_no.Contains(value.SerpMatNo));
+                }
+                if (!string.IsNullOrWhiteSpace(value.MaterialNo))
+                {
+                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_no != null && m.mat_no.Contains(value.MaterialNo));
+                }
+                if (!string.IsNullOrWhiteSpace(value.MatFullNm))
+                {
+                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_full_nm != null && m.mat_full_nm.Contains(value.MatFullNm));
+                }
+                if (!string.IsNullOrWhiteSpace(value.ColorNo))
+                {
+                    rawMatmQuery = rawMatmQuery.Where(m => m.color_no != null && m.color_no.Contains(value.ColorNo));
+                }
+                if (!string.IsNullOrWhiteSpace(value.ColorNm))
+                {
+                    rawMatmQuery = rawMatmQuery.Where(m => m.color_nm != null && m.color_nm.Contains(value.ColorNm));
+                }
+
+                // 在這裡只做初步的 Select 映射，不做 GroupBy 和 string.Join
+                // 因為這些操作無法直接轉譯為資料庫查詢
+                var resultQuery = rawMatmQuery.Select(m => new MatmResultDto
+                {
+                    SerpMatNo = m.serp_mat_no, // 暫時保留原始值
+                    MaterialNo = m.mat_no,     // 暫時保留原始值
+                    MatFullNm = m.mat_full_nm,
+                    Uom = m.uom,
+                    Memo = m.memo,
+                    Standard = m.standard,
+                    ColorNo = m.color_no,
+                    ColorNm = m.color_nm,
+                    // Colors 的邏輯可以在 IQueryable 階段，因為是單行處理
+                    Colors = (m.color_no != null && m.color_nm != null) ? $"{m.color_no} {m.color_nm}" :
+                               (m.color_no != null ? m.color_no : m.color_nm)
+                });
+
+                return (true, "Query successful", resultQuery); // 返回 IQueryable<MatmResultDto>
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Database error during Matm query: {ex.Message}", null);
+            }
+        }
 
         public static async Task<(bool, string, IQueryable<PGTSPECHeaderDto>)> QuerySpecHead(pcms_pdm_testContext _pcms_Pdm_TestContext, bool latestVerOnly, PGTSPECSearchParameter value, string pccuid, string name)
         {
@@ -322,47 +425,114 @@ namespace PDMApp.Service.PGTSPEC
         }
 
 
-        public static IQueryable<SpecUpperDTO> GetSpecUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
+        public static async Task<List<SpecUpperDTO>> GetSpecUpperResponse(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
-            return from si in _pcms_Pdm_TestContext.pcg_spec_item
-                   select new SpecUpperDTO
-                   {
-                       SpecMId = si.spec_m_id ?? "",
-                       SpecDId = si.spec_d_id ?? "",
-                       Sort = si.material_sort,
-                       No = si.parts_no ?? "",
-                       ActPartNo = si.act_part_no ?? "",
-                       Type = si.material_new ?? "",
-                       Parts = si.parts ?? "",
-                       Detail = si.detail ?? "",
-                       ProcessMk = si.process_mk ?? "",
-                       MaterialNo = "", // MATERIAL NO 需要透過 MATERIAL 關聯 PDM_MATERIAL 取得
-                       Material = si.material ?? "",
-                       Recycle = si.recycle ?? "",
-                       MaterialComment = si.mat_comment ?? "",
-                       Standard = si.standard ?? "",
-                       Agent = si.agent ?? "",
-                       Supplier = si.supplier ?? "",
-                       QuoteSupplier = si.quote_supplier ?? "",
-                       Hcha = si.hcha ?? "", // HC/HA
-                       Sec = si.sec ?? "",
-                       Colors = si.material_color ?? "",
-                       ColorComment = si.clr_comment ?? "",
-                       Memo = si.memo ?? "",
-                       MatGroup = si.material_group ?? ""
-                   };
+            // 步驟一：非同步地從 matm 表中獲取所有相關的 material_full_nm, mat_no, serp_mat_no 資料。
+            var matmRawData = await _pcms_Pdm_TestContext.matm
+                .Where(m => m.mat_full_nm != null && (m.mat_no != null || m.serp_mat_no != null))
+                .Select(m => new { m.mat_full_nm, m.mat_no, m.serp_mat_no })
+                .ToListAsync(); // <-- 非同步執行並載入到記憶體
+
+            // 步驟二：在記憶體中對 matmRawData 進行分組和去重，建立一個用於快速查找的字典。
+            var matmMaterialLookup = matmRawData
+                .GroupBy(m => m.mat_full_nm)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        MaterialNos = g.Where(x => x.mat_no != null).Select(x => x.mat_no).Distinct().ToList(),
+                        SerpMatNos = g.Where(x => x.serp_mat_no != null).Select(x => x.serp_mat_no).Distinct().ToList()
+                    }
+                );
+
+            // 步驟三：非同步地從 pcg_spec_item 表中獲取基礎資料。
+            var specItemBaseData = await _pcms_Pdm_TestContext.pcg_spec_item
+                .Select(si => new // 在資料庫端選擇所有基礎欄位
+            {
+                    si.spec_m_id,
+                    si.spec_d_id,
+                    si.material_sort,
+                    si.parts_no,
+                    si.act_part_no,
+                    si.material_new,
+                    si.parts,
+                    si.detail,
+                    si.process_mk,
+                    si.material, // 這裡需要 material 來進行字典查找
+                si.recycle,
+                    si.mat_comment,
+                    si.standard,
+                    si.agent,
+                    si.supplier,
+                    si.quote_supplier,
+                    si.hcha,
+                    si.sec,
+                    si.material_color,
+                    si.clr_comment,
+                    si.memo,
+                    si.material_group
+                })
+                .ToListAsync(); // <-- 非同步執行並載入到記憶體
+
+            // 步驟四：在記憶體中組裝最終的 SpecUpperDTO 列表，並填充 MaterialNo 和 SerpMatNo。
+            var finalSpecUpperDtos = specItemBaseData.Select(si =>
+            {
+                matmMaterialLookup.TryGetValue(si.material ?? "", out var matmInfo);
+
+                return new SpecUpperDTO
+                {
+                    SpecMId = si.spec_m_id ?? "",
+                    SpecDId = si.spec_d_id ?? "",
+                    Sort = si.material_sort,
+                    No = si.parts_no ?? "",
+                    ActPartNo = si.act_part_no ?? "",
+                    Type = si.material_new ?? "",
+                    Parts = si.parts ?? "",
+                    Detail = si.detail ?? "",
+                    ProcessMk = si.process_mk ?? "",
+                    MaterialNo = matmInfo != null ? string.Join("\n", matmInfo.MaterialNos) : "",
+                    SerpMatNo = matmInfo != null ? string.Join("\n", matmInfo.SerpMatNos) : "",
+                    Material = si.material ?? "",
+                    Recycle = si.recycle ?? "",
+                    MaterialComment = si.mat_comment ?? "",
+                    Standard = si.standard ?? "",
+                    Agent = si.agent ?? "",
+                    Supplier = si.supplier ?? "",
+                    QuoteSupplier = si.quote_supplier ?? "",
+                    Hcha = si.hcha ?? "", // HC/HA
+                    Sec = si.sec ?? "",
+                    Colors = si.material_color ?? "",
+                    ColorComment = si.clr_comment ?? "",
+                    Memo = si.memo ?? "",
+                    MatGroup = si.material_group ?? ""
+                };
+            }).ToList(); // <-- 直接返回 List<SpecUpperDTO>，不再 AsQueryable()
+
+            return finalSpecUpperDtos;
         }
 
-        public static IQueryable<SpecHeadDto> GetSpecHeadResponse(pcms_pdm_testContext context)
+        public static IQueryable<SpecHeadDto> GetSpecHeadResponse(pcms_pdm_testContext context, string currentFactNo) 
         {
+            var mailToNames = context.pdm_namevalue_new
+                                   .Where(nv => nv.group_key == "mail_to" && nv.fact_no == currentFactNo);
+
+            var mailCcNames = context.pdm_namevalue_new
+                                   .Where(nv => nv.group_key == "mail_cc" && nv.fact_no == currentFactNo);
+
             var query = from sh in context.pcg_spec_head
+                        join mt in mailToNames
+                        on sh.mail_to equals mt.value_desc into mailToGroup
+                        from mailTo in mailToGroup.DefaultIfEmpty() 
+                        join mc in mailCcNames
+                        on sh.mail_cc equals mc.value_desc into mailCcGroup
+                        from mailCc in mailCcGroup.DefaultIfEmpty() 
                         select new SpecHeadDto
                         {
                             SpecMId = sh.spec_m_id ?? "",
                             PgtColorName = sh.pgt_color_name ?? "",
                             RefDevNo = sh.ref_dev_no ?? "",
-                            MailTo = "", // TBD 欄位，先給空值
-                            MailCc = "", // TBD 欄位，先給空值
+                            MailTo = mailTo.text ,
+                            MailCc =  mailCc.text,
                             MoldNo1 = sh.mold_no1 ?? "",
                             MoldNo2 = sh.mold_no2 ?? "",
                             MoldNo3 = sh.mold_no3 ?? "",

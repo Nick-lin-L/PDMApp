@@ -24,15 +24,14 @@ namespace PDMApp.Controllers.SPEC
         {
             _pcms_Pdm_TestContext = pcms_Pdm_TestContext;
         }
-
         // POST api/v1/PGTSpec5Sheets
         [HttpPost]
         public async Task<ActionResult<Utils.APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] PGTSpec5SheetsSearchParameter value)
         {
             try
             {
-                // 創建 MultiPageResultDTO
                 var resultData = new MultiPageResultDTO();
+                string currentFactNo = value.DevFactoryNo ?? "";
 
                 // BasicData 查詢
                 var basicQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
@@ -40,19 +39,17 @@ namespace PDMApp.Controllers.SPEC
                 resultData.BasicData = await basicQuery.Distinct().ToListAsync();
 
                 // Head 查詢
-                var headQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext)
+                var headQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext, currentFactNo)
                     .Where(h => string.IsNullOrWhiteSpace(value.SpecMId) || h.SpecMId.Equals(value.SpecMId));
                 resultData.HeadData = await headQuery.Distinct().ToListAsync();
 
                 // Upper, Sole, Other 查詢
-                var upperQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
-                    .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
+                // **直接等待 GetSpecUpperResponse 返回 List<SpecUpperDTO>**
+                var allUpperData = await Service.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext);
 
-                // 先轉成 List 再做排序（避免運算式樹的限制）
-                var allUpperData = await upperQuery.ToListAsync();
-
-                // 排序邏輯：先按 material_group，再按 act_part_no 數值排序，最後按 parts_no 判斷 null 先後
-                var sortedUpperData = allUpperData
+                // 在記憶體中對 allUpperData 進行篩選和排序
+                var filteredUpperData = allUpperData
+                    .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId))
                     .OrderBy(si => si.MatGroup)
                     .ThenBy(si => int.TryParse(si.ActPartNo, out int num) ? num : int.MaxValue)
                     .ThenBy(si => string.IsNullOrEmpty(si.No) ? 1 : 0)  // parts_no 有值的排前
@@ -61,9 +58,9 @@ namespace PDMApp.Controllers.SPEC
                     .ToList();
 
                 // 根據 MatGroup 分組
-                resultData.UpperData = sortedUpperData.Where(si => si.MatGroup == "A").ToList();
-                resultData.SoleData = sortedUpperData.Where(si => si.MatGroup == "B").ToList();
-                resultData.OtherData = sortedUpperData.Where(si => si.MatGroup == "C").ToList();
+                resultData.UpperData = filteredUpperData.Where(si => si.MatGroup == "A").ToList();
+                resultData.SoleData = filteredUpperData.Where(si => si.MatGroup == "B").ToList();
+                resultData.OtherData = filteredUpperData.Where(si => si.MatGroup == "C").ToList();
 
                 // 手動轉換為字典
                 var dynamicData = new Dictionary<string, object>
@@ -73,12 +70,11 @@ namespace PDMApp.Controllers.SPEC
                     { "UpperData", resultData.UpperData },
                     { "SoleData", resultData.SoleData },
                     { "OtherData", resultData.OtherData },
-                    { "ErrorCode", "OK" }, 
-                    { "Message", "查詢成功" }, // 可加上訊息
+                    { "ErrorCode", "OK" },
+                    { "Message", "查詢成功" },
                 };
 
                 return StatusCode(200, dynamicData);
-
             }
             catch (Exception ex)
             {
