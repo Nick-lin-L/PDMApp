@@ -19,7 +19,7 @@ namespace PDMApp.Parameters.PGTSPEC
     public class MatmSearchParameter
     {
         public string? SerpMatNo { get; set; }
-        public string? MaterialNo { get; set; }
+        public string? MatNo { get; set; }
         public string? MatFullNm { get; set; }
         public string? ColorNo { get; set; }
         public string? ColorNm { get; set; }

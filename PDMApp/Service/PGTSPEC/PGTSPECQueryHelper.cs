@@ -177,7 +177,7 @@ namespace PDMApp.Service.PGTSPEC
             return query.Select(n => new ComboDto
             {
                 Text = n.Text,
-                Value = n.Value
+                Value = n.Text
             });
         }
 
@@ -203,7 +203,7 @@ namespace PDMApp.Service.PGTSPEC
             return query.Select(n => new ComboDto
             {
                 Text = n.Text,
-                Value = n.Value
+                Value = n.Text
             });
         }
 
@@ -218,9 +218,9 @@ namespace PDMApp.Service.PGTSPEC
                 {
                     rawMatmQuery = rawMatmQuery.Where(m => m.serp_mat_no != null && m.serp_mat_no.Contains(value.SerpMatNo));
                 }
-                if (!string.IsNullOrWhiteSpace(value.MaterialNo))
+                if (!string.IsNullOrWhiteSpace(value.MatNo))
                 {
-                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_no != null && m.mat_no.Contains(value.MaterialNo));
+                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_no != null && m.mat_no.Contains(value.MatNo));
                 }
                 if (!string.IsNullOrWhiteSpace(value.MatFullNm))
                 {
@@ -240,7 +240,7 @@ namespace PDMApp.Service.PGTSPEC
                 var resultQuery = rawMatmQuery.Select(m => new MatmResultDto
                 {
                     SerpMatNo = m.serp_mat_no, // 暫時保留原始值
-                    MaterialNo = m.mat_no,     // 暫時保留原始值
+                    MatNo = m.mat_no,     // 暫時保留原始值
                     MatFullNm = m.mat_full_nm,
                     Uom = m.uom,
                     Memo = m.memo,

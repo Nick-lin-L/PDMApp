@@ -79,6 +79,38 @@ namespace Service.PGTSPEC
             return null;
         }
 
+
+        /// <summary>
+        /// 根據提供的郵件名稱字串和組鍵，從 pdm_namevalue_new 表中查找對應的 value_desc。
+        /// </summary>
+        private static async Task<string?> GetValueDescFromMailNamesAsync(pcms_pdm_testContext context, string? mailNames, string groupKey)
+        {
+            if (string.IsNullOrWhiteSpace(mailNames))
+            {
+                return null; 
+            }
+
+            var trimmedMailNames = mailNames.Trim();
+
+            var nameValuesQuery = context.pdm_namevalue_new
+                                         .AsNoTracking()
+                                         .Where(nv =>
+                                             nv.group_key == groupKey &&
+                                             nv.status == "Y" && 
+                                             nv.text != null 
+                                         );
+
+            //  將篩選過 group_key 和 status 的數據先載入記憶體，然後在記憶體中進行字串比較
+            var relevantNameValues = await nameValuesQuery.ToListAsync();
+
+            // 在記憶體中進行字串比較 (可以使用 OrdinalIgnoreCase)
+            var foundNameValue = relevantNameValues.FirstOrDefault(nv =>
+                nv.text!.Trim().Equals(trimmedMailNames, StringComparison.OrdinalIgnoreCase)
+            );
+
+            return foundNameValue?.value_desc;
+        }
+
         /// <summary>
         /// 更新 SPEC_HEAD 和 SPEC_ITEM (確保整體一致性)
         /// </summary>
@@ -101,6 +133,9 @@ namespace Service.PGTSPEC
                 }
 
                 // 更新 SPEC_HEAD 相關欄位
+                // 處理 MailTo 和 MailCc
+                headEntity.mail_to = await GetValueDescFromMailNamesAsync(context, headData.MailTo, "mail_to");
+                headEntity.mail_cc = await GetValueDescFromMailNamesAsync(context, headData.MailCc, "mail_cc");
                 headEntity.pgt_color_name = headData.PgtColorName?.Trim();
                 headEntity.ref_dev_no = headData.RefDevNo?.Trim();
                 headEntity.mail_to = headData.MailTo?.Trim(); 
