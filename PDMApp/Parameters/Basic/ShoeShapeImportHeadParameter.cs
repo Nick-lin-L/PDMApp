@@ -12,7 +12,7 @@ namespace PDMApp.Parameters.Basic
     {
         public string Product_M_Id { get; set; }
         [JsonConverter(typeof(BoolToStringConverter))]
-        public bool Active { get; set; }
+        public string Active { get; set; }
         public string Assigned_Agents { get; set; }
         public string Working_Name { get; set; }
         public string Series { get; set; }
@@ -59,7 +59,7 @@ namespace PDMApp.Parameters.Basic
         public string Global_RID { get; set; }
         public string Earliest_RID { get; set; }
         public string Production_Start_Month { get; set; }
-        public string TDM_Date { get; set; }
+        public string TDM_Request_Date { get; set; }
         public string SFM_Date { get; set; }
         public string Production_Lead_Time { get; set; }
         [JsonConverter(typeof(BoolToStringConverter))]
@@ -123,7 +123,8 @@ namespace PDMApp.Parameters.Basic
         public string Development_No { get; set; }
 
         public string Product_D_Id { get; set; }
-        public bool Deteail_Active { get; set; }
+        [JsonConverter(typeof(BoolToStringConverter))]
+        public string Deteail_Active { get; set; }
         public string Design_Candidate { get; set; }
         public string Colorway { get; set; }
         public string Development_Color_No { get; set; }

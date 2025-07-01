@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-// 常規型態，時間取至hhmmss
+// 常規型態，Boolean to String
 namespace PDMApp.Utils.Converters
 {
     public class BoolToStringConverter : JsonConverter<string>
@@ -14,15 +14,23 @@ namespace PDMApp.Utils.Converters
             switch (reader.TokenType)
             {
                 case JsonTokenType.True:
+                case JsonTokenType.Number when reader.GetInt32() == 1:
                     return "TRUE";
                 case JsonTokenType.False:
+                case JsonTokenType.Number when reader.GetInt32() == 0:
                     return "FALSE";
                 case JsonTokenType.String:
-                    return reader.GetString();
+                    var str = reader.GetString()?.ToUpper();
+                    return str switch
+                    {
+                        "TRUE" or "1" or "YES" or "Y" => "TRUE",
+                        "FALSE" or "0" or "NO" or "N" => "FALSE",
+                        _ => str ?? ""
+                    };
                 case JsonTokenType.Null:
-                    return null;
+                    return "";
                 default:
-                    throw new JsonException($"Cannot convert {reader.TokenType} to string");
+                    return ""; // 改為返回空字串而不是拋出異常
             }
         }
 

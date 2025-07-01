@@ -97,7 +97,43 @@ namespace PDMApp.Controllers.Basic
         {
             try
             {
-                // 1. 驗證所有資料
+                // 增加資料量限制
+                if (parameters?.Count > 200)
+                {
+                    return APIResponseHelper.HandleApiError<List<plm_product_head>>(
+                        errorCode: "50004",
+                        message: "資料量過大，請分批處理",
+                        data: null
+                    );
+                }
+
+                // 增加空值檢查
+                if (parameters == null || !parameters.Any())
+                {
+                    return APIResponseHelper.HandleApiError<List<plm_product_head>>(
+                        errorCode: "50005",
+                        message: "沒有接收到任何資料",
+                        data: null
+                    );
+                }
+
+                // 1. 批次查詢優化 - 一次性查詢所有相關資料
+                var developmentNos = parameters.Select(p => p.Development_No).Distinct().ToList();
+                var stages = parameters.Select(p => p.Stage).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
+
+                // 一次性查詢所有可能存在的 product_head
+                var existingProducts = await _pcms_Pdm_TestContext.plm_product_head
+                    .Where(x => developmentNos.Contains(x.development_no))
+                    .ToDictionaryAsync(x => x.development_no, x => x);
+
+                // 一次性查詢所有相關的 stage
+                var validStages = await _pcms_Pdm_TestContext.pdm_namevalue_new
+                    .Where(x => x.group_key == "stage" && stages.Contains(x.text))
+                    .Select(x => x.text)
+                    .ToListAsync();
+                var validStagesSet = new HashSet<string>(validStages);
+
+                // 2. 驗證所有資料
                 var validationResults = new List<(int Index, string Error)>();
 
                 for (int i = 0; i < parameters.Count; i++)
@@ -112,10 +148,7 @@ namespace PDMApp.Controllers.Basic
                     }
 
                     // 檢查 Stage
-                    var stageExists = await _pcms_Pdm_TestContext.pdm_namevalue_new
-                        .AnyAsync(x => x.group_key == "stage" && x.text == param.Stage);
-
-                    if (!stageExists)
+                    if (!string.IsNullOrEmpty(param.Stage) && !validStagesSet.Contains(param.Stage))
                     {
                         validationResults.Add((i + 1, $"Stage '{param.Stage}' 不存在於系統中"));
                     }
@@ -132,28 +165,28 @@ namespace PDMApp.Controllers.Basic
                     );
                 }
 
-                // 2. 處理所有資料
+                // 3. 處理所有資料
                 var results = new List<plm_product_head>();
+                var now = DateTime.Now;
+
                 foreach (var param in parameters)
                 {
                     // 從 DevelopmentNo 解析 Season
                     string season = param.Development_No.Split('-')[0];
 
                     // 檢查是否已存在相同 DevelopmentNo 的記錄
-                    var existingProduct = await _pcms_Pdm_TestContext.plm_product_head
-                        .FirstOrDefaultAsync(x => x.development_no == param.Development_No);
-
+                    existingProducts.TryGetValue(param.Development_No, out var existingProduct);
                     var product = existingProduct ?? new plm_product_head();
 
                     // 如果是新增記錄，生成新的 UUID
                     if (existingProduct == null)
                     {
                         product.product_m_id = GenerateUUID();
+                        product.add_date = now;
                     }
 
-
-                    // 更新或設置產品資料
-                    product.active = param.Active ? "true" : "false";  // 將 bool 轉換為 "true"/"false"
+                    // 更新或設置產品資料 - 增加安全的資料轉換
+                    product.active = param.Active;
                     product.assigned_agents = param.Assigned_Agents;
                     product.working_name = param.Working_Name;
                     product.series = param.Series;
@@ -168,12 +201,15 @@ namespace PDMApp.Controllers.Basic
                     product.kids_type = param.Kids_Type;
                     product.width = param.Width;
                     product.pack = param.Pack;
-                    product.lp01_season_forecast = int.TryParse(param.LP01_Factory_Season_Forecast, out int lp01Season) ? lp01Season : null;
+
+                    // 安全的數字轉換
+                    product.lp01_season_forecast = SafeParseInt(param.LP01_Factory_Season_Forecast);
                     product.lp02_season_forecast = param.LP02_Factory_Season_Forecast;
                     product.lp03_season_forecast = param.LP03_Factory_Season_Forecast;
-                    product.lp01_yearly_forecast = int.TryParse(param.LP01_Factory_Yearly_Forecast, out int lp01Yearly) ? lp01Yearly : null;
+                    product.lp01_yearly_forecast = SafeParseInt(param.LP01_Factory_Yearly_Forecast);
                     product.lp02_yearly_forecast = param.LP02_Factory_Yearly_Forecast;
                     product.lp03_yearly_forecast = param.LP03_Factory_Yearly_Forecast;
+
                     product.account_code = param.Account_Code;
                     product.account_name = param.Account_Name;
                     product.account_exclusivity = param.Account_Exclusivity;
@@ -195,14 +231,14 @@ namespace PDMApp.Controllers.Basic
                     product.developer = param.Developer;
                     product.designer = param.Designer;
                     product.developer_remarks = param.Developer_Remarks;
-                    product.global_rid = ConvertToYYYYMMDD(param.Global_RID);
-                    product.earliest_rid = ConvertToYYYYMMDD(param.Earliest_RID);
-                    product.production_start_month = ConvertToYYYYMMDD(param.Production_Start_Month);
-                    product.tdm_date = ConvertToYYYYMMDD(param.TDM_Date);
-                    product.sfm_date = ConvertToYYYYMMDD(param.SFM_Date);
+                    product.global_rid = ConvertHelper.ConvertToYYYYMMDD(param.Global_RID);
+                    product.earliest_rid = ConvertHelper.ConvertToYYYYMMDD(param.Earliest_RID);
+                    product.production_start_month = ConvertHelper.ConvertToYYYYMMDD(param.Production_Start_Month);
+                    product.tdm_date = ConvertHelper.ConvertToYYYYMMDD(param.TDM_Request_Date);
+                    product.sfm_date = ConvertHelper.ConvertToYYYYMMDD(param.SFM_Date);
                     product.production_lead_time = param.Production_Lead_Time;
                     product.production_approval = param.Production_Approval;
-                    product.production_approval_date = param.Production_Approval_Date;
+                    product.production_approval_date = ConvertHelper.ConvertToYYYYMMDD(param.Production_Approval_Date);
                     product.moq_per_item = param.MOQ_Per_Item;
                     product.sampling_factory = param.Sampling_Factory;
                     product.main_factory = param.Main_Factory;
@@ -236,33 +272,29 @@ namespace PDMApp.Controllers.Basic
                     product.product_line_type = param.Product_Line_Type;
                     product.distribution_tier = param.Distribution_Tier;
                     product.price_tier = param.Price_Tier;
-                    product.global_srp = decimal.TryParse(param.Global_SRP, out decimal globalSrp) ? globalSrp : null;
+                    product.global_srp = SafeParseDecimal(param.Global_SRP);
                     product.key_item = param.Key_Item;
                     product.target_of_colors = param.Target_Of_Colors;
                     product.jump_to_merch_plan = param.Jump_To_Merch_Plan;
                     product.ref_item = param.Ref_Item;
                     product.ref_item_mold_set = param.Ref_Item_Mold_Set;
                     product.md_remarks = param.MD_Remarks;
-                    product.modified = param.Modified ?? DateTime.Now;
+                    product.modified = param.Modified ?? now;
                     product.modified_by = param.Modified_By;
-                    product.pushed_development_time = ConvertToYYYYMMDD(param.Pushed_Development_Time);
+                    product.pushed_development_time = ConvertHelper.ConvertToYYYYMMDD(param.Pushed_Development_Time);
                     product.item_trading_code = param.Item_Trading_Code;
                     product.global_id = param.Global_ID;
                     product.sort_order = param.Sort_Order;
                     product.factory = param.Login_Factory; // 使用當前登入廠別
 
+                    product.update_date = now;
+
                     if (existingProduct == null)
                     {
-                        product.add_date = DateTime.Now;
-                        product.update_date = DateTime.Now;
                         await _pcms_Pdm_TestContext.plm_product_head.AddAsync(product);
                     }
-                    else
-                    {
-                        product.update_date = DateTime.Now;
-                    }
 
-                    //results.Add(product);
+                    results.Add(product);
                 }
 
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
@@ -273,9 +305,18 @@ namespace PDMApp.Controllers.Basic
                     results
                 );
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                var fullError = ex.InnerException?.Message ?? ex.Message;
+                var msg = dbEx.InnerException?.Message ?? dbEx.Message;
+                return APIResponseHelper.HandleApiError<List<plm_product_head>>(
+                    errorCode: "50006",
+                    message: $"資料庫寫入錯誤: {msg}",
+                    data: null
+                );
+            }
+            catch (Exception ex)
+            {              
+                var fullError = ex.ToString();
                 return APIResponseHelper.HandleApiError<List<plm_product_head>>(
                     errorCode: "50002",
                     message: $"Data import failed: {ex.Message}",
@@ -284,6 +325,40 @@ namespace PDMApp.Controllers.Basic
             }
         }
 
+        // 新增安全的數字轉換方法
+        private static int? SafeParseInt(object value)
+        {
+            if (value == null) return null;
+
+            if (value is int intValue) return intValue;
+            if (value is long longValue) return (int)longValue;
+            if (value is double doubleValue) return (int)doubleValue;
+            if (value is decimal decimalValue) return (int)decimalValue;
+
+            if (value is string stringValue)
+            {
+                if (int.TryParse(stringValue, out int result)) return result;
+            }
+
+            return null;
+        }
+
+        private static decimal? SafeParseDecimal(object value)
+        {
+            if (value == null) return null;
+
+            if (value is decimal decimalValue) return decimalValue;
+            if (value is double doubleValue) return (decimal)doubleValue;
+            if (value is int intValue) return intValue;
+            if (value is long longValue) return longValue;
+
+            if (value is string stringValue)
+            {
+                if (decimal.TryParse(stringValue, out decimal result)) return result;
+            }
+
+            return null;
+        }
 
         [HttpPost("import-detail")]
         public async Task<ActionResult<APIStatusResponse<List<plm_product_item>>>> Importdetails([FromBody] List<ShoeShapeImportDetailParameter> parameters)
@@ -380,7 +455,7 @@ namespace PDMApp.Controllers.Basic
                     }
 
                     // 更新或設置產品資料
-                    productItem.active = param.Deteail_Active ? "true" : "false";  // 將 bool 轉換為 "true"/"false"
+                    productItem.active = param.Deteail_Active;  // 將 bool 轉換為 "true"/"false"
                     productItem.design_candidate = param.Design_Candidate;
                     productItem.colorway = param.Colorway;
                     productItem.development_color_no = param.Development_Color_No;

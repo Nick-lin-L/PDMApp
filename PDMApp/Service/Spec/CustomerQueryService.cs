@@ -243,6 +243,11 @@ namespace PDMApp.Service.SPEC
                 await _pcms_Pdm_TestContext.SaveChangesAsync();
                 return (true, "匯入成功");
             }
+            catch (DbUpdateException dbEx)
+            {
+                var msg = dbEx.InnerException?.Message ?? dbEx.Message;
+                return (false, $"資料庫寫入錯誤: {msg}");
+            }
             catch (Exception ex)
             {
                 return (false, $"匯入過程中發生錯誤: {ex.Message}");
