@@ -155,14 +155,14 @@ namespace PDMApp.Service.PGTSPEC
             return groupedData;
         }
 
-        public static IQueryable<ComboDto> QueryMailToCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
+        public static async Task<List<ComboDto>> QueryMailToCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
         {
             var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
-                        where n.group_key == "mail_to" 
+                        where n.group_key == "mail_to"
                         select new
                         {
-                            Text = n.text,     
-                            Value = n.value_desc, 
+                            Text = n.text,
+                            Value = n.value_desc,
                             FactNo = n.fact_no
                         };
 
@@ -173,22 +173,30 @@ namespace PDMApp.Service.PGTSPEC
 
             query = query.OrderBy(n => n.Value);
 
-            // 轉換成 ComboDto
-            return query.Select(n => new ComboDto
+            // 在這裡使用 ToListAsync() 執行資料庫查詢，確保在 memory 中操作
+            var comboDtos = await query.Select(n => new ComboDto
             {
                 Text = n.Text,
                 Value = n.Text
-            });
+            }).ToListAsync(); // <--- 這裡使用 ToListAsync()
+
+            // 新增一個新的列表來組合資料
+            var finalComboList = new List<ComboDto>();
+            finalComboList.Add(new ComboDto { Text = "", Value = "" }); // 新增空白選項
+            finalComboList.AddRange(comboDtos); // 加入所有查詢到的資料
+
+            // 直接返回 List<ComboDto>
+            return finalComboList;
         }
 
-        public static IQueryable<ComboDto> QueryMailCcCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
+        public static async Task<List<ComboDto>> QueryMailCcCombo(pcms_pdm_testContext _pcms_Pdm_TestContext, DevelopmentFactoryParameter? value)
         {
             var query = from n in _pcms_Pdm_TestContext.pdm_namevalue_new
                         where n.group_key == "mail_cc"
                         select new
                         {
-                            Text = n.text,     
-                            Value = n.value_desc, 
+                            Text = n.text,
+                            Value = n.value_desc,
                             FactNo = n.fact_no
                         };
 
@@ -199,12 +207,20 @@ namespace PDMApp.Service.PGTSPEC
 
             query = query.OrderBy(n => n.Value);
 
-            // 轉換成 ComboDto
-            return query.Select(n => new ComboDto
+            // 在這裡使用 ToListAsync() 執行資料庫查詢，確保在 memory 中操作
+            var comboDtos = await query.Select(n => new ComboDto
             {
                 Text = n.Text,
                 Value = n.Text
-            });
+            }).ToListAsync(); // <--- 這裡使用 ToListAsync()
+
+            // 新增一個新的列表來組合資料
+            var finalComboList = new List<ComboDto>();
+            finalComboList.Add(new ComboDto { Text = "", Value = "" }); // 新增空白選項
+            finalComboList.AddRange(comboDtos); // 加入所有查詢到的資料
+
+            // 直接返回 List<ComboDto>
+            return finalComboList;
         }
 
         public static async Task<(bool IsSuccess, string Message, IQueryable<MatmResultDto>? Query)> QueryMatmAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, MatmSearchParameter value)
@@ -218,9 +234,9 @@ namespace PDMApp.Service.PGTSPEC
                 {
                     rawMatmQuery = rawMatmQuery.Where(m => m.serp_mat_no != null && m.serp_mat_no.Contains(value.SerpMatNo));
                 }
-                if (!string.IsNullOrWhiteSpace(value.MatNo))
+                if (!string.IsNullOrWhiteSpace(value.MaterialNo))
                 {
-                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_no != null && m.mat_no.Contains(value.MatNo));
+                    rawMatmQuery = rawMatmQuery.Where(m => m.mat_no != null && m.mat_no.Contains(value.MaterialNo));
                 }
                 if (!string.IsNullOrWhiteSpace(value.MatFullNm))
                 {
@@ -240,7 +256,7 @@ namespace PDMApp.Service.PGTSPEC
                 var resultQuery = rawMatmQuery.Select(m => new MatmResultDto
                 {
                     SerpMatNo = m.serp_mat_no, // 暫時保留原始值
-                    MatNo = m.mat_no,     // 暫時保留原始值
+                    MaterialNo = m.mat_no,     // 暫時保留原始值
                     MatFullNm = m.mat_full_nm,
                     Uom = m.uom,
                     Memo = m.memo,

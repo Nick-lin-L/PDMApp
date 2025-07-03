@@ -397,8 +397,8 @@ namespace PDMApp.Controllers.PGTSPEC
                 resultData["StageCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryStage(_pcms_Pdm_TestContext, value).ToListAsync();
                 resultData["DevelopmentNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentNo(_pcms_Pdm_TestContext);
                 resultData["DevelopmentColorNoCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryDevelopmentColorNo(_pcms_Pdm_TestContext);
-                resultData["MailToCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailToCombo(_pcms_Pdm_TestContext, value).ToListAsync();
-                resultData["MailCcCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailCcCombo(_pcms_Pdm_TestContext, value).ToListAsync();
+                resultData["MailToCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailToCombo(_pcms_Pdm_TestContext, value);
+                resultData["MailCcCombo"] = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMailCcCombo(_pcms_Pdm_TestContext, value);
 
                 // 封裝結果並回傳
                 return APIResponseHelper.HandleDynamicMultiPageResponse(resultData);
@@ -475,7 +475,7 @@ namespace PDMApp.Controllers.PGTSPEC
                     })
                     .OrderBy(m => m.MatFullNm) // 對聚合後的結果進行最終排序
                     .ToList(); // 轉換為 List<MatmResultDto>
- 
+
                 return Ok(new APIStatusResponse<List<MatmResultDto>>
                 {
                     ErrorCode = "OK",

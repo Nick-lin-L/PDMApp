@@ -104,7 +104,7 @@
         public string MainFactory { get; set; }
         public string Team { get; set; }
         public string Pm { get; set; }
-        public string MatNm { get; set; }
+        public string MatFullNm { get; set; }
         public string ColorNo { get; set; }
         public string ColorNm { get; set; }
         public string Uom { get; set; }

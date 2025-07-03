@@ -211,14 +211,14 @@ namespace Dtos.PGTSPEC
 
     public class MatmResultDto
     {
-        public string? SerpMatNo { get; set; }   
-        public string? MatNo { get; set; }      
-        public string? MatFullNm { get; set; }  
+        public string? SerpMatNo { get; set; }
+        public string? MaterialNo { get; set; }
+        public string? MatFullNm { get; set; }
         public string? ColorNo { get; set; }
         public string? ColorNm { get; set; }
-        public string? Uom { get; set; }         
+        public string? Uom { get; set; }
         public string? Memo { get; set; }
-        public string? Standard { get; set; }    
+        public string? Standard { get; set; }
         public string? Colors { get; set; }      // COLOR + " " + COLOR_NM
     }
 
