@@ -128,18 +128,33 @@ namespace PDMApp.Service.Basic
                 if (!string.IsNullOrWhiteSpace(param.MatFullNm))
                 {
                     string searchInput = param.MatFullNm.Trim();
+                    string pattern = searchInput; // 預設模式為使用者輸入
 
                     // 檢查輸入字串是否包含 '%' 萬用字元
                     bool hasPercentWildcard = searchInput.Contains('%');
 
                     if (hasPercentWildcard)
                     {
-                        // 如果包含 '%' 萬用字元，則直接使用 EF.Functions.Like
-                        baseQuery = baseQuery.Where(x => EF.Functions.Like(x.MatFullNm, searchInput));
+                        // 如果使用者已經用了 '%'，我們保持它的精確性，但會確保前後有 '%' 以達到更廣泛的模糊匹配。
+                        // 例如：'CY%0' 會變成 '%CY%0%'
+                        //       '%CY%' 會保持 '%CY%'
+                        //       'CY%' 會變成 '%CY%'
+                        //       '%0' 會變成 '%0%'
+
+                        if (!pattern.StartsWith("%"))
+                        {
+                            pattern = "%" + pattern;
+                        }
+                        if (!pattern.EndsWith("%"))
+                        {
+                            pattern = pattern + "%";
+                        }
+                        baseQuery = baseQuery.Where(x => EF.Functions.Like(x.MatFullNm, pattern));
                     }
                     else
                     {
                         // 如果不包含 '%' 萬用字元，則使用 Contains (EF Core 會將其轉換為 LIKE '%value%')
+                        // 這是為了提供預設的模糊匹配行為，例如輸入 'CY' 會查到 'ABCYDE'
                         baseQuery = baseQuery.Where(x => x.MatFullNm.Contains(searchInput));
                     }
                 }

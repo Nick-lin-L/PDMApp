@@ -53,7 +53,7 @@ namespace PDMApp.Service.Basic
             ["MainFactory"] = "Main Factory",
             ["Team"] = "Team",
             ["Pm"] = "PM",
-            ["MatNm"] = "MATL INFO",
+            ["MatFullNm"] = "MATL FULL INFO",
             ["ColorNo"] = "COLOR NO",
             ["ColorNm"] = "COLOR INFO",
             ["Uom"] = "UOM",
@@ -101,7 +101,7 @@ namespace PDMApp.Service.Basic
             ["MainFactory"] = "量產工廠",
             ["Team"] = "Team",
             ["Pm"] = "開發員",
-            ["MatNm"] = "物料說明",
+            ["MatFullNm"] = "物料完整說明",
             ["ColorNo"] = "顏色代號",
             ["ColorNm"] = "顏色說明",
             ["Uom"] = "單位",
@@ -117,7 +117,7 @@ namespace PDMApp.Service.Basic
             "SerpMatNo",
             "MatNo",
             "Memo",
-            "MatNm",
+            "MatFullNm",
             "ColorNo",
             "ColorNm",
             "Uom",
@@ -197,9 +197,9 @@ namespace PDMApp.Service.Basic
                     .Select(SnakeToPascalCase)
                     .ToList();
 
-                // MatNm 與 Uom 為必填
-                if (string.IsNullOrWhiteSpace(item.MatNm))
-                    errors.Add($"必填欄位[{PropertyDisplayNames.GetValueOrDefault("MatNm", "MatNm")}]缺少資料");
+                // MatFullNm 與 Uom 為必填
+                if (string.IsNullOrWhiteSpace(item.MatFullNm))
+                    errors.Add($"必填欄位[{PropertyDisplayNames.GetValueOrDefault("MatFullNm", "MatFullNm")}]缺少資料");
                 if (string.IsNullOrWhiteSpace(item.Uom))
                     errors.Add($"必填欄位[{PropertyDisplayNames.GetValueOrDefault("Uom", "Uom")}]缺少資料");
 
@@ -234,7 +234,7 @@ namespace PDMApp.Service.Basic
                         .ToListAsync();
 
                     IQueryable<matm> query = _context.matm
-                        .Where(m => m.mat_nm == item.MatNm && m.uom == item.Uom);
+                        .Where(m => m.mat_full_nm == item.MatFullNm && m.uom == item.Uom); 
 
                     foreach (var coreSnake in requiredFieldsRaw)
                     {
