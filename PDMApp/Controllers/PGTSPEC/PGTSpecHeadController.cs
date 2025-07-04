@@ -455,9 +455,9 @@ namespace PDMApp.Controllers.PGTSPEC
                                                               .Distinct()
                                                               .OrderBy(s => s) // 確保順序一致
                                                               .ToList()),
-                            // 聚合 MatNo : 收集所有非空且不重複的 MatNo ，排序後用換行符連接
-                            MatNo = string.Join("\n", g.Where(x => !string.IsNullOrEmpty(x.MatNo))
-                                                               .Select(x => x.MatNo)
+                            // 聚合 MaterialNo : 收集所有非空且不重複的 MatNo ，排序後用換行符連接
+                            MaterialNo = string.Join("\n", g.Where(x => !string.IsNullOrEmpty(x.MaterialNo))
+                                                               .Select(x => x.MaterialNo)
                                                                .Distinct()
                                                                .OrderBy(s => s) // 確保順序一致
                                                                .ToList()),

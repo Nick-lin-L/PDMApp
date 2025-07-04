@@ -222,6 +222,30 @@ namespace Dtos.PGTSPEC
         public string? Colors { get; set; }      // COLOR + " " + COLOR_NM
     }
 
+    public class MaterialExportDto
+    {
+        public string? SpecMId { get; set; } 
+        public string? MatFullName { get; set; }
+        public string? ColorName { get; set; }  
+        public string? Standard { get; set; }    
+        public string? Memo { get; set; }        
+        public string? MatType { get; set; }
+        public string? MatNoPDM { get; set; }
+        public string? ColorNo { get; set; }
+        public string? UOM { get; set; }
+        public string? PDMMatlNo { get; set; } 
+        public string? ScmClassL { get; set; }
+        public string? ScmClassM { get; set; }
+        public string? ScmClassS { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    public class ExportFileResponseDto
+    {
+        public string FileName { get; set; }
+        public string FileContent { get; set; }
+    }
+
 
 }
 

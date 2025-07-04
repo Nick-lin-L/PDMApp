@@ -11,6 +11,9 @@ using Service.PGTSPEC;
 using System.Data.Common;
 using Microsoft.AspNetCore.Authorization;
 using PDMApp.Utils.BasicProgram;
+using PDMApp.Utils;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace PDMApp.Controllers.SPEC
 {
@@ -178,6 +181,120 @@ namespace PDMApp.Controllers.SPEC
                     message: $"匯出過程中發生錯誤: {ex.Message}",
                     data: null
                 ));
+            }
+        }
+
+        // POST api/v1/PGTSpec5Sheets/MaterialExport
+        [HttpPost("MaterialExport")]
+        public async Task<ActionResult<APIStatusResponse<object>>> MaterialExport([FromBody] PGTSpecMaterialRequestParameter value)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "INVALID_INPUT",
+                    message: "傳入參數不合法，請檢查請求內容。",
+                    data: ModelState
+                ));
+            }
+
+            try
+            {
+                var allItemData = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMaterialExport(_pcms_Pdm_TestContext, value).ToListAsync();
+
+                if (!allItemData.Any())
+                {
+                    return Ok(new APIStatusResponse<object>
+                    {
+                        ErrorCode = "NO_DATA",
+                        Message = "沒有可供匯出的資料。",
+                        Data = null
+                    });
+                }
+
+                if (allItemData.Any(item => string.IsNullOrEmpty(item.MatFullName)))
+                {
+                    return Ok(new APIStatusResponse<object>
+                    {
+                        ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
+                        Message = "不可包含物料說明為空的資料。",
+                        Data = null
+                    });
+                }
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Material Export");
+
+                string[] headers = {
+                    "MAT TYPE", "MAT NO", "MAT FULL NAME", "COLOR NO", "COLOR NAME",
+                    "STANDARD", "UOM", "MEMO", "PDM MATL NO",
+                    "SCM CLASS L", "SCM CLASS M", "SCM CLASS S", "ERROR MESSAGE"
+                };
+
+                for (int col = 0; col < headers.Length; col++)
+                {
+                    worksheet.Cell(1, col + 1).Value = headers[col];
+                    worksheet.Cell(1, col + 1).Style.Font.Bold = true;
+                    worksheet.Cell(1, col + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                }
+
+                int row = 2;
+                foreach (var item in allItemData)
+                {
+                    worksheet.Cell(row, 1).Value = item.MatType;
+                    worksheet.Cell(row, 2).Value = item.MatNoPDM;
+                    worksheet.Cell(row, 3).Value = item.MatFullName;
+                    worksheet.Cell(row, 4).Value = item.ColorNo;
+                    worksheet.Cell(row, 5).Value = item.ColorName;
+                    worksheet.Cell(row, 6).Value = item.Standard;
+                    worksheet.Cell(row, 7).Value = item.UOM;
+                    worksheet.Cell(row, 8).Value = item.Memo;
+                    worksheet.Cell(row, 9).Value = item.PDMMatlNo;
+                    worksheet.Cell(row, 10).Value = item.ScmClassL;
+                    worksheet.Cell(row, 11).Value = item.ScmClassM;
+                    worksheet.Cell(row, 12).Value = item.ScmClassS;
+                    worksheet.Cell(row, 13).Value = item.ErrorMessage;
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                byte[] fileBytes = stream.ToArray(); // 將流的內容讀取到字節數組
+
+                string fileName = $"物料匯出_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                string base64File = Convert.ToBase64String(fileBytes); // 將字節數組轉換為 Base64 字串
+
+                var responseFileDto = new ExportFileResponseDto // 創建包含檔案名稱和 Base64 內容的 DTO
+                {
+                    FileName = fileName,
+                    FileContent = base64File
+                };
+
+                // 返回 APIStatusResponse，其中 Data 包含 ExportFileResponseDto
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "OK", // 表示成功
+                    Message = "物料資料匯出成功。",
+                    Data = responseFileDto // 返回 Base64 編碼的檔案資料
+                });
+            }
+            catch (DbException ex)
+            {
+                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "DB_EXPORT_ERROR",
+                    message: $"物料匯出過程中發生資料庫錯誤: {ex.Message}",
+                    data: null
+                ));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new APIStatusResponse<object>
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "伺服器錯誤，物料匯出失敗。請聯絡系統管理員。",
+                    Data = ex.Message
+                });
             }
         }
     }

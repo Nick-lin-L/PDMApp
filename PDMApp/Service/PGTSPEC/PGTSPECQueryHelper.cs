@@ -617,6 +617,31 @@ namespace PDMApp.Service.PGTSPEC
                     });
         }
 
+        public static IQueryable<MaterialExportDto> QueryMaterialExport(pcms_pdm_testContext _pcms_Pdm_TestContext,PGTSpecMaterialRequestParameter parameter)
+        {
+            var query = from si in _pcms_Pdm_TestContext.pcg_spec_item 
+                        join sh in _pcms_Pdm_TestContext.pcg_spec_head on si.spec_m_id equals sh.spec_m_id 
+                        where si.spec_m_id == parameter.SpecMId 
+                        orderby si.material_group, si.material_sort 
+                        select new MaterialExportDto
+                        {
+                            SpecMId = si.spec_m_id,
+                            MatFullName = si.material,
+                            ColorName = si.material_color,
+                            Standard = si.standard,
+                            Memo = si.mat_comment,
+                            MatType = null,
+                            MatNoPDM = null,
+                            ColorNo = null,
+                            UOM = null,
+                            PDMMatlNo = null, 
+                            ScmClassL = null,
+                            ScmClassM = null,
+                            ScmClassS = null,
+                            ErrorMessage = null
+                        };
 
+            return query;
+        }
     }
 }
