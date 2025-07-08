@@ -404,38 +404,38 @@ namespace PDMApp.Service.PGTSPEC
         {
             return (from ph in _pcms_pdm_testContext.plm_product_head
                     join pi in _pcms_pdm_testContext.plm_product_item on ph.product_m_id equals pi.product_m_id
-                    join pn in _pcms_pdm_testContext.pdm_namevalue_new on ph.stage equals pn.text
                     join psh in _pcms_pdm_testContext.pcg_spec_head on pi.product_d_id equals psh.product_d_id
+                    join pn in _pcms_pdm_testContext.pdm_namevalue_new on psh.stage_code equals pn.value_desc
                     where pn.group_key == "stage"
                     select new SpecBasicDTO
                     {
                         SpecMId = psh.spec_m_id ?? "",
                         DevelopmentNo = ph.development_no ?? "",
-                        ItemNo = ph.item_trading_code ?? "",            // ITEM NO
-                        ModelName = ph.working_name ?? "",              // MODEL NAME
-                        Factory = ph.assigned_agents ?? "",             // FACTORY
-                        Season = ph.item_initial_season ?? "",          // SEASON
-                        SampleSize = ph.default_size ?? "",             // SAMPLE SIZE
-                        SizeRun = ph.size_run ?? "",                    // SIZE RUN
-                        SizeRange = ph.size_range ?? "",                // SIZE RANGE
-                        Stage = pn.text ?? "",                          // STAGE（使用 pn.text 取得描述）
-                        ColorWay = pi.colorway ?? "",                   // COLOR WAY
-                        ColorCode = pi.color_code ?? "",                // COLOR CODE
-                        DevelopmentColorNo = pi.development_color_no ?? "",     // DEVELOPMENT COLOR NO
-                        MainColor = pi.main_color ?? "",                // MAIN COLOR
-                        SubColor = pi.sub_color ?? "",                  // SUB COLOR
-                        ItemMode = ph.item_mode ?? "",                  // ITEM MODE
-                        SubItemMode = ph.item_mode_sub_type ?? "",      // SUB ITEM MODE
-                        Gender = ph.gender ?? "",                       // GENDER
-                        Width = ph.width ?? "",                         // WIDTH
-                        Last1 = ph.last1 ?? "",                         // LAST1
-                        Last2 = ph.last2 ?? "",                         // LAST2
-                        Last3 = ph.last3 ?? "",                         // LAST3
-                        SizeMap = ph.sizemap ?? "",                     // SIZE MAP
-                        Lasting = ph.lasting ?? "",                     // LASTING
-                        HeelHeight = ph.heel_height ?? "",              // HEEL HEIGHT
-                        ProductType = ph.product_line_type ?? "",       // PRODUCT TYPE
-                        Category = ph.category1 ?? "",                  // CATEGORY
+                        ItemNo = ph.item_trading_code ?? "",             // ITEM NO
+                        ModelName = ph.working_name ?? "",               // MODEL NAME
+                        Factory = ph.assigned_agents ?? "",              // FACTORY
+                        Season = ph.item_initial_season ?? "",           // SEASON
+                        SampleSize = ph.default_size ?? "",              // SAMPLE SIZE
+                        SizeRun = ph.size_run ?? "",                     // SIZE RUN
+                        SizeRange = ph.size_range ?? "",                 // SIZE RANGE
+                        Stage = pn.text ?? "",                           // STAGE（使用 pn.text 取得描述）
+                        ColorWay = pi.colorway ?? "",                    // COLOR WAY
+                        ColorCode = pi.color_code ?? "",                 // COLOR CODE
+                        DevelopmentColorNo = pi.development_color_no ?? "",      // DEVELOPMENT COLOR NO
+                        MainColor = pi.main_color ?? "",                 // MAIN COLOR
+                        SubColor = pi.sub_color ?? "",                   // SUB COLOR
+                        ItemMode = ph.item_mode ?? "",                   // ITEM MODE
+                        SubItemMode = ph.item_mode_sub_type ?? "",       // SUB ITEM MODE
+                        Gender = ph.gender ?? "",                        // GENDER
+                        Width = ph.width ?? "",                          // WIDTH
+                        Last1 = ph.last1 ?? "",                          // LAST1
+                        Last2 = ph.last2 ?? "",                          // LAST2
+                        Last3 = ph.last3 ?? "",                          // LAST3
+                        SizeMap = ph.sizemap ?? "",                      // SIZE MAP
+                        Lasting = ph.lasting ?? "",                      // LASTING
+                        HeelHeight = ph.heel_height ?? "",               // HEEL HEIGHT
+                        ProductType = ph.product_line_type ?? "",        // PRODUCT TYPE
+                        Category = ph.category1 ?? "",                   // CATEGORY
                         ProductionLeadTime = ph.production_lead_time ?? "" // PRODUCT LEAD TIME
                     });
         }
@@ -565,7 +565,7 @@ namespace PDMApp.Service.PGTSPEC
                     join pi in _pcms_Pdm_TestContext.plm_product_item on ph.product_m_id equals pi.product_m_id
                     join shf in _pcms_Pdm_TestContext.pcg_spec_head on pi.product_d_id equals shf.product_d_id
                     join sif in _pcms_Pdm_TestContext.pcg_spec_item on shf.spec_m_id equals sif.spec_m_id
-                    join pn in _pcms_Pdm_TestContext.pdm_namevalue_new on ph.stage equals pn.text
+                    join pn in _pcms_Pdm_TestContext.pdm_namevalue_new on shf.stage_code equals pn.value_desc
                     where pn.group_key == "stage"
 
                     let mailTo = (from f in _pcms_Pdm_TestContext.pdm_factoryspec_ref_signflow
@@ -615,33 +615,6 @@ namespace PDMApp.Service.PGTSPEC
                         PartClass = sif.material_group,
                         RemarksProhibit = shf.remarks_prohibit
                     });
-        }
-
-        public static IQueryable<MaterialExportDto> QueryMaterialExport(pcms_pdm_testContext _pcms_Pdm_TestContext,PGTSpecMaterialRequestParameter parameter)
-        {
-            var query = from si in _pcms_Pdm_TestContext.pcg_spec_item 
-                        join sh in _pcms_Pdm_TestContext.pcg_spec_head on si.spec_m_id equals sh.spec_m_id 
-                        where si.spec_m_id == parameter.SpecMId 
-                        orderby si.material_group, si.material_sort 
-                        select new MaterialExportDto
-                        {
-                            SpecMId = si.spec_m_id,
-                            MatFullName = si.material,
-                            ColorName = si.material_color,
-                            Standard = si.standard,
-                            Memo = si.mat_comment,
-                            MatType = null,
-                            MatNoPDM = null,
-                            ColorNo = null,
-                            UOM = null,
-                            PDMMatlNo = null, 
-                            ScmClassL = null,
-                            ScmClassM = null,
-                            ScmClassS = null,
-                            ErrorMessage = null
-                        };
-
-            return query;
         }
     }
 }

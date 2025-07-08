@@ -186,7 +186,7 @@ namespace PDMApp.Controllers.SPEC
 
         // POST api/v1/PGTSpec5Sheets/MaterialExport
         [HttpPost("MaterialExport")]
-        public async Task<ActionResult<APIStatusResponse<object>>> MaterialExport([FromBody] PGTSpecMaterialRequestParameter value)
+        public async Task<ActionResult<APIStatusResponse<object>>> MaterialExport([FromBody] PGTSpecMaterialExportRequestParameter value) 
         {
             if (!ModelState.IsValid)
             {
@@ -197,33 +197,34 @@ namespace PDMApp.Controllers.SPEC
                 ));
             }
 
+            // 檢查是否傳入了要匯出的數據
+            if (value.MaterialData == null || !value.MaterialData.Any())
+            {
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "NO_DATA",
+                    Message = "沒有可供匯出的資料。請確保 MaterialData 列表不為空。",
+                    Data = null
+                });
+            }
+
+            // 根據您之前的需求，如果 MatFullName (現在對應 input.Material) 為空，則返回錯誤
+            if (value.MaterialData.Any(item => string.IsNullOrEmpty(item.Material)))
+            {
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
+                    Message = "不可包含物料說明為空的資料。",
+                    Data = null
+                });
+            }
+
             try
             {
-                var allItemData = await Service.PGTSPEC.PGTSPECQueryHelper.QueryMaterialExport(_pcms_Pdm_TestContext, value).ToListAsync();
-
-                if (!allItemData.Any())
-                {
-                    return Ok(new APIStatusResponse<object>
-                    {
-                        ErrorCode = "NO_DATA",
-                        Message = "沒有可供匯出的資料。",
-                        Data = null
-                    });
-                }
-
-                if (allItemData.Any(item => string.IsNullOrEmpty(item.MatFullName)))
-                {
-                    return Ok(new APIStatusResponse<object>
-                    {
-                        ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
-                        Message = "不可包含物料說明為空的資料。",
-                        Data = null
-                    });
-                }
-
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Material Export");
 
+                // Excel 標頭：根據您之前的要求，不包含 "SPEC M ID"，且保留所有原先的欄位名稱
                 string[] headers = {
                     "MAT TYPE", "MAT NO", "MAT FULL NAME", "COLOR NO", "COLOR NAME",
                     "STANDARD", "UOM", "MEMO", "PDM MATL NO",
@@ -238,21 +239,21 @@ namespace PDMApp.Controllers.SPEC
                 }
 
                 int row = 2;
-                foreach (var item in allItemData)
+                foreach (var item in value.MaterialData) // 直接遍歷前端傳來的數據
                 {
-                    worksheet.Cell(row, 1).Value = item.MatType;
-                    worksheet.Cell(row, 2).Value = item.MatNoPDM;
-                    worksheet.Cell(row, 3).Value = item.MatFullName;
-                    worksheet.Cell(row, 4).Value = item.ColorNo;
-                    worksheet.Cell(row, 5).Value = item.ColorName;
+                    worksheet.Cell(row, 1).Value = ""; 
+                    worksheet.Cell(row, 2).Value = ""; 
+                    worksheet.Cell(row, 3).Value = item.Material; 
+                    worksheet.Cell(row, 4).Value = ""; 
+                    worksheet.Cell(row, 5).Value = item.Colors; 
                     worksheet.Cell(row, 6).Value = item.Standard;
-                    worksheet.Cell(row, 7).Value = item.UOM;
-                    worksheet.Cell(row, 8).Value = item.Memo;
-                    worksheet.Cell(row, 9).Value = item.PDMMatlNo;
-                    worksheet.Cell(row, 10).Value = item.ScmClassL;
-                    worksheet.Cell(row, 11).Value = item.ScmClassM;
-                    worksheet.Cell(row, 12).Value = item.ScmClassS;
-                    worksheet.Cell(row, 13).Value = item.ErrorMessage;
+                    worksheet.Cell(row, 7).Value = ""; 
+                    worksheet.Cell(row, 8).Value = item.MaterialComment;
+                    worksheet.Cell(row, 9).Value = "";
+                    worksheet.Cell(row, 10).Value = "";
+                    worksheet.Cell(row, 11).Value = "";
+                    worksheet.Cell(row, 12).Value = "";
+                    worksheet.Cell(row, 13).Value = ""; 
                     row++;
                 }
 
@@ -260,40 +261,32 @@ namespace PDMApp.Controllers.SPEC
 
                 using var stream = new MemoryStream();
                 workbook.SaveAs(stream);
-                byte[] fileBytes = stream.ToArray(); // 將流的內容讀取到字節數組
+                byte[] fileBytes = stream.ToArray();
 
                 string fileName = $"物料匯出_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-                string base64File = Convert.ToBase64String(fileBytes); // 將字節數組轉換為 Base64 字串
 
-                var responseFileDto = new ExportFileResponseDto // 創建包含檔案名稱和 Base64 內容的 DTO
+                string base64File = Convert.ToBase64String(fileBytes);
+
+                var responseFileDto = new ExportFileResponseDto
                 {
                     FileName = fileName,
                     FileContent = base64File
                 };
 
-                // 返回 APIStatusResponse，其中 Data 包含 ExportFileResponseDto
                 return Ok(new APIStatusResponse<object>
                 {
-                    ErrorCode = "OK", // 表示成功
+                    ErrorCode = "OK",
                     Message = "物料資料匯出成功。",
-                    Data = responseFileDto // 返回 Base64 編碼的檔案資料
+                    Data = responseFileDto
                 });
-            }
-            catch (DbException ex)
-            {
-                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
-                    errorCode: "DB_EXPORT_ERROR",
-                    message: $"物料匯出過程中發生資料庫錯誤: {ex.Message}",
-                    data: null
-                ));
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new APIStatusResponse<object>
                 {
                     ErrorCode = "SERVER_ERROR",
-                    Message = "伺服器錯誤，物料匯出失敗。請聯絡系統管理員。",
-                    Data = ex.Message
+                    Message = $"伺服器錯誤，物料匯出失敗。請聯絡系統管理員。錯誤訊息: {ex.Message}",
+                    Data = null // 不再返回 ex.Message 到 Data，避免敏感資訊洩露
                 });
             }
         }
