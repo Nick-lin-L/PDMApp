@@ -72,9 +72,17 @@ namespace PDMApp.Parameters.PGTSPEC
         public string? DevFactoryNo { get; set; }
     }
 
-    public class PGTSpecMaterialRequestParameter
+    public class MaterialExportInputItemDto
     {
-        public string SpecMId { get; set; }
+        public string? Material { get; set; }        
+        public string? MaterialComment { get; set; } 
+        public string? Standard { get; set; }        
+        public string? Colors { get; set; }          
+    }
+
+    public class PGTSpecMaterialExportRequestParameter
+    {
+        public List<MaterialExportInputItemDto> MaterialData { get; set; } = new List<MaterialExportInputItemDto>();
     }
 
     public class PGTSpec5SheetsUpdateParameter
