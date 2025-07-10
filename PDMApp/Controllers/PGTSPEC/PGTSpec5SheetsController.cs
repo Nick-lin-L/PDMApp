@@ -133,6 +133,50 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
+        // POST api/v1/PGTSpec5Sheets/GetItemByDId
+        [HttpPost("GetItemByDId")]
+        public async Task<ActionResult<Utils.APIStatusResponse<List<MaterialInfoDTO>>>> GetItemByDId([FromBody] SpecItemByDIdSearchParameter value)
+        {
+            if (string.IsNullOrWhiteSpace(value.SpecDId))
+            {
+                return BadRequest(Utils.APIResponseHelper.HandleApiError<List<MaterialInfoDTO>>(
+                    errorCode: "INVALID_INPUT",
+                    message: "請提供有效的 SpecDId。",
+                    data: null
+                ));
+            }
+            if (string.IsNullOrWhiteSpace(value.DevFactoryNo))
+            {
+                return BadRequest(Utils.APIResponseHelper.HandleApiError<List<MaterialInfoDTO>>(
+                    errorCode: "INVALID_INPUT",
+                    message: "請提供有效的 DevFactoryNo。",
+                    data: null
+                ));
+            }
+
+            try
+            {
+                // 呼叫輔助方法來獲取 SpecItem 資料，包含動態組合的 MaterialNo 和 SerpMatNo
+                var specItems = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialInfoByDId(_pcms_Pdm_TestContext, value.SpecDId, value.DevFactoryNo);
+
+                return Ok(new Utils.APIStatusResponse<List<MaterialInfoDTO>>
+                {
+                    ErrorCode = "OK",
+                    Message = "查詢成功",
+                    Data = specItems
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new Utils.APIStatusResponse<List<MaterialInfoDTO>>
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "伺服器錯誤，查詢 Spec Item 失敗。請聯絡系統管理員。",
+                    Data = null
+                });
+            }
+        }
+
         // POST api/v1/PGTSpec5Sheets/Export
         [HttpPost("Export")]
         public async Task<ActionResult<Utils.APIStatusResponse<object>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value) // 將返回型別改為 object

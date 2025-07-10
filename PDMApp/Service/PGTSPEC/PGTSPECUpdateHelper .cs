@@ -20,7 +20,30 @@ namespace Service.PGTSPEC
                 return currentItem.No;
             }
 
+            // 檢查 Parts 是否包含精確的一對成對括號
+            bool hasExactlyOnePairOfParentheses = false;
             if (!string.IsNullOrWhiteSpace(currentItem.Parts))
+            {
+                string trimmedParts = currentItem.Parts.Trim();
+                int openParenCount = trimmedParts.Count(c => c == '(');
+                int closeParenCount = trimmedParts.Count(c => c == ')');
+
+                // 必須只有一個左括號和一個右括號
+                if (openParenCount == 1 && closeParenCount == 1)
+                {
+                    int firstOpenParenIndex = trimmedParts.IndexOf('(');
+                    int firstCloseParenIndex = trimmedParts.IndexOf(')');
+
+                    // 並且左括號必須在右括號之前
+                    if (firstOpenParenIndex != -1 && firstCloseParenIndex != -1 && firstOpenParenIndex < firstCloseParenIndex)
+                    {
+                        hasExactlyOnePairOfParentheses = true;
+                    }
+                }
+            }
+
+            // 如果 No 沒有值，且 Parts 有值，並且不同時包含 '(' 和 ')'
+            if (!string.IsNullOrWhiteSpace(currentItem.Parts) && !hasExactlyOnePairOfParentheses)
             {
                 var matchingItem = allItems.FirstOrDefault(i => i.Parts == currentItem.Parts && !string.IsNullOrWhiteSpace(i.No));
                 if (matchingItem != null)
