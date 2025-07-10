@@ -109,7 +109,6 @@ namespace Dtos.PGTSPEC
     {
         [JsonIgnore]
         public string? SpecMId { get; set; }
-        [JsonIgnore]
         public string? SpecDId { get; set; }
         public decimal? Sort { get; set; } // MATERIAL_SORT
         public string? No { get; set; } // PART_NO
@@ -238,6 +237,12 @@ namespace Dtos.PGTSPEC
         public string? ScmClassM { get; set; }
         public string? ScmClassS { get; set; }
         public string? ErrorMessage { get; set; }
+    }
+
+    public class MaterialInfoDTO
+    {
+        public string? SerpMatNo { get; set; }
+        public string? MaterialNo { get; set; }
     }
 
     public class ExportFileResponseDto

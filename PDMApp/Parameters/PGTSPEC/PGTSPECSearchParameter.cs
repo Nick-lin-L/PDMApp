@@ -85,6 +85,12 @@ namespace PDMApp.Parameters.PGTSPEC
         public List<MaterialExportInputItemDto> MaterialData { get; set; } = new List<MaterialExportInputItemDto>();
     }
 
+    public class SpecItemByDIdSearchParameter
+    {
+        public string SpecDId { get; set; }
+        public string DevFactoryNo { get; set; } 
+    }
+
     public class PGTSpec5SheetsUpdateParameter
     {
         public List<HeadDataParameter> HeadData { get; set; } // 改為 List
