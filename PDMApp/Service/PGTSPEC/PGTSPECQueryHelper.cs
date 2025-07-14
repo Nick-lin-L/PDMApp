@@ -5,6 +5,7 @@ using PDMApp.Parameters.PGTSPEC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PDMApp.Service.PGTSPEC
@@ -223,16 +224,14 @@ namespace PDMApp.Service.PGTSPEC
             return finalComboList;
         }
 
-        public static async Task<List<MaterialInfoDTO>> GetMaterialInfoByDId(pcms_pdm_testContext _pcms_Pdm_TestContext, string specDId, string currentFactNo)
+        public static async Task<MaterialInfoDTO> GetMaterialInfoByItemData(pcms_pdm_testContext _pcms_Pdm_TestContext,SpecItemSearchParameter itemData,string currentFactNo)
         {
-            // --- 步驟一：讀取動態配置 ---
-            // 先從資料庫載入所有相關配置到記憶體
+            // --- 步驟一：讀取動態配置 (MatFullName 組合規則) ---
             var matFullNmConfigRaw = await _pcms_Pdm_TestContext.pdm_namevalue_new
                 .Where(nv => nv.group_key == "spec_mat_no" && nv.fact_no == currentFactNo && nv.status == "Y")
-                .Select(nv => new { nv.value_desc, nv.text }) // 選取 value_desc 和 text
-                .ToListAsync(); // <-- 在這裡先執行查詢，將資料載入記憶體
+                .Select(nv => new { nv.value_desc, nv.text })
+                .ToListAsync();
 
-            // 然後在記憶體中進行排序和選擇
             var matFullNmConfig = matFullNmConfigRaw
                 .OrderBy(nv => int.TryParse(nv.value_desc, out int orderValue) ? orderValue : int.MaxValue)
                 .Select(nv => nv.text)
@@ -262,85 +261,139 @@ namespace PDMApp.Service.PGTSPEC
                     StringComparer.OrdinalIgnoreCase
                 );
 
-            // --- 步驟四：從 pcg_spec_item 表中根據 SpecDId 獲取基礎資料 ---
-            var specItemBaseData = await _pcms_Pdm_TestContext.pcg_spec_item
-                .Where(si => si.spec_d_id == specDId) // 根據 SpecDId 進行篩選
-                .Select(si => new
+            // --- 步驟四：處理前端傳入的單一物料資料，組裝 MaterialInfoDTO ---
+            // 建立一個字典，將 SpecItemSearchParameter 的屬性名和值映射起來
+            var propertiesMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "material_sort", itemData.Sort?.ToString() ?? "" },
+                { "parts_no", itemData.No ?? "" },
+                { "act_part_no", itemData.ActPartNo ?? "" },
+                { "material_new", itemData.Type ?? "" },
+                { "parts", itemData.Parts ?? "" },
+                { "detail", itemData.Detail ?? "" },
+                { "process_mk", itemData.ProcessMk ?? "" },
+                { "material", itemData.Material ?? "" },
+                { "recycle", itemData.Recycle ?? "" },
+                { "mat_comment", itemData.MaterialComment ?? "" },
+                { "standard", itemData.Standard ?? "" },
+                { "agent", itemData.Agent ?? "" },
+                { "supplier", itemData.Supplier ?? "" },
+                { "quote_supplier", itemData.QuoteSupplier ?? "" },
+                { "hcha", itemData.Hcha ?? "" },
+                { "sec", itemData.Sec ?? "" },
+                { "material_color", itemData.Colors ?? "" },
+                { "clr_comment", itemData.ColorComment ?? "" },
+                { "memo", itemData.Memo ?? "" }
+            };
+
+            // 動態組合物料全名 (combinedMaterialKey)
+            var combinedParts = new List<string>();
+            foreach (var fieldName in matFullNmConfig)
+            {
+                if (propertiesMap.TryGetValue(fieldName, out var value) && !string.IsNullOrWhiteSpace(value))
                 {
-                    si.spec_m_id,
-                    si.spec_d_id,
-                    si.material_sort,
-                    si.parts_no,
-                    si.act_part_no,
-                    si.material_new,
-                    si.parts,
-                    si.detail,
-                    si.process_mk,
-                    si.material,
-                    si.recycle,
-                    si.mat_comment,
-                    si.standard,
-                    si.agent,
-                    si.supplier,
-                    si.quote_supplier,
-                    si.hcha,
-                    si.sec,
-                    si.material_color,
-                    si.clr_comment,
-                    si.memo,
-                    si.material_group
-                })
+                    combinedParts.Add(value);
+                }
+            }
+            var combinedMaterialKey = string.Join(" ", combinedParts);
+
+            // 從 matm 查找字典中獲取 MaterialNo 和 SerpMatNo
+            matmMaterialLookup.TryGetValue(combinedMaterialKey, out var matmInfo);
+
+            // 返回單一 MaterialInfoDTO 物件
+            return new MaterialInfoDTO // 直接返回物件
+            {
+                MaterialNo = matmInfo != null ? string.Join("\n", matmInfo.MaterialNos) : "",
+                SerpMatNo = matmInfo != null ? string.Join("\n", matmInfo.SerpMatNos) : ""
+            };
+        }
+
+        public static async Task<List<MaterialExportDto>> GetMaterialExportData(pcms_pdm_testContext _pcms_Pdm_TestContext,List<SpecItemSearchParameter> materialDataList,string currentFactNo)
+        {
+            // 步驟 1: 查詢 PDM_NAMEVALUE_NEW 獲取 MatFullName 的組合配置
+            var matFullNmConfigRaw = await _pcms_Pdm_TestContext.pdm_namevalue_new
+                .Where(nv => nv.group_key == "spec_mat_no" && nv.fact_no == currentFactNo && nv.status == "Y")
+                .Select(nv => new { nv.value_desc, nv.text })
                 .ToListAsync();
 
-            // --- 步驟五：在記憶體中組裝最終的 MaterialInfoDTO 列表 ---
-            var finalMaterialInfoDtos = specItemBaseData.Select(si =>
+            var matFullNmConfigFields = matFullNmConfigRaw
+                .OrderBy(nv => int.TryParse(nv.value_desc, out int orderValue) ? orderValue : int.MaxValue)
+                .Select(nv => nv.text)
+                .ToList();
+
+            if (!matFullNmConfigFields.Any())
             {
+                matFullNmConfigFields = new List<string> { "material" }; // 作為一個預設 fallback
+            }
+
+            var result = new List<MaterialExportDto>();
+
+            // 步驟 2: 遍歷前端傳入的 materialDataList
+            foreach (var item in materialDataList)
+            {
+                // 建立一個字典，將 SpecItemSearchParameter 的屬性名和值映射起來
                 var propertiesMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "spec_m_id", si.spec_m_id ?? "" },
-                    { "spec_d_id", si.spec_d_id ?? "" },
-                    { "material_sort", si.material_sort.ToString() },
-                    { "parts_no", si.parts_no ?? "" },
-                    { "act_part_no", si.act_part_no ?? "" },
-                    { "material_new", si.material_new ?? "" },
-                    { "parts", si.parts ?? "" },
-                    { "detail", si.detail ?? "" },
-                    { "process_mk", si.process_mk ?? "" },
-                    { "material", si.material ?? "" },
-                    { "recycle", si.recycle ?? "" },
-                    { "mat_comment", si.mat_comment ?? "" },
-                    { "standard", si.standard ?? "" },
-                    { "agent", si.agent ?? "" },
-                    { "supplier", si.supplier ?? "" },
-                    { "quote_supplier", si.quote_supplier ?? "" },
-                    { "hcha", si.hcha ?? "" },
-                    { "sec", si.sec ?? "" },
-                    { "material_color", si.material_color ?? "" },
-                    { "clr_comment", si.clr_comment ?? "" },
-                    { "memo", si.memo ?? "" },
-                    { "material_group", si.material_group ?? "" }
+                    { "material_sort", item.Sort?.ToString() ?? "" },
+                    { "parts_no", item.No ?? "" },
+                    { "act_part_no", item.ActPartNo ?? "" },
+                    { "material_new", item.Type ?? "" },
+                    { "parts", item.Parts ?? "" },
+                    { "detail", item.Detail ?? "" },
+                    { "process_mk", item.ProcessMk ?? "" },
+                    { "material", item.Material ?? "" },
+                    { "recycle", item.Recycle ?? "" },
+                    { "mat_comment", item.MaterialComment ?? "" },
+                    { "standard", item.Standard ?? "" },
+                    { "agent", item.Agent ?? "" },
+                    { "supplier", item.Supplier ?? "" },
+                    { "quote_supplier", item.QuoteSupplier ?? "" },
+                    { "hcha", item.Hcha ?? "" },
+                    { "sec", item.Sec ?? "" },
+                    { "material_color", item.Colors ?? "" },
+                    { "clr_comment", item.ColorComment ?? "" },
+                    { "memo", item.Memo ?? "" }
                 };
 
-                var combinedParts = new List<string>();
-                foreach (var fieldName in matFullNmConfig)
+                // 步驟 3: 動態組合 MatFullName
+                var matFullNameBuilder = new StringBuilder();
+                foreach (var fieldName in matFullNmConfigFields)
                 {
-                    if (propertiesMap.TryGetValue(fieldName, out var value) && !string.IsNullOrWhiteSpace(value))
+                    if (propertiesMap.TryGetValue(fieldName, out var fieldValue) && !string.IsNullOrWhiteSpace(fieldValue))
                     {
-                        combinedParts.Add(value);
+                        if (matFullNameBuilder.Length > 0)
+                        {
+                            matFullNameBuilder.Append(" "); // 每個欄位之間加一個空白
+                        }
+                        matFullNameBuilder.Append(fieldValue);
                     }
                 }
-                var combinedMaterialKey = string.Join(" ", combinedParts);
 
-                matmMaterialLookup.TryGetValue(combinedMaterialKey, out var matmInfo);
-
-                return new MaterialInfoDTO // **** 回傳新的 DTO ****
+                // 步驟 4: 填充 MaterialExportDto
+                result.Add(new MaterialExportDto
                 {
-                    MaterialNo = matmInfo != null ? string.Join("\n", matmInfo.MaterialNos) : "",
-                    SerpMatNo = matmInfo != null ? string.Join("\n", matmInfo.SerpMatNos) : ""
-                };
-            }).ToList();
+                    // MatFullName 是根據配置動態組合的
+                    MatFullName = matFullNameBuilder.ToString(),
 
-            return finalMaterialInfoDtos;
+                    // 直接從前端傳入的數據映射到對應的 Excel 欄位
+                    Memo = item.MaterialComment, // 匯出到 MEMO
+                    Standard = item.Standard,    // 匯出到 STANDARD
+                    ColorName = item.Colors,     // 匯出到 COLOR NAME
+
+                    // 其他 Excel 欄位預設留空或 null (根據 MaterialExportDto 的屬性類型)
+                    MatType = null,
+                    MatNoPDM = null,
+                    ColorNo = null,
+                    UOM = null,
+                    PDMMatlNo = null,
+                    ScmClassL = null,
+                    ScmClassM = null,
+                    ScmClassS = null,
+                    ErrorMessage = null
+                });
+            }
+
+            return result;
         }
 
         public static async Task<(bool IsSuccess, string Message, IQueryable<MatmResultDto>? Query)> QueryMatmAsync(pcms_pdm_testContext _pcms_Pdm_TestContext, MatmSearchParameter value)
@@ -595,7 +648,7 @@ namespace PDMApp.Service.PGTSPEC
                     si.detail,
                     si.process_mk,
                     si.material, // 這裡需要 material 來進行字典查找
-                si.recycle,
+                    si.recycle,
                     si.mat_comment,
                     si.standard,
                     si.agent,
