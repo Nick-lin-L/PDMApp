@@ -72,4 +72,39 @@ namespace PDMApp.Dtos.BasicProgram
         public int SuccessCount { get; set; }
         public int FailureCount { get; set; }
     }
+
+    /// <summary>
+    /// 批次角色使用者請求 DTO (以角色為中心)
+    /// </summary>
+    public class BatchRoleUserRequest
+    {
+        public int RoleId { get; set; }
+        public List<long> UserIds { get; set; } = new List<long>();
+    }
+
+    /// <summary>
+    /// 使用者角色移除結果 DTO
+    /// </summary>
+    public class UserRoleRemoveResultDto
+    {
+        public int UserRoleId { get; set; }
+        public long UserId { get; set; }
+        public int RoleId { get; set; }
+        public string UserName { get; set; }
+        public string RoleName { get; set; }
+        public string DevFactoryNo { get; set; }
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// 批次移除結果 DTO
+    /// </summary>
+    public class BatchRemoveResultDto
+    {
+        public List<UserRoleRemoveResultDto> Results { get; set; } = new List<UserRoleRemoveResultDto>();
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailureCount { get; set; }
+    }
 }
