@@ -133,45 +133,54 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
-        // POST api/v1/PGTSpec5Sheets/GetItemByDId
-        [HttpPost("GetItemByDId")]
-        public async Task<ActionResult<Utils.APIStatusResponse<List<MaterialInfoDTO>>>> GetItemByDId([FromBody] SpecItemByDIdSearchParameter value)
+        // POST api/v1/PGTSpec5Sheets/GetMaterialInfoByItemData
+        [HttpPost("GetMaterialInfoByItemData")]
+        public async Task<ActionResult<APIStatusResponse<MaterialInfoDTO>>> GetMaterialInfoByItemData([FromBody] SpecItemSearchParameter item) 
         {
-            if (string.IsNullOrWhiteSpace(value.SpecDId))
+            // 驗證輸入參數
+            if (item == null)
             {
-                return BadRequest(Utils.APIResponseHelper.HandleApiError<List<MaterialInfoDTO>>(
+                return BadRequest(APIResponseHelper.HandleApiError<MaterialInfoDTO>( 
                     errorCode: "INVALID_INPUT",
-                    message: "請提供有效的 SpecDId。",
+                    message: "請提供要查詢的物料資料。",
                     data: null
                 ));
             }
-            if (string.IsNullOrWhiteSpace(value.DevFactoryNo))
+
+            // 檢查是否包含 DevFactoryNo
+            if (string.IsNullOrWhiteSpace(item.DevFactoryNo))
             {
-                return BadRequest(Utils.APIResponseHelper.HandleApiError<List<MaterialInfoDTO>>(
+                return BadRequest(APIResponseHelper.HandleApiError<MaterialInfoDTO>( 
                     errorCode: "INVALID_INPUT",
-                    message: "請提供有效的 DevFactoryNo。",
+                    message: "物料資料必須提供有效的 DevFactoryNo。",
                     data: null
                 ));
             }
+
+            string devFactoryNo = item.DevFactoryNo;
 
             try
             {
-                // 呼叫輔助方法來獲取 SpecItem 資料，包含動態組合的 MaterialNo 和 SerpMatNo
-                var specItems = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialInfoByDId(_pcms_Pdm_TestContext, value.SpecDId, value.DevFactoryNo);
+                // 呼叫輔助方法來獲取 MaterialInfoDTO 資料
+                var materialInfo = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialInfoByItemData(
+                    _pcms_Pdm_TestContext,
+                    item, 
+                    devFactoryNo
+                );
 
-                return Ok(new Utils.APIStatusResponse<List<MaterialInfoDTO>>
+                return Ok(new APIStatusResponse<MaterialInfoDTO> 
                 {
                     ErrorCode = "OK",
                     Message = "查詢成功",
-                    Data = specItems
+                    Data = materialInfo
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new Utils.APIStatusResponse<List<MaterialInfoDTO>>
+                return StatusCode(500, new APIStatusResponse<MaterialInfoDTO> 
                 {
                     ErrorCode = "SERVER_ERROR",
-                    Message = "伺服器錯誤，查詢 Spec Item 失敗。請聯絡系統管理員。",
+                    Message = "伺服器錯誤，查詢物料資訊失敗。請聯絡系統管理員。",
                     Data = null
                 });
             }
@@ -230,45 +239,36 @@ namespace PDMApp.Controllers.SPEC
 
         // POST api/v1/PGTSpec5Sheets/MaterialExport
         [HttpPost("MaterialExport")]
-        public async Task<ActionResult<APIStatusResponse<object>>> MaterialExport([FromBody] PGTSpecMaterialExportRequestParameter value) 
+        public async Task<IActionResult> MaterialExport([FromBody] MaterialExportParameter value) 
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || value.MaterialData == null || !value.MaterialData.Any())
             {
                 return BadRequest(APIResponseHelper.HandleApiError<object>(
                     errorCode: "INVALID_INPUT",
-                    message: "傳入參數不合法，請檢查請求內容。",
+                    message: "傳入參數不合法，請提供有效的 DevFactoryNo 和 MaterialData 列表，且列表不可為空。",
                     data: ModelState
                 ));
             }
 
-            // 檢查是否傳入了要匯出的數據
-            if (value.MaterialData == null || !value.MaterialData.Any())
-            {
-                return Ok(new APIStatusResponse<object>
-                {
-                    ErrorCode = "NO_DATA",
-                    Message = "沒有可供匯出的資料。請確保 MaterialData 列表不為空。",
-                    Data = null
-                });
-            }
-
-            // 根據您之前的需求，如果 MatFullName (現在對應 input.Material) 為空，則返回錯誤
-            if (value.MaterialData.Any(item => string.IsNullOrEmpty(item.Material)))
-            {
-                return Ok(new APIStatusResponse<object>
-                {
-                    ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
-                    Message = "不可包含物料說明為空的資料。",
-                    Data = null
-                });
-            }
+            string devFactoryNo = value.DevFactoryNo;
 
             try
             {
+                var materialDataToExport = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialExportData(_pcms_Pdm_TestContext,value.MaterialData,devFactoryNo);
+
+                if (materialDataToExport.Any(item => string.IsNullOrEmpty(item.MatFullName)))
+                {
+                    return Ok(new APIStatusResponse<object>
+                    {
+                        ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
+                        Message = "不可包含物料說明為空的資料。",
+                        Data = null
+                    });
+                }
+
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Material Export");
 
-                // Excel 標頭：根據您之前的要求，不包含 "SPEC M ID"，且保留所有原先的欄位名稱
                 string[] headers = {
                     "MAT TYPE", "MAT NO", "MAT FULL NAME", "COLOR NO", "COLOR NAME",
                     "STANDARD", "UOM", "MEMO", "PDM MATL NO",
@@ -283,21 +283,21 @@ namespace PDMApp.Controllers.SPEC
                 }
 
                 int row = 2;
-                foreach (var item in value.MaterialData) // 直接遍歷前端傳來的數據
+                foreach (var item in materialDataToExport)
                 {
-                    worksheet.Cell(row, 1).Value = ""; 
-                    worksheet.Cell(row, 2).Value = ""; 
-                    worksheet.Cell(row, 3).Value = item.Material; 
-                    worksheet.Cell(row, 4).Value = ""; 
-                    worksheet.Cell(row, 5).Value = item.Colors; 
+                    worksheet.Cell(row, 1).Value = item.MatType;
+                    worksheet.Cell(row, 2).Value = item.MatNoPDM;
+                    worksheet.Cell(row, 3).Value = item.MatFullName;
+                    worksheet.Cell(row, 4).Value = item.ColorNo;
+                    worksheet.Cell(row, 5).Value = item.ColorName;
                     worksheet.Cell(row, 6).Value = item.Standard;
-                    worksheet.Cell(row, 7).Value = ""; 
-                    worksheet.Cell(row, 8).Value = item.MaterialComment;
-                    worksheet.Cell(row, 9).Value = "";
-                    worksheet.Cell(row, 10).Value = "";
-                    worksheet.Cell(row, 11).Value = "";
-                    worksheet.Cell(row, 12).Value = "";
-                    worksheet.Cell(row, 13).Value = ""; 
+                    worksheet.Cell(row, 7).Value = item.UOM;
+                    worksheet.Cell(row, 8).Value = item.Memo;
+                    worksheet.Cell(row, 9).Value = item.PDMMatlNo;
+                    worksheet.Cell(row, 10).Value = item.ScmClassL;
+                    worksheet.Cell(row, 11).Value = item.ScmClassM;
+                    worksheet.Cell(row, 12).Value = item.ScmClassS;
+                    worksheet.Cell(row, 13).Value = item.ErrorMessage;
                     row++;
                 }
 
@@ -305,10 +305,12 @@ namespace PDMApp.Controllers.SPEC
 
                 using var stream = new MemoryStream();
                 workbook.SaveAs(stream);
+
+                stream.Position = 0;
+
                 byte[] fileBytes = stream.ToArray();
 
                 string fileName = $"物料匯出_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-
                 string base64File = Convert.ToBase64String(fileBytes);
 
                 var responseFileDto = new ExportFileResponseDto
@@ -329,8 +331,8 @@ namespace PDMApp.Controllers.SPEC
                 return StatusCode(500, new APIStatusResponse<object>
                 {
                     ErrorCode = "SERVER_ERROR",
-                    Message = $"伺服器錯誤，物料匯出失敗。請聯絡系統管理員。錯誤訊息: {ex.Message}",
-                    Data = null // 不再返回 ex.Message 到 Data，避免敏感資訊洩露
+                    Message = "伺服器錯誤，物料匯出失敗。請聯絡系統管理員。",
+                    Data = null
                 });
             }
         }

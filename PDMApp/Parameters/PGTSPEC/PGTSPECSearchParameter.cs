@@ -72,17 +72,35 @@ namespace PDMApp.Parameters.PGTSPEC
         public string? DevFactoryNo { get; set; }
     }
 
-    public class MaterialExportInputItemDto
+
+    public class MaterialExportParameter
     {
-        public string? Material { get; set; }        
-        public string? MaterialComment { get; set; } 
-        public string? Standard { get; set; }        
-        public string? Colors { get; set; }          
+        public string? DevFactoryNo { get; set; } 
+        public List<SpecItemSearchParameter>? MaterialData { get; set; } 
     }
 
-    public class PGTSpecMaterialExportRequestParameter
+    public class SpecItemSearchParameter
     {
-        public List<MaterialExportInputItemDto> MaterialData { get; set; } = new List<MaterialExportInputItemDto>();
+        public decimal? Sort { get; set; } // MATERIAL_SORT
+        public string? No { get; set; } //  PARTS_NO
+        public string? ActPartNo { get; set; } //  ACT_PART_NO
+        public string? Type { get; set; } //  MATERIAL_NEW
+        public string? Parts { get; set; } //  PARTS
+        public string? Detail { get; set; } //  DETAIL
+        public string? ProcessMk { get; set; } //  PROCESS_MK
+        public string? Material { get; set; } //  MATERIAL
+        public string? Recycle { get; set; } //  RECYCLE
+        public string? MaterialComment { get; set; } //  MATERIAL_COMMENT
+        public string? Standard { get; set; } //  STANDARD
+        public string? Agent { get; set; } //  AGENT
+        public string? Supplier { get; set; } //  SUPPLIER
+        public string? QuoteSupplier { get; set; } //  QUOTE_SUPPLIER
+        public string? Hcha { get; set; } //  HC/HA 
+        public string? Sec { get; set; } //  SEC 
+        public string? Colors { get; set; } //  MATERIAL_COLOR
+        public string? ColorComment { get; set; } //  COLOR_COMMENT
+        public string? Memo { get; set; } //  MEMO
+        public string? DevFactoryNo { get; set; }
     }
 
     public class SpecItemByDIdSearchParameter
