@@ -31,7 +31,7 @@ namespace PDMApp.Utils
         }
 
         /// <summary>
-        /// 將物件轉為 Nullable<int>，無法轉換回傳 null
+        /// 將物件轉為 Nullable int，無法轉換回傳 null
         /// </summary>
         public static int? ConvertToNullableInt(object value)
         {
@@ -42,7 +42,7 @@ namespace PDMApp.Utils
         }
 
         /// <summary>
-        /// 將物件轉為 Nullable<decimal>，無法轉換回傳 null
+        /// 將物件轉為 Nullable decimal，無法轉換回傳 null
         /// </summary>
         public static decimal? ConvertToNullableDecimal(object value)
         {

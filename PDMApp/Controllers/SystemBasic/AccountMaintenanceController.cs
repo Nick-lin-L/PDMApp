@@ -16,7 +16,7 @@ using System.Net.Http;
 namespace PDMApp.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/systembasic/[controller]")]
     public class AccountMaintenanceController : ControllerBase
     {
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;

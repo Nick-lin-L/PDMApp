@@ -63,7 +63,7 @@ namespace PDMApp.Controllers
                     query = query.Where(ur => ur.IsActive == parameter.IsActive);
 
                 // 排序
-                query = query.OrderBy(ur => ur.RoleId).ThenBy(ur => ur.RoleId);
+                query = query.OrderBy(ur => ur.RoleId);
 
                 var pagedResult = await query.ToPagedResultAsync(parameter.Pagination.PageNumber, parameter.Pagination.PageSize);
 
@@ -141,11 +141,30 @@ namespace PDMApp.Controllers
                         );
                     }
 
+                    // 驗證並轉換 ID
+                    if (!long.TryParse(request.UserId, out var parsedUserId))
+                    {
+                        return APIResponseHelper.HandleApiError<UserRoleAssignResultDto>(
+                            errorCode: "40005",
+                            message: "使用者 ID 格式不正確",
+                            data: null
+                        );
+                    }
+
+                    if (!int.TryParse(request.RoleId, out var parsedRoleId))
+                    {
+                        return APIResponseHelper.HandleApiError<UserRoleAssignResultDto>(
+                            errorCode: "40006",
+                            message: "角色 ID 格式不正確",
+                            data: null
+                        );
+                    }
+
                     // 建立新的使用者角色關聯
                     var newUserRole = new pdm_user_roles
                     {
-                        user_id = long.TryParse(request.UserId, out var parsedUserId) ? parsedUserId : (long?)null,
-                        role_id = int.TryParse(request.RoleId, out var parsedRoleId) ? parsedRoleId : (int?)null,
+                        user_id = parsedUserId,
+                        role_id = parsedRoleId,
                         created_by = currentUser.UserId,
                         created_at = DateTime.UtcNow,
                         updated_by = currentUser.UserId,
@@ -163,8 +182,8 @@ namespace PDMApp.Controllers
                     var result = new UserRoleAssignResultDto
                     {
                         UserRoleId = newUserRole.user_role_id,
-                        UserId = newUserRole.user_id.Value,
-                        RoleId = newUserRole.role_id.Value,
+                        UserId = parsedUserId,
+                        RoleId = parsedRoleId,
                         UserName = user.username,
                         RoleName = role.role_name,
                         DevFactoryNo = role.dev_factory_no,
@@ -277,6 +296,7 @@ namespace PDMApp.Controllers
                             };
 
                             _pcms_Pdm_TestContext.pdm_user_roles.Add(newUserRole);
+                            await _pcms_Pdm_TestContext.SaveChangesAsync();
 
                             results.Add(new UserRoleAssignResultDto
                             {
@@ -304,7 +324,6 @@ namespace PDMApp.Controllers
                         }
                     }
 
-                    await _pcms_Pdm_TestContext.SaveChangesAsync();
                     scope.Complete();
 
                     // 清除快取
@@ -318,7 +337,11 @@ namespace PDMApp.Controllers
                         FailureCount = failureCount
                     };
 
-                    return APIResponseHelper.GenerateApiResponse("OK", "批次分配完成", batchResult);
+                    string message = successCount == 0 ?
+                                    "批次分配完成，但無新增記錄" :
+                                    $"批次分配完成，成功：{successCount}，失敗：{failureCount}";
+
+                    return APIResponseHelper.GenerateApiResponse("OK", message, batchResult);
                 }
                 catch (Exception ex)
                 {
@@ -330,6 +353,143 @@ namespace PDMApp.Controllers
                 }
             }
         }
+
+
+                /// <summary>
+        /// 批次從特定角色移除使用者
+        /// </summary>
+        /// <param name="request">批次移除請求</param>
+        /// <returns>批次移除結果</returns>
+        [HttpPost("batch-remove-users")]
+        public async Task<ActionResult<APIStatusResponse<BatchRemoveResultDto>>> BatchRemoveUsersFromRole([FromBody] BatchRoleUserRequest request)
+        {
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    var currentUser = CurrentUserUtils.Get(HttpContext);
+                    if (currentUser?.UserId == null)
+                    {
+                        return APIResponseHelper.HandleApiError<BatchRemoveResultDto>(
+                            errorCode: "40001",
+                            message: "找不到登入者資訊",
+                            data: null
+                        );
+                    }
+
+                    // 驗證角色是否存在
+                    var role = await _pcms_Pdm_TestContext.pdm_roles
+                        .FirstOrDefaultAsync(r => r.role_id == request.RoleId);
+
+                    if (role == null)
+                    {
+                        return APIResponseHelper.HandleApiError<BatchRemoveResultDto>(
+                            errorCode: "40003",
+                            message: $"角色 ID {request.RoleId} 不存在",
+                            data: null
+                        );
+                    }
+
+                    var results = new List<UserRoleRemoveResultDto>();
+                    int successCount = 0;
+                    int failureCount = 0;
+
+                    foreach (var userId in request.UserIds)
+                    {
+                        try
+                        {
+                            // 驗證使用者是否存在
+                            var user = await _pcms_Pdm_TestContext.pdm_users
+                                .FirstOrDefaultAsync(u => u.user_id == userId);
+
+                            if (user == null)
+                            {
+                                results.Add(new UserRoleRemoveResultDto
+                                {
+                                    UserId = userId,
+                                    RoleId = request.RoleId,
+                                    IsSuccess = false,
+                                    Message = $"使用者 ID {userId} 不存在"
+                                });
+                                failureCount++;
+                                continue;
+                            }
+
+                            // 查找使用者角色關聯
+                            var userRole = await _pcms_Pdm_TestContext.pdm_user_roles
+                                .FirstOrDefaultAsync(ur => ur.user_id == userId && ur.role_id == request.RoleId);
+
+                            if (userRole == null)
+                            {
+                                results.Add(new UserRoleRemoveResultDto
+                                {
+                                    UserId = userId,
+                                    RoleId = request.RoleId,
+                                    UserName = user.username,
+                                    RoleName = role.role_name,
+                                    IsSuccess = false,
+                                    Message = $"使用者 {user.username} 並未擁有角色 {role.role_name}"
+                                });
+                                failureCount++;
+                                continue;
+                            }
+
+                            // 移除使用者角色關聯
+                            _pcms_Pdm_TestContext.pdm_user_roles.Remove(userRole);
+
+                            results.Add(new UserRoleRemoveResultDto
+                            {
+                                UserRoleId = userRole.user_role_id,
+                                UserId = userId,
+                                RoleId = request.RoleId,
+                                UserName = user.username,
+                                RoleName = role.role_name,
+                                DevFactoryNo = role.dev_factory_no,
+                                IsSuccess = true,
+                                Message = "成功從角色移除使用者"
+                            });
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            results.Add(new UserRoleRemoveResultDto
+                            {
+                                UserId = userId,
+                                RoleId = request.RoleId,
+                                IsSuccess = false,
+                                Message = $"處理使用者 {userId} 時發生錯誤: {ex.Message}"
+                            });
+                            failureCount++;
+                        }
+                    }
+
+                    await _pcms_Pdm_TestContext.SaveChangesAsync();
+                    scope.Complete();
+
+                    // 清除快取
+                    ClearUserRoleCache();
+
+                    var batchResult = new BatchRemoveResultDto
+                    {
+                        Results = results,
+                        TotalCount = request.UserIds.Count,
+                        SuccessCount = successCount,
+                        FailureCount = failureCount
+                    };
+
+                    return APIResponseHelper.GenerateApiResponse("OK", $"批次移除完成，成功：{successCount}，失敗：{failureCount}", batchResult);
+                }
+                catch (Exception ex)
+                {
+                    return APIResponseHelper.HandleApiError<BatchRemoveResultDto>(
+                        errorCode: "50001",
+                        message: $"批次從角色移除使用者時發生錯誤: {ex.Message}",
+                        data: null
+                    );
+                }
+            }
+        }
+
 
         /// <summary>
         /// 移除使用者角色
