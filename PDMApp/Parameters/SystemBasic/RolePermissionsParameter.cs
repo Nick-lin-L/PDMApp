@@ -42,7 +42,14 @@ namespace PDMApp.Parameters.Basic
         public int RolePermissionDetailsId { get; set; } // 權限Detail ID
         public int PermissionId { get; set; } // 權限 ID
         public string PermissionKey { get; set; } // 權限名稱
+        public int PermissionKeyId { get; set; } // 擴充權限Detail作業 ID
         public string DescriptionD { get; set; } // 權限Detail描述 ID
         public string IsActiveD { get; set; } // 是否啟用
+    }
+
+    public class PermissionCheckParameter
+    {
+        public string DevFactoryNo { get; set; }
+        public int FrontendId { get; set; }
     }
 }

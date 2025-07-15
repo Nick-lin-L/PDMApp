@@ -27,7 +27,9 @@ using PDMApp.Utils.BasicProgram;
 using Microsoft.AspNetCore.Routing;
 using System.Reflection;
 using PDMApp.Middleware;
-
+using System.IdentityModel.Tokens.Jwt;
+using PDMApp.Service.Basic;
+using PDMApp.Filters;
 
 namespace PDMApp
 {
@@ -59,7 +61,7 @@ namespace PDMApp
             services.AddMiniProfiler(options =>
             {
                 options.RouteBasePath = "/profiler";
-                options.EnableDebugMode = true; // 显示完整 SQL 参数
+                options.EnableDebugMode = true; // ?示完整 SQL ??
                 options.TrackConnectionOpenClose = false;
                 options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
                 // options.Storage = new oidcDemo.Model.PostgreSqlStorage(connectionString, "miniprofiler", "miniprofiler_timings", "miniprofiler_client_timings");
@@ -68,7 +70,7 @@ namespace PDMApp
             {
                 options.AddPolicy("AllowSpecificOrigin", builder =>
                 {
-                    builder.WithOrigins("https://pcms-mif-test01.pouchen.com", "http://localhost:*") // 指定前端來源
+                    builder.WithOrigins("https://pcms-pdm-test.pouchen.com", "https://pcms-mif-test01.pouchen.com", "http://localhost:443*") // 指定前端來源
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials() // 如果有 Cookie 或憑證請求，這是必需的
@@ -77,17 +79,25 @@ namespace PDMApp
             });
             AddScopedServices(services);
             //services.AddControllers();
-            services.AddControllers().ConfigureApiBehaviorOptions(options =>
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICurrentUserPermissionService, CurrentUserPermissionService>();
+            services.AddControllers(options =>
+            {
+                // 加入權限過濾器
+                options.Filters.Add<PermissionActionFilter>();
+            })
+            .ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
                     // 收集錯誤信息
                     var errors = context.ModelState
-                        .Where(e => e.Value.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
-                        );
+                                    .Where(e => e.Value.Errors.Count > 0)
+                                    .ToDictionary(
+                                        kvp => kvp.Key,
+                                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).FirstOrDefault()
+                                    );
 
                     // 將錯誤信息存儲在 HttpContext.Items 中
                     context.HttpContext.Items["ModelValidationErrors"] = errors;
@@ -103,12 +113,67 @@ namespace PDMApp
                 options.JsonSerializerOptions.Converters.Add(new Utils.Converters.StringJsonConverter());
                 options.JsonSerializerOptions.Converters.Add(new Utils.Converters.IntJsonConverter());
             });
+            // 確保路由設定正確
             services.Configure<RouteOptions>(options =>
             {
-                options.LowercaseUrls = true; // 讓 API URL 變成小寫
+                options.LowercaseUrls = true;
+                options.LowercaseQueryStrings = true;
             });
             //services.AddAuthorization(); // 啟用授權
             services.AddControllersWithViews();
+            // 添加記憶體快取
+            services.AddMemoryCache();
+            // 添加 HttpClient 工廠
+            services.AddHttpClient("SSOValidation", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+                // 可以在這裡配置其他 HttpClient 的預設值
+            });
+            /*
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
+          .AddJwtBearer(options =>
+          {
+              options.Events = new JwtBearerEvents
+              {
+                  OnMessageReceived = context =>
+                  {
+                      // 確保 cookie 中有 JWT Token
+                      if (context.Request.Cookies.ContainsKey("PDMToken"))
+                      {
+                          var token = context.Request.Cookies["PDMToken"];
+
+                          // 解析 JWT Token
+                          var handler = new JwtSecurityTokenHandler();
+                          var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+
+                          // 提取各種聲明並存入 HttpContext.Items
+                          var claims = jsonToken?.Claims.ToList(); // 提取所有聲明
+
+                          if (claims != null)
+                          {
+                              // 提取需要的聲明
+                              var name = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                              var nameEn = claims.FirstOrDefault(c => c.Type == "name_en")?.Value;
+                              var pccuid = claims.FirstOrDefault(c => c.Type == "pccuid")?.Value;
+                              var email = claims.FirstOrDefault(c => c.Type == "email")?.Value;
+                              var userId = claims.FirstOrDefault(c => c.Type == "user_id")?.Value;
+
+                              // 將所有需要的資料存入 HttpContext.Items
+                              context.HttpContext.Items["name"] = name;
+                              context.HttpContext.Items["name_en"] = nameEn;
+                              context.HttpContext.Items["pccuid"] = pccuid;
+                              context.HttpContext.Items["email"] = email;
+                              context.HttpContext.Items["user_id"] = userId;
+
+                          }
+                      }
+                      return Task.CompletedTask;
+                  }
+              };
+ 
+          });
+            */
         }
         /// <summary>
         /// 自動掃描並注入所有繼承 IScopedService 的類別
@@ -140,8 +205,7 @@ namespace PDMApp
                     options.SlidingExpiration = true; // 每次請求重置過期時間
                 }
             */
-            )
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+            ).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = Configuration["Authentication:PCG:Authority"]; // 設定 SSO 伺服器位址
@@ -153,7 +217,7 @@ namespace PDMApp
                 options.Scope.Add("profile");
                 options.CallbackPath = "/signin-oidc";//options.CallbackPath = new PathString("/api/auth/callback"); // 驗證回調路徑 (與設定一致)
                 options.SignedOutRedirectUri = Configuration["Authentication:PCG:PostLogoutRedirectUri"]; //options.SignedOutRedirectUri = "http://localhost:44378/signin-oidc"; // 登出重定向 
-                
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true, // 驗證頒發者
@@ -163,25 +227,63 @@ namespace PDMApp
                     ValidIssuer = Configuration["Authentication:PCG:Authority"],
                     ValidAudience = Configuration["Authentication:PCG:ClientId"]
                 };
-                
+
             });
+
             services.Configure<OAuthConfig>(Configuration.GetSection("Authentication:PCG"));
+            // ? 加上 JWT 驗證，從 Cookie["PDMToken"] 解析 JWT
+            var jwtSecret = Configuration["Authentication:PCG:ClientSecret"];
+            var jwtKey = Encoding.UTF8.GetBytes(jwtSecret);
+
+            services.AddAuthentication()
+                .AddJwtBearer("PDMToken", options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = "PDMAppissu",     // ?? 必須與產生 JWT 時一致
+                        ValidAudience = "testclient",   // ?? 同上
+                        IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
+                    };
+
+                    // 讓 ASP.NET Core 從 Cookie["PDMToken"] 讀取 JWT
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var token = context.Request.Cookies["PDMToken"];
+                            if (!string.IsNullOrEmpty(token))
+                            {
+                                context.Token = token;
+                            }
+                            return Task.CompletedTask;
+                        },
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine($"[JWT 驗證失敗] {context.Exception.Message}");
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
 
             foreach (var type in serviceTypes)
             {
                 services.AddScoped(type.Service, type.Implementation);
             }
         }
-        
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseValidationExceptionHandler();
 
             //if (env.IsDevelopment())
             //{
             app.UseDeveloperExceptionPage();
+            //}
             app.UseOpenApi(); // OpenAPI 規範文檔 (swagger.json)
                               //app.UseSwagger(); 原生swagger
             app.UseSwaggerUi3(); // NSwag
@@ -207,10 +309,13 @@ namespace PDMApp
             app.UseRouting();
             app.UseCors("AllowSpecificOrigin");
 
-            app.UseAuthentication(); // 啟用 JWT 驗證
-            app.UseAuthorization();  // 啟用授權
+            // 確保認證和授權中間件的順序正確
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseMiniProfiler();
+            // 將 ValidationMiddleware 移到最後
+            app.UseValidationExceptionHandler();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

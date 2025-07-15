@@ -7,6 +7,11 @@ namespace PDMApp.Models
 {
     public partial class pdm_factory
     {
+        public pdm_factory()
+        {
+            pdm_roles = new HashSet<pdm_roles>();
+        }
+
         public int factory_id { get; set; }
         public string dev_factory_no { get; set; }
         public string dev_factory_name { get; set; }
@@ -29,5 +34,6 @@ namespace PDMApp.Models
 
         public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
+        public virtual ICollection<pdm_roles> pdm_roles { get; set; }
     }
 }

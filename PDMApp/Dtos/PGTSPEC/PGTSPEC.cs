@@ -23,6 +23,8 @@ namespace Dtos.PGTSPEC
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? UpdateDate { get; internal set; }
         public string UpdateUser { get; internal set; }
+        public string EditMk { get; internal set; }
+        
     }
 
 
@@ -107,7 +109,6 @@ namespace Dtos.PGTSPEC
     {
         [JsonIgnore]
         public string? SpecMId { get; set; }
-        [JsonIgnore]
         public string? SpecDId { get; set; }
         public decimal? Sort { get; set; } // MATERIAL_SORT
         public string? No { get; set; } // PART_NO
@@ -116,6 +117,7 @@ namespace Dtos.PGTSPEC
         public string? Parts { get; set; } // PARTS
         public string? Detail { get; set; } // DETAIL
         public string? ProcessMk { get; set; } // PROCESS_MK
+        public string? SerpMatNo { get; set; }
         public string? MaterialNo { get; set; } // SERP_MATERIAL_NO (需關聯 MATERIAL 取得)
         public string? Material { get; set; } // MATERIAL
         public string? Recycle { get; set; } // RECYCLE
@@ -204,6 +206,49 @@ namespace Dtos.PGTSPEC
         public string? Supplier { get; set; }    // 供應商
         public object ActNo { get; internal set; }
         public string RemarksProhibit { get; internal set; }
+    }
+
+    public class MatmResultDto
+    {
+        public string? SerpMatNo { get; set; }
+        public string? MaterialNo { get; set; }
+        public string? MatFullNm { get; set; }
+        public string? ColorNo { get; set; }
+        public string? ColorNm { get; set; }
+        public string? Uom { get; set; }
+        public string? Memo { get; set; }
+        public string? Standard { get; set; }
+        public string? Colors { get; set; }      // COLOR + " " + COLOR_NM
+    }
+
+    public class MaterialExportDto
+    {
+        public string? SpecMId { get; set; } 
+        public string? MatFullName { get; set; }
+        public string? ColorName { get; set; }  
+        public string? Standard { get; set; }    
+        public string? Memo { get; set; }        
+        public string? MatType { get; set; }
+        public string? MatNoPDM { get; set; }
+        public string? ColorNo { get; set; }
+        public string? UOM { get; set; }
+        public string? PDMMatlNo { get; set; } 
+        public string? ScmClassL { get; set; }
+        public string? ScmClassM { get; set; }
+        public string? ScmClassS { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    public class MaterialInfoDTO
+    {
+        public string? SerpMatNo { get; set; }
+        public string? MaterialNo { get; set; }
+    }
+
+    public class ExportFileResponseDto
+    {
+        public string FileName { get; set; }
+        public string FileContent { get; set; }
     }
 
 

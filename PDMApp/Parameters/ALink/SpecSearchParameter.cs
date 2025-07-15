@@ -3,17 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
-
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PDMApp.Parameters.ALink
 {
-    public class SpecSearchParameter
+    public class SpecSearchParameter : IValidatableObject
     {
         //接收user查詢的參數
 #nullable enable
         public string? SpecMId { get; set; }
+        //[Required]
         public string? Factory { get; set; }
         public string? EntryMode { get; set; }
+        //[Required]
         public string? Season { get; set; }
         public string? Year { get; set; }
         public string? ItemNo { get; set; }
@@ -41,5 +43,18 @@ namespace PDMApp.Parameters.ALink
 
         //public ICollection<PaginationParameter> paginationParameter { get; set; } 
         public PaginationParameter Pagination { get; set; } = new PaginationParameter();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var hasAnyValue = GetType().GetProperties()
+                .Where(p => p.PropertyType == typeof(string))
+                .Select(p => (string?)p.GetValue(this))
+                .Any(v => !string.IsNullOrWhiteSpace(v));
+
+            if (!hasAnyValue)
+            {
+                yield return new ValidationResult("Please enter at least one search condition.", new[] { nameof(SpecMId) });
+            }
+        }
     }
 }

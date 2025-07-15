@@ -3,17 +3,22 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DocumentFormat.OpenXml.Math;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Dtos.Cbd;
 using PDMApp.Extensions;
 using PDMApp.Models;
+using PDMApp.Parameters.Cbd;
+using PDMApp.Utils.BasicProgram;
 
 namespace PDMApp.Service.Cbd
 {
@@ -21,11 +26,12 @@ namespace PDMApp.Service.Cbd
     {
         private readonly pcms_pdm_testContext _context;
         private readonly ILogger<CbdQueryService> _logger;
-
-        public CbdQueryService(pcms_pdm_testContext context, ILogger<CbdQueryService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public CbdQueryService(pcms_pdm_testContext context, ILogger<CbdQueryService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<dynamic> ExcelImport(Parameters.Cbd.CbdQueryParameter.CbdExcel value)
@@ -34,6 +40,7 @@ namespace PDMApp.Service.Cbd
             {
                 var stageList = await GetStages(value.DevFactoryNo);
                 var stage = stageList.Where(x => string.Equals(x.text, value.Stage, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var currentUser = CurrentUserUtils.Get(_httpContextAccessor.HttpContext);
 
                 if (String.IsNullOrWhiteSpace(value?.DevelopmentNo))
                 {
@@ -115,9 +122,9 @@ namespace PDMApp.Service.Cbd
                 _plm_cbd_head.speclockmk = "N";
                 _plm_cbd_head.cbdlockmk = "N";
                 _plm_cbd_head.stage = stage.value_desc;
-                _plm_cbd_head.create_user = "TEST";
+                // _plm_cbd_head.create_user = currentUser.UserId?.ToString();
                 _plm_cbd_head.create_date = DateTime.Now;
-                _plm_cbd_head.update_user = "TEST";
+                // _plm_cbd_head.update_user = currentUser.UserId?.ToString();
                 _plm_cbd_head.update_date = DateTime.Now;
                 _plm_cbd_head.product_d_id = product_d_id;
                 _plm_cbd_head.ver = ver;
@@ -494,6 +501,155 @@ namespace PDMApp.Service.Cbd
             var data = await query.ToListAsync();
             return data;
 
+        }
+
+        public IEnumerable<CbdSearchDto.ExcelData> ExcelExport(CbdSearchParameter.QueryParameter value)
+        {
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        join pnv in _context.pdm_namevalue_new
+                        on ph.factory equals pnv.fact_no
+                        where (pnv.text == value.Brand) &&
+                              (pnv.group_key == "brand") &&
+                              (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                              (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
+                              (string.IsNullOrWhiteSpace(value.Stage) || ph.stage == (value.Stage == null ? string.Empty : value.Stage.ToUpper())) &&
+                              (ph.item_trading_code.Contains(value.ItemNo) || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no.Contains(value.DevelopmentNo) || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code.Contains(value.ColorCode) || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ph.working_name.Contains(value.WorkingName) || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last)) &&
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
+                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        select new CbdSearchDto.ExcelData
+                        {
+                            Season = ph.item_initial_season,
+                            Stage = ph.stage,
+                            Factory = ph.main_factory + (string.IsNullOrWhiteSpace(ph.sub_factory) ? "" : "," + ph.sub_factory) + (string.IsNullOrWhiteSpace(ph.sub_factory2) ? "" : "," + ph.sub_factory2),
+                            WorkingName = ph.working_name,
+                            ItemTradingCode = ph.item_trading_code,
+                            DevelopmentNo = ph.development_no,
+                            DevelopmentColorNo = pi.development_color_no,
+                            ColorCode = pi.color_code,
+                            No = ci.no,
+                            Parts = ci.parts,
+                            Detail = ci.detail,
+                            ProcessMk = ci.process_mk,
+                            Material = ci.material,
+                            MtrComment = ci.mtrcomment,
+                            Standard = ci.standard,
+                            Supplier = ci.supplier,
+                            Colors = ci.colors,
+                            Memo = ci.memo,
+                            CbdComment = ci.cbdcomment,
+                            HcHa = ci.hcha,
+                            Sec = ci.sec,
+                            Width = ci.width,
+                            Usage = ci.usage2,
+                            Price = ci.unitprice,
+                            Cost = ci.cost,
+                        };
+            return query.AsEnumerable();
+        }
+
+        public IQueryable<CbdSearchDto.QueryDto> CbdSearch(CbdSearchParameter.QueryParameter value)
+        {
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        join pnv in _context.pdm_namevalue_new
+                        on ph.factory equals pnv.fact_no
+                        where (pnv.text == value.Brand) &&
+                              (pnv.group_key == "brand") &&
+                              (ph.factory == value.DevFactoryNo || string.IsNullOrWhiteSpace(value.DevFactoryNo)) &&
+                              (ph.product_line_type == value.ProductLineType || string.IsNullOrWhiteSpace(value.ProductLineType)) &&
+                              (ph.item_initial_season == value.Season || string.IsNullOrWhiteSpace(value.Season)) &&
+                              (string.IsNullOrWhiteSpace(value.Stage) || ph.stage == (value.Stage == null ? string.Empty : value.Stage.ToUpper())) &&
+                              (ph.item_trading_code.Contains(value.ItemNo) || string.IsNullOrWhiteSpace(value.ItemNo)) &&
+                              (ph.development_no.Contains(value.DevelopmentNo) || string.IsNullOrWhiteSpace(value.DevelopmentNo)) &&
+                              (pi.color_code.Contains(value.ColorCode) || string.IsNullOrWhiteSpace(value.ColorCode)) &&
+                              (ph.working_name.Contains(value.WorkingName) || string.IsNullOrWhiteSpace(value.WorkingName)) &&
+                              (ph.last1.Contains(value.Last) || string.IsNullOrWhiteSpace(value.Last)) &&
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
+                        group new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
+                           by new { ph.stage, ph.item_initial_season, ph.development_no, ph.working_name, pi.color_code, pi.colorway, ph.last1, ch.data_m_id, pi.development_color_no }
+                           into g
+                        orderby g.Key.development_no, g.Key.development_color_no ascending
+                        select new CbdSearchDto.QueryDto
+                        {
+                            Stage = g.Key.stage,
+                            Season = g.Key.item_initial_season,
+                            DevelopmentNo = g.Key.development_no,
+                            WorkingName = g.Key.working_name,
+                            ColorCode = g.Key.color_code,
+                            ColorWay = g.Key.colorway,
+                            Last = g.Key.last1,
+                            DataMId = g.Key.data_m_id,
+                            DevelopmentColorNo = g.Key.development_color_no
+                        };
+
+            return query.Distinct();
+        }
+
+        public IQueryable<CbdSearchDto.DetailsDto> CbdSearchDetail(Parameters.Cbd.CbdSearchParameter.QueryDetailParameter value)
+        {
+            var query = from ph in _context.plm_product_head
+                        join pi in _context.plm_product_item
+                        on ph.product_m_id equals pi.product_m_id
+                        join ch in _context.plm_cbd_head
+                        on pi.product_d_id equals ch.product_d_id
+                        join ci in _context.plm_cbd_item
+                        on ch.data_m_id equals ci.data_m_id
+                        where ci.data_m_id == value.DataMId &&
+                              (ci.parts.Contains(value.Parts) || string.IsNullOrWhiteSpace(value.Parts)) &&
+                              (ci.material.Contains(value.Material) || string.IsNullOrWhiteSpace(value.Material)) &&
+                              (ci.colors.Contains(value.MaterialColor) || string.IsNullOrWhiteSpace(value.MaterialColor)) &&
+                              (ci.supplier.Contains(value.Supplier) || string.IsNullOrWhiteSpace(value.Supplier))
+                        orderby ci.data_m_id, ci.partclass, ci.seqno ascending
+                        select new CbdSearchDto.DetailsDto
+                        {
+                            PartNo = ci.no,
+                            Parts = ci.parts,
+                            MoldNo = ci.moldno,
+                            ProcessMk = ci.process_mk,
+                            Material = ci.material,
+                            Recycle = ci.recycle,
+                            MtrComment = ci.mtrcomment,
+                            CbdComment = ci.cbdcomment,
+                            Standard = ci.standard,
+                            Supplier = ci.supplier,
+                            Colors = ci.colors,
+                            Memo = ci.memo,
+                            ClrComment = ci.clrcomment,
+                            HcHa = ci.hcha,
+                            Sec = ci.sec,
+                            Width = ci.width,
+                            Usage1 = ci.usage1,
+                            Usage2 = ci.usage2,
+                            UnitPrice = ci.unitprice,
+                            Cost = ci.cost,
+                            Seqno = ci.seqno,
+                            PartClass = ci.partclass,
+                            DataMId = ch.data_m_id
+                        };
+
+            return query;
         }
     }
 }

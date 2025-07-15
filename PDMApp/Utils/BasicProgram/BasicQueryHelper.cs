@@ -17,9 +17,7 @@ namespace PDMApp.Utils.BasicProgram
         public static IQueryable<pdm_rolesDto> QueryRoles(pcms_pdm_testContext _pcms_Pdm_TestContext)
         {
             return (from pr in _pcms_Pdm_TestContext.pdm_roles
-                    join pur in _pcms_Pdm_TestContext.pdm_user_roles on pr.role_id equals pur.role_id into purJoin
-                    from pur in purJoin.DefaultIfEmpty() // 將 pdm_user_roles 改為 left join
-                    join pu in _pcms_Pdm_TestContext.pdm_users on pur.user_id equals pu.user_id into puJoin
+                    join pu in _pcms_Pdm_TestContext.pdm_users on pr.updated_by equals pu.user_id into puJoin
                     from pu in puJoin.DefaultIfEmpty()   // pdm_users left join
                     select new pdm_rolesDto
                     {
@@ -27,10 +25,10 @@ namespace PDMApp.Utils.BasicProgram
                         RoleName = pr.role_name,
                         Description = pr.description,
                         DevFactoryNo = pr.dev_factory_no,
-                        CreatedAt = pr.created_at,
-                        CreatedBy = pu != null ? pu.username : string.Empty,
+                        //CreatedAt = pr.created_at,
+                        //CreatedBy = pu.username ?? string.Empty,
                         UpdatedAt = pr.updated_at,
-                        UpdatedBy = pu != null ? pu.username : string.Empty,
+                        UpdatedBy = pu.username ?? string.Empty,
                         IsActive = pr.is_active
                     });
 
@@ -63,10 +61,10 @@ namespace PDMApp.Utils.BasicProgram
                         Deletep = Prp.deletep,
                         Exportp = Prp.exportp,
                         Importp = Prp.importp,
-                        Permission1 = Prp.permission1,
-                        Permission2 = Prp.permission2,
-                        Permission3 = Prp.permission3,
-                        Permission4 = Prp.permission4
+                        //Permission1 = Prp.permission1,
+                        //Permission2 = Prp.permission2,
+                        //Permission3 = Prp.permission3,
+                        //Permission4 = Prp.permission4
                     });
         }
 
@@ -122,73 +120,49 @@ namespace PDMApp.Utils.BasicProgram
                                    Text = Pf.dev_factory_no
                                };
             // 查詢權限清單
-            var permissionsRaw = await (
-                from Pp in _pcms_Pdm_TestContext.pdm_permissions
-                join Prp in _pcms_Pdm_TestContext.pdm_role_permissions on Pp.permission_id equals Prp.permission_id
-                select new pdm_permissionsInitDto
-                {
-                    PermissionId = Pp.permission_id,
-                    PermissionName = Pp.permission_name,
-                    Description = Pp.description,
-                    IsActive = Prp.is_active,
-                    Createp = Prp.createp,
-                    Readp = Prp.readp,
-                    Updatep = Prp.updatep,
-                    Deletep = Prp.deletep,
-                    Exportp = Prp.exportp,
-                    Importp = Prp.importp,
-                    Permission1 = Prp.permission1,
-                    Permission2 = Prp.permission2,
-                    Permission3 = Prp.permission3,
-                    Permission4 = Prp.permission4
-                }).ToListAsync(); // **先把資料載入記憶體**
+            var permissionsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                                   select new pdm_permissionsInitDto
+                                   {
+                                       PermissionId = Pp.permission_id,
+                                       PermissionName = Pp.permission_name,
+                                       Description = Pp.description,
+                                       FrontEndId = Pp.frontend_id,
+                                       IsActive = Pp.is_active ?? "Y",
+                                       // 預設權限設定為 "Y"
+                                       Createp = "Y",
+                                       Readp = "Y",
+                                       Updatep = "Y",
+                                       Deletep = "Y",
+                                       Exportp = "Y",
+                                       Importp = "Y",
+                                       Permission1 = "Y",
+                                       Permission2 = "Y",
+                                       Permission3 = "Y",
+                                       Permission4 = "Y"
+                                   };
 
-            var permissions = permissionsRaw
-                .GroupBy(p => new { p.PermissionId, p.PermissionName, p.Description })
-                .Select(g => new pdm_permissionsInitDto
-                {
-                    PermissionId = g.Key.PermissionId,
-                    PermissionName = g.Key.PermissionName,
-                    Description = g.Key.Description,
-                    IsActive = g.Any(p => p.IsActive == "Y") ? "Y" : "N",
-                    Createp = g.Any(p => p.Createp == "Y") ? "Y" : "N",
-                    Readp = g.Any(p => p.Readp == "Y") ? "Y" : "N",
-                    Updatep = g.Any(p => p.Updatep == "Y") ? "Y" : "N",
-                    Deletep = g.Any(p => p.Deletep == "Y") ? "Y" : "N",
-                    Exportp = g.Any(p => p.Exportp == "Y") ? "Y" : "N",
-                    Importp = g.Any(p => p.Importp == "Y") ? "Y" : "N",
-                    Permission1 = g.Any(p => p.Permission1 == "Y") ? "Y" : "N",
-                    Permission2 = g.Any(p => p.Permission2 == "Y") ? "Y" : "N",
-                    Permission3 = g.Any(p => p.Permission3 == "Y") ? "Y" : "N",
-                    Permission4 = g.Any(p => p.Permission4 == "Y") ? "Y" : "N"
-                }).ToList();
-
+            var permissions = await permissionsQuery
+                .OrderBy(p => p.PermissionId)
+                .ToListAsync();
 
             // 查詢權限清單details
-            var detailsRaw = await (
-                from Prpd in _pcms_Pdm_TestContext.pdm_role_permission_details
-                join Pp in _pcms_Pdm_TestContext.pdm_permissions on Prpd.permission_id equals Pp.permission_id
-                select new pdm_role_permission_detailsInitDto
-                {
-                    PermissionId = (int)Prpd.permission_id,
-                    PermissionName = Pp.permission_name,
-                    Description = Pp.description,
-                    PermissionKey = Prpd.permission_key,
-                    DescriptionD = Prpd.description,
-                    IsActiveD = Prpd.is_active
-                }).ToListAsync(); // **先查詢再處理**
+            var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
+                               join Ppk in _pcms_Pdm_TestContext.pdm_permission_keys
+                                   on Pp.permission_id equals Ppk.permission_id
+                               select new pdm_role_permission_detailsInitDto
+                               {
+                                   PermissionId = Pp.permission_id,
+                                   PermissionName = Pp.permission_name,
+                                   Description = Pp.description,
+                                   PermissionKey = Ppk.permission_key,
+                                   PermissionKeyId = Ppk.permission_key_id,
+                                   DescriptionD = Ppk.description,
+                                   IsActiveD = "Y"  // 預設為未啟用
+                               };
 
-            var permissionDetails = detailsRaw
-                .GroupBy(d => new { d.PermissionId, d.PermissionKey })
-                .Select(g => new pdm_role_permission_detailsInitDto
-                {
-                    PermissionId = g.Key.PermissionId,
-                    PermissionName = g.First().PermissionName,
-                    Description = g.First().Description,
-                    PermissionKey = g.Key.PermissionKey,
-                    DescriptionD = g.First().DescriptionD,
-                    IsActiveD = g.Any(x => x.IsActiveD == "Y") ? "Y" : "N"
-                }).OrderBy(g => g.PermissionId).ToList();
+            var permissionDetails = await detailsQuery
+                .OrderBy(d => d.PermissionId)
+                .ToListAsync();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>
@@ -231,22 +205,24 @@ namespace PDMApp.Utils.BasicProgram
                                        PermissionId = Pp.permission_id,
                                        PermissionName = Pp.permission_name,
                                        Description = Pp.description,
+                                       FrontEndId = Pp.frontend_id,
+                                       //IsActive = Pp.is_active ?? "N",
 
                                        // 角色權限設定，如果沒有設定則使用預設值
                                        RolePermissionId = Prp != null ? Prp.role_permission_id : 0,
                                        RoleId = parameters.RoleId,
                                        DevFactoryNo = Prp.dev_factory_no ?? pr.dev_factory_no ?? parameters.DevFactoryNo,
-                                       IsActive = Prp.is_active ?? "N",
+                                       IsActive = Prp.is_active ?? "Y", // 因為前端沒有接收，但抓取tree menu會判斷此值。故給Y
                                        Createp = Prp.createp ?? "N",
                                        Readp = Prp.readp ?? "N",
                                        Updatep = Prp.updatep ?? "N",
                                        Deletep = Prp.deletep ?? "N",
                                        Exportp = Prp.exportp ?? "N",
                                        Importp = Prp.importp ?? "N",
-                                       Permission1 = Prp.permission1 ?? "N",
-                                       Permission2 = Prp.permission2 ?? "N",
-                                       Permission3 = Prp.permission3 ?? "N",
-                                       Permission4 = Prp.permission4 ?? "N",
+                                       //Permission1 = Prp.permission1 ?? "N",
+                                       //Permission2 = Prp.permission2 ?? "N",
+                                       //Permission3 = Prp.permission3 ?? "N",
+                                       //Permission4 = Prp.permission4 ?? "N",
 
                                        // 時間和建立/更新者資訊
                                        CreatedAt = Prp.created_at ?? Pp.created_at,
@@ -269,7 +245,7 @@ namespace PDMApp.Utils.BasicProgram
                 permissionsQuery = permissionsQuery.Where(p => p.DevFactoryNo == parameters.DevFactoryNo);
             }
 
-            var permissions = await permissionsQuery.OrderBy(q => q.PermissionId).ToListAsync();
+            var permissions = await permissionsQuery.OrderBy(q => q.FrontEndId).ToListAsync();
 
             // 查詢 details
             var detailsQuery = from Pp in _pcms_Pdm_TestContext.pdm_permissions
@@ -320,7 +296,7 @@ namespace PDMApp.Utils.BasicProgram
                 detailsQuery = detailsQuery.Where(d => d.DevFactoryNoD == parameters.DevFactoryNo);
             }
 
-            var permissionDetails = await detailsQuery.OrderBy(q => q.PermissionId).ToListAsync();
+            var permissionDetails = await detailsQuery.OrderBy(q => q.PermissionKeyId).ToListAsync();
 
             // 將查詢結果包裝成 Dictionary
             return new Dictionary<string, object>

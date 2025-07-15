@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PDMApp.Attributes;
 using PDMApp.Dtos;
 using PDMApp.Dtos.BasicProgram;
 using PDMApp.Models;
@@ -13,6 +14,9 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using PDMApp.Service;
+using PDMApp.Service.Basic;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -20,14 +24,19 @@ namespace PDMApp.Controllers.ALink
 {
     [Route("api/v1/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "PDMToken")]
     public class SpecHeadsController : ControllerBase
     {
 
         private readonly pcms_pdm_testContext _pcms_Pdm_TestContext;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SpecHeadsController(pcms_pdm_testContext pcms_Pdm_testContext)
+        public SpecHeadsController(
+            pcms_pdm_testContext pcms_Pdm_testContext,
+            ICurrentUserService currentUserService)
         {
             _pcms_Pdm_TestContext = pcms_Pdm_testContext;
+            _currentUserService = currentUserService;
         }
 
         // GET: api/<SpecHeadsController>
@@ -46,35 +55,73 @@ namespace PDMApp.Controllers.ALink
 
         // POST api/<SpecHeadsController>
         // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
+        /// <summary>
+        /// 查詢SpecHeads
+        /// </summary>
+        /// <param name="value">SpecSearchParameter</param>
+        /// <returns>pdm_spec_headDto</returns>
         [HttpPost]
+        [RequirePermission(2, "READ")]
+        //[RequirePermission(2, "PDF_export")]
         public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post([FromBody] SpecSearchParameter value)
         {
-            //if (!ModelState.IsValid)
-            //    return BadRequest(ModelState);
-
-
-            // 手動檢查必填欄位
-            var inputErrors = new List<string>();
-            if (string.IsNullOrWhiteSpace(value.Year))
+            // 檢查是否至少有一個搜尋條件
+            if (!ValidateSearchParams(value))
             {
-                inputErrors.Add("Year is required.");
+                return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
+                    errorCode: "40001",
+                    message: "請至少輸入一個搜尋條件",
+                    data: null
+                );
             }
 
-            if (string.IsNullOrWhiteSpace(value.Stage))
+            try
             {
-                inputErrors.Add("Stage is required.");
-            }
+                // Step 1：查詢 + 分頁（EF 查 DB）
+                var pagedResult = await QueryHelper.QuerySpecHead2(_pcms_Pdm_TestContext, value)
+                                                   .Distinct()
+                                                   .ToPagedResultAsync(value.Pagination.PageNumber, value.Pagination.PageSize);
 
-            // 如果有驗證錯誤，返回自定義格式的錯誤訊息
-            if (inputErrors.Any())
+                // Step 2：在記憶體中組合 Factory 字串
+                foreach (var item in pagedResult.Results)
+                {
+                    item.Factory = string.Join(",", new[] { item.Factory1, item.Factory2, item.Factory3 }
+                                                .Where(f => !string.IsNullOrWhiteSpace(f)));
+                }
+
+                return APIResponseHelper.HandlePagedApiResponse(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                return APIResponseHelper.HandleApiError<PagedResult<pdm_spec_headDto>>(
+                    errorCode: "50001",
+                    message: $"查詢過程中發生錯誤: {ex.Message}",
+                    data: null
+                );
+            }
+        }
+
+        // POST api/<SpecHeadsController>
+        // 以下方法為綜合應用「泛型、非同步處理、回傳值與參數不同」
+        [HttpPost("post2")]
+        public async Task<ActionResult<APIStatusResponse<PagedResult<pdm_spec_headDto>>>> Post2([FromBody] SpecSearchParameter value)
+        {
+            // 使用反射來檢查所有字串屬性
+            var searchProperties = typeof(SpecSearchParameter)
+                .GetProperties()
+                .Where(p => p.PropertyType == typeof(string))
+                .Select(p => p.GetValue(value) as string)
+                .Any(v => !string.IsNullOrWhiteSpace(v));
+
+            if (!searchProperties)
             {
                 return Ok(new APIStatusResponse<object>
                 {
                     ErrorCode = "10001",
-                    Message = "One or more validation errors occurred.",
-                    Data = new { Errors = inputErrors }
+                    Message = "Please enter at least one search condition."
                 });
             }
+
             try
             {
                 var query = QueryHelper.QuerySpecHead(_pcms_Pdm_TestContext);
@@ -90,7 +137,12 @@ namespace PDMApp.Controllers.ALink
                 if (!string.IsNullOrWhiteSpace(value.Season))
                     filters.Add(ph => ph.Season == value.Season);
                 if (!string.IsNullOrWhiteSpace(value.Year))
-                    filters.Add(ph => ph.Year == value.Year);
+                {
+                    var years = value.Year.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(y => y.Trim())
+                                               .ToArray();
+                    query = query.Where(ph => years.Contains(ph.Year));
+                }
                 if (!string.IsNullOrWhiteSpace(value.ItemNo))
                     filters.Add(ph => ph.ItemNo.Contains(value.ItemNo));
                 if (!string.IsNullOrWhiteSpace(value.ColorNo))
@@ -107,6 +159,31 @@ namespace PDMApp.Controllers.ALink
                     filters.Add(ph => ph.Mode.Contains(value.ModeName));
                 if (!string.IsNullOrWhiteSpace(value.OutMoldNo))
                     filters.Add(ph => ph.OutMoldNo.Contains(value.OutMoldNo));
+                if (!string.IsNullOrWhiteSpace(value.LastNo))
+                    filters.Add(ph => ph.LastNo1.Contains(value.LastNo) || ph.LastNo2.Contains(value.LastNo) || ph.LastNo3.Contains(value.LastNo));
+                if (!string.IsNullOrWhiteSpace(value.ItemNameENG))
+                    filters.Add(ph => ph.ItemNameEng.Contains(value.ItemNameENG));
+                if (!string.IsNullOrWhiteSpace(value.ItemNameJPN))
+                    filters.Add(ph => ph.ItemNameJpn.Contains(value.ItemNameJPN));
+                /*
+                if (!string.IsNullOrWhiteSpace(value.PartName))
+                    filters.Add(ph => ph.PartName.Contains(value.PartName));
+                if (!string.IsNullOrWhiteSpace(value.PartNo))
+                    filters.Add(ph => ph.PartNo.Contains(value.PartNo));
+                if (!string.IsNullOrWhiteSpace(value.MatColor))
+                    filters.Add(ph => ph.MatColor.Contains(value.MatColor));
+                if (!string.IsNullOrWhiteSpace(value.Material))
+                    filters.Add(ph => ph.Material.Contains(value.Material));
+                if (!string.IsNullOrWhiteSpace(value.SubMaterial))
+                    filters.Add(ph => ph.SubMaterial.Contains(value.SubMaterial));
+                if (!string.IsNullOrWhiteSpace(value.Supplier))
+                    filters.Add(ph => ph.Supplier.Contains(value.Supplier));
+                if (!string.IsNullOrWhiteSpace(value.Width))
+                    filters.Add(ph => ph.Width.Contains(value.Width));
+                */
+                if (!string.IsNullOrWhiteSpace(value.HeelHeight))
+                    filters.Add(ph => ph.HeelHeight.Contains(value.HeelHeight));
+
 
                 // 加上上面所有的篩選條件
                 foreach (var filter in filters)
@@ -140,6 +217,12 @@ namespace PDMApp.Controllers.ALink
             }
         }
 
+        // 上傳Excel
+        /// <summary>
+        /// 上傳Excel
+        /// </summary>
+        /// <param name="file">IFormFile</param>
+        /// <returns>IActionResult</returns>
         [HttpPost("Upload")]
         public IActionResult UploadExcel([FromForm] IFormFile file)
         {
@@ -162,6 +245,7 @@ namespace PDMApp.Controllers.ALink
         }
 
         [HttpPost("Export")]
+        [RequirePermission(2, "EXPORT")]
         //public async Task<IActionResult> ExportMasterDetail([FromBody] SpecSearchParameter value)
         public async Task<ActionResult<APIStatusResponse<IEnumerable<ExportFileResponseDto>>>> ExportMasterDetail([FromBody] SpecSearchParameter value)
         {
@@ -217,6 +301,13 @@ namespace PDMApp.Controllers.ALink
                 var specMIds = result.Select(r => r.SpecMId).Distinct().ToList();
                 var allSpecItems = await _pcms_Pdm_TestContext.pdm_spec_item
                     .Where(si => specMIds.Contains(si.spec_m_id))
+                    .Where(si => string.IsNullOrEmpty(value.PartNo) || si.act_no.Contains(value.PartNo))
+                    .Where(si => string.IsNullOrEmpty(value.PartName) || si.parts.Contains(value.PartName))
+                    .Where(si => string.IsNullOrEmpty(value.MatColor) || si.colors.Contains(value.MatColor))
+                    .Where(si => string.IsNullOrEmpty(value.Material) || si.material.Contains(value.Material))
+                    .Where(si => string.IsNullOrEmpty(value.SubMaterial) || si.submaterial.Contains(value.SubMaterial))
+                    .Where(si => string.IsNullOrEmpty(value.Supplier) || si.supplier.Contains(value.Supplier))
+                    .Where(si => string.IsNullOrEmpty(value.Width) || si.width.Contains(value.Width))
                     .OrderBy(si => Convert.ToInt32(si.act_no))
                     .ThenBy(si => si.seqno)
                     .ToListAsync();
@@ -305,11 +396,13 @@ namespace PDMApp.Controllers.ALink
             }
             catch (Exception ex)
             {
-                return new ObjectResult(APIResponseHelper.HandleApiError<object>(
+                var errorResponse = APIResponseHelper.HandleApiError<object>(
                     errorCode: "10001",
                     message: $"匯出過程中發生錯誤: {ex.Message}",
                     data: null
-                ));
+                );
+                HttpContext.Items["CustomErrorMessage"] = errorResponse.Value;
+                throw;  // 重新拋出異常，讓 ValidationMiddleware 處理
             }
         }
 
@@ -324,6 +417,16 @@ namespace PDMApp.Controllers.ALink
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+        private bool ValidateSearchParams(SpecSearchParameter value)
+        {
+            return typeof(SpecSearchParameter)
+                .GetProperties()
+                .Where(p => p.Name != "Pagination")
+                .Any(p => {
+                    var propertyValue = p.GetValue(value);
+                    return propertyValue != null && !string.IsNullOrWhiteSpace(propertyValue.ToString());
+                });
         }
     }
 }

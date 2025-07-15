@@ -102,5 +102,34 @@ namespace PDMApp.Extensions
                 Console.WriteLine(e.ToString());
             }
         }
+
+        /// <summary>
+        /// 驗證傳入的字串參數是否有值
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="ValidCount">需要驗證的參數數量</param>
+        /// <returns></returns>
+        public static bool ValidationParameter(this object obj, int ValidCount = 1)
+        {
+            var propertys = obj.GetType().GetProperties();
+            int i = 0;
+            foreach (var property in propertys)
+            {
+                var value = property.GetValue(obj);
+                if (property.PropertyType == typeof(string))
+                {
+                    value = value?.ToString()?.Replace("%", "");
+                    if (!string.IsNullOrWhiteSpace((string)value))
+                    {
+                        i++;
+                    }
+                    if (i == ValidCount)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return default;
+        }
     }
 }

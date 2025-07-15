@@ -11,6 +11,7 @@ namespace PDMApp.Models
         {
             pdm_permission_keys = new HashSet<pdm_permission_keys>();
             pdm_role_permissions = new HashSet<pdm_role_permissions>();
+            sys_menus = new HashSet<sys_menus>();
         }
 
         public int permission_id { get; set; }
@@ -20,10 +21,13 @@ namespace PDMApp.Models
         public DateTime? created_at { get; set; }
         public long? updated_by { get; set; }
         public DateTime? updated_at { get; set; }
+        public int? frontend_id { get; set; }
+        public string is_active { get; set; }
 
         public virtual pdm_users created_byNavigation { get; set; }
         public virtual pdm_users updated_byNavigation { get; set; }
         public virtual ICollection<pdm_permission_keys> pdm_permission_keys { get; set; }
         public virtual ICollection<pdm_role_permissions> pdm_role_permissions { get; set; }
+        public virtual ICollection<sys_menus> sys_menus { get; set; }
     }
 }

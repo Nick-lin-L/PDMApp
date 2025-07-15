@@ -13,5 +13,7 @@ namespace PDMApp.Models
         public string text_en { get; set; }
         public string group_key { get; set; }
         public string status { get; set; }
+        public string modify_user { get; set; }
+        public DateTime? modify_time { get; set; }
     }
 }

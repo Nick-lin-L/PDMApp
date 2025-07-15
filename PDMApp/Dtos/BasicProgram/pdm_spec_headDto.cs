@@ -28,23 +28,24 @@ namespace PDMApp.Dtos.BasicProgram
         public string? ItemNameJpn { get; set; }
 
 
-
-
-
         public string? Cbdlockmk { get; set; }
         public string? ProductMId { get; set; }
         public string? HeelHeight { get; set; }
         public string? ProductDId { get; set; }
 
         //以下是表頭用不到，但查詢條件需要的欄位
+        public string? LastNo { get; set; }
         public string? LastNo1 { get; set; }
         public string? LastNo2 { get; set; }
         public string? LastNo3 { get; set; }
+        public string? Factory1 { get; set; }
+        public string? Factory2 { get; set; }
+        public string? Factory3 { get; set; }
         public string? PartName { get; set; }
         public string? PartNo { get; set; }
         public string? MatColor { get; set; }
         public string? Material { get; set; }
-        public string? Submaterial { get; set; }
+        public string? SubMaterial { get; set; }
         public string? Supplier { get; set; }
         public string? Width { get; set; }
 

@@ -7,8 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
-using Utils.PGTSPEC;
+using Service.PGTSPEC;
 using System.Data.Common;
+using Microsoft.AspNetCore.Authorization;
+using PDMApp.Utils.BasicProgram;
+using PDMApp.Utils;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace PDMApp.Controllers.SPEC
 {
@@ -22,35 +27,32 @@ namespace PDMApp.Controllers.SPEC
         {
             _pcms_Pdm_TestContext = pcms_Pdm_TestContext;
         }
-
         // POST api/v1/PGTSpec5Sheets
         [HttpPost]
         public async Task<ActionResult<Utils.APIStatusResponse<IDictionary<string, object>>>> Post([FromBody] PGTSpec5SheetsSearchParameter value)
         {
             try
             {
-                // 創建 MultiPageResultDTO
                 var resultData = new MultiPageResultDTO();
+                string currentFactNo = value.DevFactoryNo ?? "";
 
                 // BasicData 查詢
-                var basicQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
+                var basicQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecBasicResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId));
                 resultData.BasicData = await basicQuery.Distinct().ToListAsync();
 
                 // Head 查詢
-                var headQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext)
+                var headQuery = Service.PGTSPEC.PGTSPECQueryHelper.GetSpecHeadResponse(_pcms_Pdm_TestContext, currentFactNo)
                     .Where(h => string.IsNullOrWhiteSpace(value.SpecMId) || h.SpecMId.Equals(value.SpecMId));
                 resultData.HeadData = await headQuery.Distinct().ToListAsync();
 
                 // Upper, Sole, Other 查詢
-                var upperQuery = Utils.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext)
-                    .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId));
+                // **直接等待 GetSpecUpperResponse 返回 List<SpecUpperDTO>**
+                var allUpperData = await Service.PGTSPEC.PGTSPECQueryHelper.GetSpecUpperResponse(_pcms_Pdm_TestContext);
 
-                // 先轉成 List 再做排序（避免運算式樹的限制）
-                var allUpperData = await upperQuery.ToListAsync();
-
-                // 排序邏輯：先按 material_group，再按 act_part_no 數值排序，最後按 parts_no 判斷 null 先後
-                var sortedUpperData = allUpperData
+                // 在記憶體中對 allUpperData 進行篩選和排序
+                var filteredUpperData = allUpperData
+                    .Where(si => string.IsNullOrWhiteSpace(value.SpecMId) || si.SpecMId.Equals(value.SpecMId))
                     .OrderBy(si => si.MatGroup)
                     .ThenBy(si => int.TryParse(si.ActPartNo, out int num) ? num : int.MaxValue)
                     .ThenBy(si => string.IsNullOrEmpty(si.No) ? 1 : 0)  // parts_no 有值的排前
@@ -59,9 +61,9 @@ namespace PDMApp.Controllers.SPEC
                     .ToList();
 
                 // 根據 MatGroup 分組
-                resultData.UpperData = sortedUpperData.Where(si => si.MatGroup == "A").ToList();
-                resultData.SoleData = sortedUpperData.Where(si => si.MatGroup == "B").ToList();
-                resultData.OtherData = sortedUpperData.Where(si => si.MatGroup == "C").ToList();
+                resultData.UpperData = filteredUpperData.Where(si => si.MatGroup == "A").ToList();
+                resultData.SoleData = filteredUpperData.Where(si => si.MatGroup == "B").ToList();
+                resultData.OtherData = filteredUpperData.Where(si => si.MatGroup == "C").ToList();
 
                 // 手動轉換為字典
                 var dynamicData = new Dictionary<string, object>
@@ -71,12 +73,11 @@ namespace PDMApp.Controllers.SPEC
                     { "UpperData", resultData.UpperData },
                     { "SoleData", resultData.SoleData },
                     { "OtherData", resultData.OtherData },
-                    { "ErrorCode", "OK" }, 
-                    { "Message", "查詢成功" }, // 可加上訊息
+                    { "ErrorCode", "OK" },
+                    { "Message", "查詢成功" },
                 };
 
                 return StatusCode(200, dynamicData);
-
             }
             catch (Exception ex)
             {
@@ -90,11 +91,17 @@ namespace PDMApp.Controllers.SPEC
         }
 
         // POST api/v1/PGTSpec5Sheets/UpdateSpec
+        [Authorize(AuthenticationSchemes = "PDMToken")]
         [HttpPost("UpdateSpec")]
         public async Task<ActionResult> Post([FromBody] PGTSpec5SheetsUpdateParameter value)
         {
             try
             {
+                // 取得當前登入者資訊
+                var currentUser = CurrentUserUtils.Get(HttpContext);
+                var pccuid = currentUser.Pccuid?.ToString();  // 從 currentUser 取得 pccuid
+                var name = currentUser.Name?.ToString();  // 從 currentUser 取得 name
+
                 var headData = value.HeadData.FirstOrDefault();
                 if (headData == null || string.IsNullOrWhiteSpace(headData.SpecMId))
                 {
@@ -102,7 +109,7 @@ namespace PDMApp.Controllers.SPEC
                 } 
 
                 // 嘗試更新 SpecHead 和 SpecItem
-                var (success, message) = await PGTSPECUpdateHelper.UpdateSpecAsync(_pcms_Pdm_TestContext, value);
+                var (success, message) = await PGTSPECUpdateHelper.UpdateSpecAsync(_pcms_Pdm_TestContext, value, pccuid, name);
 
                 if (!success)
                 {
@@ -126,9 +133,62 @@ namespace PDMApp.Controllers.SPEC
             }
         }
 
+        // POST api/v1/PGTSpec5Sheets/GetMaterialInfoByItemData
+        [HttpPost("GetMaterialInfoByItemData")]
+        public async Task<ActionResult<APIStatusResponse<MaterialInfoDTO>>> GetMaterialInfoByItemData([FromBody] SpecItemSearchParameter item) 
+        {
+            // 驗證輸入參數
+            if (item == null)
+            {
+                return BadRequest(APIResponseHelper.HandleApiError<MaterialInfoDTO>( 
+                    errorCode: "INVALID_INPUT",
+                    message: "請提供要查詢的物料資料。",
+                    data: null
+                ));
+            }
+
+            // 檢查是否包含 DevFactoryNo
+            if (string.IsNullOrWhiteSpace(item.DevFactoryNo))
+            {
+                return BadRequest(APIResponseHelper.HandleApiError<MaterialInfoDTO>( 
+                    errorCode: "INVALID_INPUT",
+                    message: "物料資料必須提供有效的 DevFactoryNo。",
+                    data: null
+                ));
+            }
+
+            string devFactoryNo = item.DevFactoryNo;
+
+            try
+            {
+                // 呼叫輔助方法來獲取 MaterialInfoDTO 資料
+                var materialInfo = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialInfoByItemData(
+                    _pcms_Pdm_TestContext,
+                    item, 
+                    devFactoryNo
+                );
+
+                return Ok(new APIStatusResponse<MaterialInfoDTO> 
+                {
+                    ErrorCode = "OK",
+                    Message = "查詢成功",
+                    Data = materialInfo
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new APIStatusResponse<MaterialInfoDTO> 
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "伺服器錯誤，查詢物料資訊失敗。請聯絡系統管理員。",
+                    Data = null
+                });
+            }
+        }
+
         // POST api/v1/PGTSpec5Sheets/Export
         [HttpPost("Export")]
-        public async Task<ActionResult<Utils.APIStatusResponse<IEnumerable<Dtos.ExportFileResponseDto>>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value)
+        public async Task<ActionResult<Utils.APIStatusResponse<object>>> ExportToExcel([FromBody] PGTSpec5SheetsSearchParameter value) // 將返回型別改為 object
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -136,7 +196,7 @@ namespace PDMApp.Controllers.SPEC
             try
             {
                 // ItemSheet 查詢
-                var itemSheetData = Utils.PGTSPEC.PGTSPECQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
+                var itemSheetData = Service.PGTSPEC.PGTSPECQueryHelper.GetItemSheetResponse(_pcms_Pdm_TestContext)
                     .Where(ph => string.IsNullOrWhiteSpace(value.SpecMId) || ph.SpecMId.Equals(value.SpecMId))
                     .ToList(); // 執行查詢，轉為 List
 
@@ -152,13 +212,20 @@ namespace PDMApp.Controllers.SPEC
 
                 string base64File = Convert.ToBase64String(fileContent); // 轉 Base64
 
-                var response = new Dtos.ExportFileResponseDto
+                // 準備回傳的 ExportFileResponseDto
+                var responseFileDto = new Dtos.ExportFileResponseDto
                 {
                     FileName = fileName,
                     FileContent = base64File
                 };
 
-                return Utils.APIResponseHelper.HandleApiResponse(new[] { response }, "OK", "");
+                // 直接建構 APIStatusResponse<object> 物件並回傳，Data 為單一 ExportFileResponseDto
+                return Ok(new Utils.APIStatusResponse<object>
+                {
+                    ErrorCode = "OK",
+                    Message = "匯出成功", // 可以根據需求設定訊息
+                    Data = responseFileDto // 直接賦值為單一物件
+                });
             }
             catch (DbException ex)
             {
@@ -168,7 +235,106 @@ namespace PDMApp.Controllers.SPEC
                     data: null
                 ));
             }
+        }
 
+        // POST api/v1/PGTSpec5Sheets/MaterialExport
+        [HttpPost("MaterialExport")]
+        public async Task<IActionResult> MaterialExport([FromBody] MaterialExportParameter value) 
+        {
+            if (!ModelState.IsValid || value.MaterialData == null || !value.MaterialData.Any())
+            {
+                return BadRequest(APIResponseHelper.HandleApiError<object>(
+                    errorCode: "INVALID_INPUT",
+                    message: "傳入參數不合法，請提供有效的 DevFactoryNo 和 MaterialData 列表，且列表不可為空。",
+                    data: ModelState
+                ));
+            }
+
+            string devFactoryNo = value.DevFactoryNo;
+
+            try
+            {
+                var materialDataToExport = await Service.PGTSPEC.PGTSPECQueryHelper.GetMaterialExportData(_pcms_Pdm_TestContext,value.MaterialData,devFactoryNo);
+
+                if (materialDataToExport.Any(item => string.IsNullOrEmpty(item.MatFullName)))
+                {
+                    return Ok(new APIStatusResponse<object>
+                    {
+                        ErrorCode = "MATERIAL_DESCRIPTION_EMPTY",
+                        Message = "不可包含物料說明為空的資料。",
+                        Data = null
+                    });
+                }
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Material Export");
+
+                string[] headers = {
+                    "MAT TYPE", "MAT NO", "MAT FULL NAME", "COLOR NO", "COLOR NAME",
+                    "STANDARD", "UOM", "MEMO", "PDM MATL NO",
+                    "SCM CLASS L", "SCM CLASS M", "SCM CLASS S", "ERROR MESSAGE"
+                };
+
+                for (int col = 0; col < headers.Length; col++)
+                {
+                    worksheet.Cell(1, col + 1).Value = headers[col];
+                    worksheet.Cell(1, col + 1).Style.Font.Bold = true;
+                    worksheet.Cell(1, col + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                }
+
+                int row = 2;
+                foreach (var item in materialDataToExport)
+                {
+                    worksheet.Cell(row, 1).Value = item.MatType;
+                    worksheet.Cell(row, 2).Value = item.MatNoPDM;
+                    worksheet.Cell(row, 3).Value = item.MatFullName;
+                    worksheet.Cell(row, 4).Value = item.ColorNo;
+                    worksheet.Cell(row, 5).Value = item.ColorName;
+                    worksheet.Cell(row, 6).Value = item.Standard;
+                    worksheet.Cell(row, 7).Value = item.UOM;
+                    worksheet.Cell(row, 8).Value = item.Memo;
+                    worksheet.Cell(row, 9).Value = item.PDMMatlNo;
+                    worksheet.Cell(row, 10).Value = item.ScmClassL;
+                    worksheet.Cell(row, 11).Value = item.ScmClassM;
+                    worksheet.Cell(row, 12).Value = item.ScmClassS;
+                    worksheet.Cell(row, 13).Value = item.ErrorMessage;
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+
+                stream.Position = 0;
+
+                byte[] fileBytes = stream.ToArray();
+
+                string fileName = $"物料匯出_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                string base64File = Convert.ToBase64String(fileBytes);
+
+                var responseFileDto = new ExportFileResponseDto
+                {
+                    FileName = fileName,
+                    FileContent = base64File
+                };
+
+                return Ok(new APIStatusResponse<object>
+                {
+                    ErrorCode = "OK",
+                    Message = "物料資料匯出成功。",
+                    Data = responseFileDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new APIStatusResponse<object>
+                {
+                    ErrorCode = "SERVER_ERROR",
+                    Message = "伺服器錯誤，物料匯出失敗。請聯絡系統管理員。",
+                    Data = null
+                });
+            }
         }
     }
 }

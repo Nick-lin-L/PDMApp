@@ -15,10 +15,10 @@ namespace PDMApp.Dtos.BasicProgram
         public string IsActive { get; set; } // 是否啟用
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? LastLogin { get; set; } // 最後登入時間
-        public long? CreatedBy { get; set; } // 建立者ID
+        public string? CreatedBy { get; set; } // 建立者ID
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? CreatedAt { get; set; } // 建立時間
-        public long? UpdatedBy { get; set; } // 更新者ID
+        public string? UpdatedBy { get; set; } // 更新者ID
         [JsonConverter(typeof(PDMApp.Utils.Converters.DateTimeConverterHms))]
         public DateTime? UpdatedAt { get; set; } // 更新時間
 

@@ -25,6 +25,12 @@ namespace PDMApp.Models
             pdm_user_rolescreated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesupdated_byNavigation = new HashSet<pdm_user_roles>();
             pdm_user_rolesuser = new HashSet<pdm_user_roles>();
+            sys_languagescreated_byNavigation = new HashSet<sys_languages>();
+            sys_languagesupdated_byNavigation = new HashSet<sys_languages>();
+            sys_menu_i18ncreated_byNavigation = new HashSet<sys_menu_i18n>();
+            sys_menu_i18nupdated_byNavigation = new HashSet<sys_menu_i18n>();
+            sys_menuscreated_byNavigation = new HashSet<sys_menus>();
+            sys_menusupdated_byNavigation = new HashSet<sys_menus>();
         }
 
         public long user_id { get; set; }
@@ -59,5 +65,11 @@ namespace PDMApp.Models
         public virtual ICollection<pdm_user_roles> pdm_user_rolescreated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesupdated_byNavigation { get; set; }
         public virtual ICollection<pdm_user_roles> pdm_user_rolesuser { get; set; }
+        public virtual ICollection<sys_languages> sys_languagescreated_byNavigation { get; set; }
+        public virtual ICollection<sys_languages> sys_languagesupdated_byNavigation { get; set; }
+        public virtual ICollection<sys_menu_i18n> sys_menu_i18ncreated_byNavigation { get; set; }
+        public virtual ICollection<sys_menu_i18n> sys_menu_i18nupdated_byNavigation { get; set; }
+        public virtual ICollection<sys_menus> sys_menuscreated_byNavigation { get; set; }
+        public virtual ICollection<sys_menus> sys_menusupdated_byNavigation { get; set; }
     }
 }
